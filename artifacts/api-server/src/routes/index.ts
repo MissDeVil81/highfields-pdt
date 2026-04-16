@@ -1,8 +1,20 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import careerPathsRouter from "./careerPaths";
+import rolesRouter from "./roles";
+import competenciesRouter from "./competencies";
+import assessmentsRouter from "./assessments";
+import evidenceRouter from "./evidence";
+import summaryRouter from "./summary";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use("/career-paths", careerPathsRouter);
+router.use("/roles", rolesRouter);
+router.use("/competencies", competenciesRouter);
+router.use("/assessments", assessmentsRouter);
+router.use("/evidence", evidenceRouter);
+router.use("/summary", summaryRouter);
 
 export default router;

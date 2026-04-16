@@ -1,22 +1,33 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Career Progression Tracker API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: careerPaths
+    description: Career path operations
+  - name: roles
+    description: Role operations
+  - name: competencies
+    description: Competency operations
+  - name: assessments
+    description: User assessment operations
+  - name: evidence
+    description: Evidence for target role competencies
+  - name: summary
+    description: Summary and aggregation endpoints
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,315 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /career-paths:
+    get:
+      operationId: listCareerPaths
+      tags: [careerPaths]
+      summary: List all career paths
+      responses:
+        "200":
+          description: List of career paths
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CareerPath"
+    post:
+      operationId: createCareerPath
+      tags: [careerPaths]
+      summary: Create a career path
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCareerPathBody"
+      responses:
+        "201":
+          description: Created career path
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareerPath"
+
+  /career-paths/{id}:
+    get:
+      operationId: getCareerPath
+      tags: [careerPaths]
+      summary: Get a career path by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Career path
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CareerPath"
+        "404":
+          description: Not found
+
+  /roles:
+    get:
+      operationId: listRoles
+      tags: [roles]
+      summary: List roles, optionally filtered by career path
+      parameters:
+        - name: careerPathId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Role"
+    post:
+      operationId: createRole
+      tags: [roles]
+      summary: Create a role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoleBody"
+      responses:
+        "201":
+          description: Created role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+
+  /roles/{id}:
+    get:
+      operationId: getRole
+      tags: [roles]
+      summary: Get a role with its full job spec and competencies
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Role with competencies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleWithCompetencies"
+        "404":
+          description: Not found
+
+  /competencies:
+    get:
+      operationId: listCompetencies
+      tags: [competencies]
+      summary: List competencies for a role
+      parameters:
+        - name: roleId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of competencies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Competency"
+    post:
+      operationId: createCompetency
+      tags: [competencies]
+      summary: Create a competency for a role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCompetencyBody"
+      responses:
+        "201":
+          description: Created competency
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Competency"
+
+  /assessments:
+    get:
+      operationId: listAssessments
+      tags: [assessments]
+      summary: List assessments for a user session
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: roleId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of assessments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Assessment"
+    post:
+      operationId: upsertAssessment
+      tags: [assessments]
+      summary: Create or update an assessment for a competency
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertAssessmentBody"
+      responses:
+        "200":
+          description: Upserted assessment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assessment"
+
+  /evidence:
+    get:
+      operationId: listEvidence
+      tags: [evidence]
+      summary: List evidence entries for a user session and role
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: roleId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: competencyId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of evidence entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Evidence"
+    post:
+      operationId: createEvidence
+      tags: [evidence]
+      summary: Add an evidence entry for a competency
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEvidenceBody"
+      responses:
+        "201":
+          description: Created evidence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evidence"
+
+  /evidence/{id}:
+    put:
+      operationId: updateEvidence
+      tags: [evidence]
+      summary: Update an evidence entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEvidenceBody"
+      responses:
+        "200":
+          description: Updated evidence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evidence"
+    delete:
+      operationId: deleteEvidence
+      tags: [evidence]
+      summary: Delete an evidence entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /summary/readiness:
+    get:
+      operationId: getReadinessSummary
+      tags: [summary]
+      summary: Get readiness summary for a session across current and target roles
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: currentRoleId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: targetRoleId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Readiness summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +354,331 @@ components:
       required:
         - status
 
+    CareerPath:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - description
+        - createdAt
+
+    CreateCareerPathBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - name
+        - description
+
+    Role:
+      type: object
+      properties:
+        id:
+          type: integer
+        careerPathId:
+          type: integer
+        title:
+          type: string
+        level:
+          type: integer
+        jobSpec:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - careerPathId
+        - title
+        - level
+        - jobSpec
+        - createdAt
+
+    RoleWithCompetencies:
+      type: object
+      properties:
+        id:
+          type: integer
+        careerPathId:
+          type: integer
+        title:
+          type: string
+        level:
+          type: integer
+        jobSpec:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        competencies:
+          type: array
+          items:
+            $ref: "#/components/schemas/Competency"
+      required:
+        - id
+        - careerPathId
+        - title
+        - level
+        - jobSpec
+        - createdAt
+        - competencies
+
+    CreateRoleBody:
+      type: object
+      properties:
+        careerPathId:
+          type: integer
+        title:
+          type: string
+        level:
+          type: integer
+        jobSpec:
+          type: string
+      required:
+        - careerPathId
+        - title
+        - level
+        - jobSpec
+
+    Competency:
+      type: object
+      properties:
+        id:
+          type: integer
+        roleId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - roleId
+        - name
+        - description
+        - category
+        - createdAt
+
+    CreateCompetencyBody:
+      type: object
+      properties:
+        roleId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+      required:
+        - roleId
+        - name
+        - description
+        - category
+
+    Assessment:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: string
+        competencyId:
+          type: integer
+        roleId:
+          type: integer
+        rating:
+          type: string
+          enum: [red, amber, green]
+        notes:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - sessionId
+        - competencyId
+        - roleId
+        - rating
+        - updatedAt
+
+    UpsertAssessmentBody:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        competencyId:
+          type: integer
+        roleId:
+          type: integer
+        rating:
+          type: string
+          enum: [red, amber, green]
+        notes:
+          type: string
+      required:
+        - sessionId
+        - competencyId
+        - roleId
+        - rating
+
+    Evidence:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: string
+        competencyId:
+          type: integer
+        roleId:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        rating:
+          type: string
+          enum: [red, amber, green]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - sessionId
+        - competencyId
+        - roleId
+        - title
+        - description
+        - rating
+        - createdAt
+        - updatedAt
+
+    CreateEvidenceBody:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        competencyId:
+          type: integer
+        roleId:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        rating:
+          type: string
+          enum: [red, amber, green]
+      required:
+        - sessionId
+        - competencyId
+        - roleId
+        - title
+        - description
+        - rating
+
+    UpdateEvidenceBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        rating:
+          type: string
+          enum: [red, amber, green]
+      required:
+        - title
+        - description
+        - rating
+
+    ReadinessSummary:
+      type: object
+      properties:
+        currentRole:
+          type: object
+          nullable: true
+          properties:
+            roleId:
+              type: integer
+            title:
+              type: string
+            totalCompetencies:
+              type: integer
+            green:
+              type: integer
+            amber:
+              type: integer
+            red:
+              type: integer
+            unrated:
+              type: integer
+            readinessPercent:
+              type: number
+          required:
+            - roleId
+            - title
+            - totalCompetencies
+            - green
+            - amber
+            - red
+            - unrated
+            - readinessPercent
+        targetRole:
+          type: object
+          nullable: true
+          properties:
+            roleId:
+              type: integer
+            title:
+              type: string
+            totalCompetencies:
+              type: integer
+            green:
+              type: integer
+            amber:
+              type: integer
+            red:
+              type: integer
+            unrated:
+              type: integer
+            readinessPercent:
+              type: number
+            evidenceCount:
+              type: integer
+          required:
+            - roleId
+            - title
+            - totalCompetencies
+            - green
+            - amber
+            - red
+            - unrated
+            - readinessPercent
+            - evidenceCount
+      required:
+        - currentRole
+        - targetRole
