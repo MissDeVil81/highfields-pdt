@@ -1,7 +1,8 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/lib/session";
-import { ChevronRight, LayoutDashboard, Briefcase, Target, BarChart3 } from "lucide-react";
+import { useClerk, useUser } from "@clerk/react";
+import { ChevronRight, LayoutDashboard, Briefcase, Target, BarChart3, LogOut } from "lucide-react";
 
 interface NavItemProps {
   href: string;
@@ -40,7 +41,17 @@ function NavItem({ href, label, icon, disabled }: NavItemProps) {
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { currentRoleId, targetRoleId } = useSessionStore();
+  const { currentRoleId } = useSessionStore();
+  const { signOut } = useClerk();
+  const { user } = useUser();
+
+  const displayName = user?.firstName
+    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ""}`
+    : user?.primaryEmailAddress?.emailAddress ?? "You";
+
+  const initials = user?.firstName
+    ? `${user.firstName[0]}${user.lastName?.[0] ?? ""}`.toUpperCase()
+    : (user?.primaryEmailAddress?.emailAddress?.[0] ?? "U").toUpperCase();
 
   return (
     <div className="flex min-h-screen">
@@ -50,8 +61,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <h1 className="text-base font-semibold text-sidebar-foreground tracking-tight">Career Progression</h1>
           <p className="text-xs text-sidebar-foreground/50 mt-0.5">Your path to promotion</p>
         </div>
+
+        {/* User info */}
+        <div className="px-4 py-3 border-b border-sidebar-border flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-xs font-bold shrink-0">
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-sidebar-foreground truncate">{displayName}</p>
+            <p className="text-xs text-sidebar-foreground/40 truncate">
+              {user?.primaryEmailAddress?.emailAddress}
+            </p>
+          </div>
+        </div>
+
         <nav className="flex-1 px-3 py-4 space-y-1">
-          <NavItem href="/" label="Setup" icon={<LayoutDashboard className="h-4 w-4" />} />
+          <NavItem href="/setup" label="Setup" icon={<LayoutDashboard className="h-4 w-4" />} />
           <NavItem
             href="/current-role"
             label="Current Role"
@@ -71,10 +96,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             disabled={!currentRoleId}
           />
         </nav>
-        <div className="px-4 py-4 border-t border-sidebar-border">
-          <p className="text-xs text-sidebar-foreground/40 leading-relaxed">
-            Rate your competencies and track evidence to prepare for your next role.
-          </p>
+
+        <div className="px-3 py-3 border-t border-sidebar-border">
+          <button
+            onClick={() => signOut({ redirectUrl: "/" })}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Sign out</span>
+          </button>
         </div>
       </aside>
 

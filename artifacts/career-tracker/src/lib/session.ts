@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { v4 as uuidv4 } from 'uuid';
 
 interface SessionState {
+  // sessionId is now the Clerk userId — set by ClerkTokenSync after sign-in
   sessionId: string;
   currentRoleId: number | null;
   targetRoleId: number | null;
@@ -11,12 +11,13 @@ interface SessionState {
   setCurrentRoleId: (id: number | null) => void;
   setTargetRoleId: (id: number | null) => void;
   setCareerPathId: (id: number | null) => void;
+  reset: () => void;
 }
 
 export const useSessionStore = create<SessionState>()(
   persist(
     (set) => ({
-      sessionId: uuidv4(),
+      sessionId: "",
       currentRoleId: null,
       targetRoleId: null,
       careerPathId: null,
@@ -24,6 +25,7 @@ export const useSessionStore = create<SessionState>()(
       setCurrentRoleId: (id) => set({ currentRoleId: id }),
       setTargetRoleId: (id) => set({ targetRoleId: id }),
       setCareerPathId: (id) => set({ careerPathId: id }),
+      reset: () => set({ currentRoleId: null, targetRoleId: null, careerPathId: null }),
     }),
     {
       name: 'career-tracker-session',

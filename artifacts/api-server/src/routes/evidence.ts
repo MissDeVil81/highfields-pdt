@@ -2,11 +2,11 @@ import { Router } from "express";
 import { db, evidenceTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
 const createSchema = z.object({
-  sessionId: z.string(),
   competencyId: z.number().int(),
   roleId: z.number().int(),
   title: z.string(),
@@ -20,11 +20,10 @@ const updateSchema = z.object({
   rating: z.enum(["red", "amber", "green"]),
 });
 
-router.get("/", async (req, res) => {
-  const sessionId = req.query.sessionId as string;
+router.get("/", requireAuth, async (req, res) => {
+  const sessionId = (req as any).userId as string;
   const roleId = req.query.roleId ? parseInt(req.query.roleId as string) : undefined;
   const competencyId = req.query.competencyId ? parseInt(req.query.competencyId as string) : undefined;
-  if (!sessionId) return res.status(400).json({ error: "sessionId is required" });
 
   const conditions = [eq(evidenceTable.sessionId, sessionId)];
   if (roleId) conditions.push(eq(evidenceTable.roleId, roleId));
@@ -34,14 +33,15 @@ router.get("/", async (req, res) => {
   res.json(evidence);
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   const result = createSchema.safeParse(req.body);
   if (!result.success) return res.status(400).json({ error: result.error.message });
-  const [created] = await db.insert(evidenceTable).values(result.data).returning();
+  const sessionId = (req as any).userId as string;
+  const [created] = await db.insert(evidenceTable).values({ ...result.data, sessionId }).returning();
   res.status(201).json(created);
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireAuth, async (req, res) => {
   const id = parseInt(req.params.id);
   const result = updateSchema.safeParse(req.body);
   if (!result.success) return res.status(400).json({ error: result.error.message });
@@ -50,7 +50,7 @@ router.put("/:id", async (req, res) => {
   res.json(updated);
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAuth, async (req, res) => {
   const id = parseInt(req.params.id);
   await db.delete(evidenceTable).where(eq(evidenceTable.id, id));
   res.status(204).send();

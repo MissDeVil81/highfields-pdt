@@ -2,21 +2,20 @@ import { Router } from "express";
 import { db, assessmentsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
 const upsertSchema = z.object({
-  sessionId: z.string(),
   competencyId: z.number().int(),
   roleId: z.number().int(),
   rating: z.enum(["red", "amber", "green"]),
   notes: z.string().optional(),
 });
 
-router.get("/", async (req, res) => {
-  const sessionId = req.query.sessionId as string;
+router.get("/", requireAuth, async (req, res) => {
+  const sessionId = (req as any).userId as string;
   const roleId = req.query.roleId ? parseInt(req.query.roleId as string) : undefined;
-  if (!sessionId) return res.status(400).json({ error: "sessionId is required" });
 
   const conditions = [eq(assessmentsTable.sessionId, sessionId)];
   if (roleId) conditions.push(eq(assessmentsTable.roleId, roleId));
@@ -25,11 +24,12 @@ router.get("/", async (req, res) => {
   res.json(assessments);
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   const result = upsertSchema.safeParse(req.body);
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
-  const { sessionId, competencyId, roleId, rating, notes } = result.data;
+  const sessionId = (req as any).userId as string;
+  const { competencyId, roleId, rating, notes } = result.data;
 
   const existing = await db.select().from(assessmentsTable).where(
     and(

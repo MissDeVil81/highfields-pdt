@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, assessmentsTable, evidenceTable, rolesTable, competenciesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
@@ -39,12 +40,10 @@ async function getRoleSummary(sessionId: string, roleId: number, isTargetRole: b
   return base;
 }
 
-router.get("/readiness", async (req, res) => {
-  const sessionId = req.query.sessionId as string;
+router.get("/readiness", requireAuth, async (req, res) => {
+  const sessionId = (req as any).userId as string;
   const currentRoleId = req.query.currentRoleId ? parseInt(req.query.currentRoleId as string) : undefined;
   const targetRoleId = req.query.targetRoleId ? parseInt(req.query.targetRoleId as string) : undefined;
-
-  if (!sessionId) return res.status(400).json({ error: "sessionId is required" });
 
   const currentRole = currentRoleId ? await getRoleSummary(sessionId, currentRoleId, false) : null;
   const targetRole = targetRoleId ? await getRoleSummary(sessionId, targetRoleId, true) : null;
