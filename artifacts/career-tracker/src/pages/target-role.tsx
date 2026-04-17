@@ -232,7 +232,12 @@ export default function TargetRole() {
     evidenceByComp.get(e.competencyId)!.push(e);
   }
 
-  const categories = Array.from(new Set((role?.competencies ?? []).map(c => c.category)));
+  const categories = Array.from(new Set((role?.competencies ?? []).map(c => c.category)))
+    .sort((a, b) => {
+      if (a === "Financials") return -1;
+      if (b === "Financials") return 1;
+      return a.localeCompare(b);
+    });
 
   function handleRate(competencyId: number, rating: Rating) {
     upsert.mutate({ data: { sessionId, competencyId, roleId: targetRoleId!, rating } });
