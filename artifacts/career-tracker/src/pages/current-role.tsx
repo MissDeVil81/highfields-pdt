@@ -103,7 +103,7 @@ export default function CurrentRole() {
 
   return (
     <div className="max-w-3xl mx-auto px-8 py-10">
-      <div className="mb-6">
+      <div className="mb-10">
         <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">Current Role</div>
         <h2 className="font-script text-4xl text-foreground">{role.title}</h2>
       </div>

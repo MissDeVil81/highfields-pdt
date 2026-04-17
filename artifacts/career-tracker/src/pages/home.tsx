@@ -39,7 +39,7 @@ export default function Home() {
     <div className="max-w-3xl mx-auto px-8 py-10">
       <div className="mb-8">
         <h2 className="font-script text-4xl text-foreground">Welcome</h2>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="text-muted-foreground mt-4 text-sm">
           Choose your career path and current role to get started with your promotion readiness assessment.
         </p>
       </div>

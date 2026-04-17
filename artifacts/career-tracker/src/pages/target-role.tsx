@@ -247,7 +247,7 @@ export default function TargetRole() {
     <div className="max-w-3xl mx-auto px-8 py-10">
       <div className="mb-8">
         <h2 className="font-script text-4xl text-foreground">Target Role</h2>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="text-muted-foreground mt-4 text-sm">
           Choose the career path, role you are working towards and collect evidence in one place ready for a potential promotion.
         </p>
       </div>
