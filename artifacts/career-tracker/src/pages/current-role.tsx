@@ -5,7 +5,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { RatingPicker, RatingBadge } from "@/components/RatingButton";
 import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 type Rating = "red" | "amber" | "green";
 
@@ -42,13 +41,14 @@ export default function CurrentRole() {
   const [, navigate] = useLocation();
   const { sessionId, currentRoleId } = useSessionStore();
   const queryClient = useQueryClient();
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [jobSpecOpen, setJobSpecOpen] = useState(false);
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
 
   const { data: role, isLoading: roleLoading } = useGetRole(currentRoleId!, {
     query: { enabled: !!currentRoleId },
   });
 
-  const { data: assessments = [], isLoading: assessmentsLoading } = useListAssessments(
+  const { data: assessments = [] } = useListAssessments(
     { sessionId, roleId: currentRoleId ?? undefined },
     { query: { enabled: !!currentRoleId } }
   );
@@ -85,12 +85,14 @@ export default function CurrentRole() {
   if (!role) return null;
 
   const assessmentMap = new Map(assessments.map(a => [a.competencyId, a]));
-
-  // Group competencies by category
   const categories = Array.from(new Set((role.competencies ?? []).map(c => c.category)));
 
   function handleRate(competencyId: number, rating: Rating) {
     upsert.mutate({ data: { sessionId, competencyId, roleId: currentRoleId!, rating } });
+  }
+
+  function toggleCategory(key: string) {
+    setOpenCategories(prev => ({ ...prev, [key]: !prev[key] }));
   }
 
   return (
@@ -100,10 +102,24 @@ export default function CurrentRole() {
         <h2 className="text-2xl font-bold text-foreground tracking-tight">{role.title}</h2>
       </div>
 
-      {/* Job Spec */}
+      {/* Job Spec — collapsible */}
       <div className="bg-card border border-border rounded-xl p-5 mb-6">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Job Specification</h3>
-        <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{role.jobSpec}</p>
+        <button
+          onClick={() => setJobSpecOpen(v => !v)}
+          className="w-full flex items-center justify-between text-left"
+        >
+          <h3 className="text-sm font-semibold text-foreground">Job Specification</h3>
+          {jobSpecOpen
+            ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+        </button>
+
+        {!jobSpecOpen && (
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-3">{role.jobSpec}</p>
+        )}
+        {jobSpecOpen && (
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed whitespace-pre-wrap">{role.jobSpec}</p>
+        )}
       </div>
 
       {/* Readiness bar */}
@@ -112,26 +128,31 @@ export default function CurrentRole() {
       {/* Competencies */}
       <div className="mb-4">
         <h3 className="text-sm font-semibold text-foreground mb-1">Self-Assessment</h3>
-        <p className="text-xs text-muted-foreground">Rate each competency to reflect your current level. Red = not yet there, Amber = working on it, Green = confident.</p>
+        <p className="text-xs text-muted-foreground">Rate each competency to reflect your current level. Red = not yet there, Amber = working on it, Green = confident. Click a section to expand it.</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-2">
         {categories.map(category => {
           const comps = (role.competencies ?? []).filter(c => c.category === category);
           const catKey = `cat-${category}`;
-          const isCatOpen = expanded[catKey] !== false; // open by default
+          const isCatOpen = !!openCategories[catKey];
+          const rated = comps.filter(c => assessmentMap.has(c.id)).length;
+
           return (
             <div key={category} className="border border-border rounded-xl overflow-hidden">
               <button
-                onClick={() => setExpanded(e => ({ ...e, [catKey]: !isCatOpen }))}
-                className="w-full flex items-center justify-between px-5 py-3 bg-muted/50 hover:bg-muted transition-colors"
+                onClick={() => toggleCategory(catKey)}
+                className="w-full flex items-center justify-between px-5 py-3.5 bg-muted/50 hover:bg-muted transition-colors"
               >
                 <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{category}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">{comps.length} competencies</span>
-                  {isCatOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">{rated}/{comps.length} rated</span>
+                  {isCatOpen
+                    ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                 </div>
               </button>
+
               {isCatOpen && (
                 <div className="divide-y divide-border">
                   {comps.map(comp => {
@@ -149,10 +170,7 @@ export default function CurrentRole() {
                           </div>
                         </div>
                         <div className="mt-3">
-                          <RatingPicker
-                            value={rating ?? null}
-                            onChange={(r) => handleRate(comp.id, r)}
-                          />
+                          <RatingPicker value={rating ?? null} onChange={(r) => handleRate(comp.id, r)} />
                         </div>
                       </div>
                     );

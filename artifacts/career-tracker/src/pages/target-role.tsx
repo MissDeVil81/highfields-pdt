@@ -148,7 +148,11 @@ export default function TargetRole() {
     setTargetRoleId, setTargetCareerPathId,
   } = useSessionStore();
   const queryClient = useQueryClient();
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+  const [pathPickerOpen, setPathPickerOpen] = useState(!targetCareerPathId);
+  const [rolePickerOpen, setRolePickerOpen] = useState(!targetRoleId);
+  const [jobSpecOpen, setJobSpecOpen] = useState(false);
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   const [addingEvidence, setAddingEvidence] = useState<number | null>(null);
   const [editingEvidence, setEditingEvidence] = useState<number | null>(null);
 
@@ -202,8 +206,23 @@ export default function TargetRole() {
     if (id !== targetCareerPathId) {
       setTargetCareerPathId(id);
       setTargetRoleId(null);
+      setRolePickerOpen(true);
     }
+    setPathPickerOpen(false);
   }
+
+  function handleSelectRole(id: number) {
+    setTargetRoleId(id);
+    setRolePickerOpen(false);
+    setOpenCategories({});
+  }
+
+  function toggleCategory(key: string) {
+    setOpenCategories(prev => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  const selectedPath = careerPaths?.find(p => p.id === targetCareerPathId);
+  const selectedRole = targetRoles?.find(r => r.id === targetRoleId);
 
   const assessmentMap = new Map(assessments.map(a => [a.competencyId, a]));
   const evidenceByComp = new Map<number, typeof evidence>();
@@ -228,116 +247,157 @@ export default function TargetRole() {
       </div>
 
       {/* Step 1: Career Path */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">1</div>
-          <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Select Career Path</h3>
-        </div>
-        {pathsLoading ? (
-          <div className="space-y-2">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
-            ))}
+      <div className="mb-5">
+        {/* Header / summary row */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex-shrink-0">1</div>
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Career Path</h3>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {(careerPaths ?? []).map(path => {
-              const pdfUrl = CAREER_PATH_PDFS[path.id];
-              return (
-                <div
-                  key={path.id}
-                  onClick={() => handleSelectPath(path.id)}
-                  className={cn(
-                    "w-full text-left rounded-xl border p-4 transition-all duration-150 cursor-pointer",
-                    targetCareerPathId === path.id
-                      ? "border-primary bg-accent shadow-sm"
-                      : "border-border bg-card hover:border-primary/40 hover:bg-accent/50"
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-foreground text-sm">{path.name}</div>
-                      {pdfUrl && (
-                        <a
-                          href={pdfUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={e => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium mt-1.5"
-                        >
-                          <FileText className="h-3 w-3" />
-                          View career path diagram
-                        </a>
+          {targetCareerPathId && !pathPickerOpen && (
+            <button
+              onClick={() => setPathPickerOpen(true)}
+              className="flex items-center gap-1 text-xs text-primary font-medium hover:opacity-80 transition-opacity"
+            >
+              <Pencil className="h-3 w-3" />
+              Change
+            </button>
+          )}
+        </div>
+
+        {/* Collapsed summary */}
+        {targetCareerPathId && !pathPickerOpen && selectedPath && (
+          <div className="rounded-xl border border-primary/30 bg-accent px-4 py-2.5 text-sm font-semibold text-foreground">
+            {selectedPath.name}
+          </div>
+        )}
+
+        {/* Expanded picker */}
+        {pathPickerOpen && (
+          pathsLoading ? (
+            <div className="space-y-2">
+              {[...Array(3)].map((_, i) => <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />)}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {(careerPaths ?? []).map(path => {
+                const pdfUrl = CAREER_PATH_PDFS[path.id];
+                return (
+                  <div
+                    key={path.id}
+                    onClick={() => handleSelectPath(path.id)}
+                    className={cn(
+                      "w-full text-left rounded-xl border p-4 transition-all duration-150 cursor-pointer",
+                      targetCareerPathId === path.id
+                        ? "border-primary bg-accent shadow-sm"
+                        : "border-border bg-card hover:border-primary/40 hover:bg-accent/50"
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold text-foreground text-sm">{path.name}</div>
+                        {pdfUrl && (
+                          <a
+                            href={pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium mt-1.5"
+                          >
+                            <FileText className="h-3 w-3" />
+                            View career path diagram
+                          </a>
+                        )}
+                      </div>
+                      {targetCareerPathId === path.id && (
+                        <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                          <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
                       )}
                     </div>
-                    {targetCareerPathId === path.id && (
-                      <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                        <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    )}
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )
         )}
       </div>
 
       {/* Step 2: Role Picker */}
       {targetCareerPathId && (
         <div className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">2</div>
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Select Your Target Role</h3>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex-shrink-0">2</div>
+              <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Target Role</h3>
+            </div>
+            {targetRoleId && !rolePickerOpen && (
+              <button
+                onClick={() => setRolePickerOpen(true)}
+                className="flex items-center gap-1 text-xs text-primary font-medium hover:opacity-80 transition-opacity"
+              >
+                <Pencil className="h-3 w-3" />
+                Change
+              </button>
+            )}
           </div>
-          {rolesLoading ? (
-            <div className="space-y-2">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />
-              ))}
+
+          {/* Collapsed summary */}
+          {targetRoleId && !rolePickerOpen && selectedRole && (
+            <div className="rounded-xl border border-primary/30 bg-accent px-4 py-2.5 text-sm font-semibold text-foreground">
+              {selectedRole.title}
             </div>
-          ) : !targetRoles?.length ? (
-            <div className="rounded-xl border border-dashed border-border p-6 text-center text-muted-foreground text-sm">
-              No roles found for this career path.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {targetRoles.map(r => (
-                <button
-                  key={r.id}
-                  onClick={() => setTargetRoleId(r.id)}
-                  className={cn(
-                    "w-full text-left rounded-xl border p-4 transition-all duration-150 cursor-pointer",
-                    targetRoleId === r.id
-                      ? "border-primary bg-accent shadow-sm"
-                      : "border-border bg-card hover:border-primary/40 hover:bg-accent/50"
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted text-muted-foreground flex-shrink-0">
-                        <Briefcase className="h-4 w-4" />
-                      </div>
-                      <div className="font-semibold text-foreground text-sm">{r.title}</div>
-                    </div>
-                    {targetRoleId === r.id && (
-                      <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                        <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
+          )}
+
+          {/* Expanded role list */}
+          {rolePickerOpen && (
+            rolesLoading ? (
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />)}
+              </div>
+            ) : !targetRoles?.length ? (
+              <div className="rounded-xl border border-dashed border-border p-6 text-center text-muted-foreground text-sm">
+                No roles found for this career path.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {targetRoles.map(r => (
+                  <button
+                    key={r.id}
+                    onClick={() => handleSelectRole(r.id)}
+                    className={cn(
+                      "w-full text-left rounded-xl border p-4 transition-all duration-150 cursor-pointer",
+                      targetRoleId === r.id
+                        ? "border-primary bg-accent shadow-sm"
+                        : "border-border bg-card hover:border-primary/40 hover:bg-accent/50"
                     )}
-                  </div>
-                </button>
-              ))}
-            </div>
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted text-muted-foreground flex-shrink-0">
+                          <Briefcase className="h-4 w-4" />
+                        </div>
+                        <div className="font-semibold text-foreground text-sm">{r.title}</div>
+                      </div>
+                      {targetRoleId === r.id && (
+                        <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                          <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )
           )}
         </div>
       )}
 
-      {/* Role detail + competencies */}
+      {/* Role detail + competencies — only when a role is selected */}
       {targetRoleId && roleLoading && (
         <div className="space-y-4">
           <div className="h-32 rounded-xl bg-muted animate-pulse" />
@@ -347,10 +407,23 @@ export default function TargetRole() {
 
       {targetRoleId && role && !roleLoading && (
         <>
-          {/* Job Spec */}
+          {/* Job Spec — collapsible */}
           <div className="bg-card border border-border rounded-xl p-5 mb-6">
-            <h3 className="text-sm font-semibold text-foreground mb-3">Job Specification</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{role.jobSpec}</p>
+            <button
+              onClick={() => setJobSpecOpen(v => !v)}
+              className="w-full flex items-center justify-between text-left"
+            >
+              <h3 className="text-sm font-semibold text-foreground">Job Specification</h3>
+              {jobSpecOpen
+                ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+            </button>
+            {!jobSpecOpen && (
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-3">{role.jobSpec}</p>
+            )}
+            {jobSpecOpen && (
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed whitespace-pre-wrap">{role.jobSpec}</p>
+            )}
           </div>
 
           {/* Readiness bar */}
@@ -359,26 +432,34 @@ export default function TargetRole() {
           {/* Competencies + Evidence */}
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-foreground mb-1">Competency Assessment & Evidence</h3>
-            <p className="text-xs text-muted-foreground">Rate each competency and add real examples of evidence to demonstrate your readiness.</p>
+            <p className="text-xs text-muted-foreground">Rate each competency and add evidence to demonstrate your readiness. Click a section to expand it.</p>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2">
             {categories.map(category => {
               const comps = (role.competencies ?? []).filter(c => c.category === category);
               const catKey = `cat-${category}`;
-              const isCatOpen = expandedCategories[catKey] !== false;
+              const isCatOpen = !!openCategories[catKey];
+              const rated = comps.filter(c => assessmentMap.has(c.id)).length;
+              const evidenceTotal = comps.reduce((sum, c) => sum + (evidenceByComp.get(c.id)?.length ?? 0), 0);
+
               return (
                 <div key={category} className="border border-border rounded-xl overflow-hidden">
                   <button
-                    onClick={() => setExpandedCategories(e => ({ ...e, [catKey]: !isCatOpen }))}
-                    className="w-full flex items-center justify-between px-5 py-3 bg-muted/50 hover:bg-muted transition-colors"
+                    onClick={() => toggleCategory(catKey)}
+                    className="w-full flex items-center justify-between px-5 py-3.5 bg-muted/50 hover:bg-muted transition-colors"
                   >
                     <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{category}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{comps.length} competencies</span>
-                      {isCatOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground">
+                        {rated}/{comps.length} rated{evidenceTotal > 0 ? ` · ${evidenceTotal} evidence` : ""}
+                      </span>
+                      {isCatOpen
+                        ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                        : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                     </div>
                   </button>
+
                   {isCatOpen && (
                     <div className="divide-y divide-border">
                       {comps.map(comp => {
