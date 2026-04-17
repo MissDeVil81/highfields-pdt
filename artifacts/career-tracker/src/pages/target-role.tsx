@@ -240,7 +240,7 @@ export default function TargetRole() {
   return (
     <div className="max-w-3xl mx-auto px-8 py-10">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-foreground tracking-tight">Target Role</h2>
+        <h2 className="font-script text-4xl text-foreground">Target Role</h2>
         <p className="text-muted-foreground mt-1 text-sm">
           Choose the career path and role you are working towards.
         </p>
@@ -420,7 +420,7 @@ export default function TargetRole() {
                   : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
               </button>
               {jobSpecOpen && (
-                <div className="px-5 py-4 border-t border-border space-y-2">
+                <div className="px-5 py-4 border-t border-border space-y-2 bg-white">
                   {role.jobSpec.split("\n").filter(l => l.trim()).map((line, i) => (
                     <p key={i} className="text-sm text-muted-foreground leading-relaxed">{line.trim()}</p>
                   ))}

@@ -46,7 +46,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen">
       <aside className="w-60 shrink-0 bg-sidebar text-sidebar-foreground flex flex-col">
         <div className="px-4 py-5 border-b border-sidebar-border">
-          <h1 className="text-base font-semibold text-sidebar-foreground tracking-tight">Career Progression</h1>
+          <h1 className="font-script text-2xl text-sidebar-primary leading-tight">Career Progression</h1>
           <p className="text-xs text-sidebar-foreground/50 mt-0.5">Your path to promotion</p>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">

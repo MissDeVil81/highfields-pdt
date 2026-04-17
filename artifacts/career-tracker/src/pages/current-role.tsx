@@ -99,7 +99,7 @@ export default function CurrentRole() {
     <div className="max-w-3xl mx-auto px-8 py-10">
       <div className="mb-6">
         <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">Current Role</div>
-        <h2 className="text-2xl font-bold text-foreground tracking-tight">{role.title}</h2>
+        <h2 className="font-script text-4xl text-foreground">{role.title}</h2>
       </div>
 
       {/* Job Spec collapsible */}
@@ -115,7 +115,7 @@ export default function CurrentRole() {
               : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
           </button>
           {jobSpecOpen && (
-            <div className="px-5 py-4 border-t border-border space-y-2">
+            <div className="px-5 py-4 border-t border-border space-y-2 bg-white">
               {role.jobSpec.split("\n").filter(l => l.trim()).map((line, i) => (
                 <p key={i} className="text-sm text-muted-foreground leading-relaxed">{line.trim()}</p>
               ))}

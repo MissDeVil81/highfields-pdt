@@ -38,7 +38,7 @@ export default function Home() {
   return (
     <div className="max-w-3xl mx-auto px-8 py-10">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-foreground tracking-tight">Welcome</h2>
+        <h2 className="font-script text-4xl text-foreground">Welcome</h2>
         <p className="text-muted-foreground mt-1 text-sm">
           Choose your career path and current role to get started with your promotion readiness assessment.
         </p>
