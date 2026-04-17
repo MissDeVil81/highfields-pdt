@@ -1,8 +1,16 @@
 import { useListCareerPaths, useListRoles } from "@workspace/api-client-react";
 import { useSessionStore } from "@/lib/session";
 import { useLocation } from "wouter";
-import { ChevronRight, Briefcase, ArrowRight } from "lucide-react";
+import { Briefcase, ArrowRight, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+const CAREER_PATH_PDFS: Record<number, string> = {
+  1: `${basePath}/pdfs/360-career-path.pdf`,
+  2: `${basePath}/pdfs/180-delivery-career-path.pdf`,
+  3: `${basePath}/pdfs/account-management-career-path.pdf`,
+};
 
 export default function Home() {
   const [, navigate] = useLocation();
@@ -54,32 +62,48 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-2">
-            {careerPaths.map(path => (
-              <button
-                key={path.id}
-                onClick={() => handleSelectPath(path.id)}
-                className={cn(
-                  "w-full text-left rounded-xl border p-4 transition-all duration-150 cursor-pointer",
-                  careerPathId === path.id
-                    ? "border-primary bg-accent shadow-sm"
-                    : "border-border bg-card hover:border-primary/40 hover:bg-accent/50"
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold text-foreground text-sm">{path.name}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{path.description}</div>
-                  </div>
-                  {careerPathId === path.id && (
-                    <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                      <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
+            {careerPaths.map(path => {
+              const pdfUrl = CAREER_PATH_PDFS[path.id];
+              return (
+                <div
+                  key={path.id}
+                  onClick={() => handleSelectPath(path.id)}
+                  className={cn(
+                    "w-full text-left rounded-xl border p-4 transition-all duration-150 cursor-pointer",
+                    careerPathId === path.id
+                      ? "border-primary bg-accent shadow-sm"
+                      : "border-border bg-card hover:border-primary/40 hover:bg-accent/50"
                   )}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-foreground text-sm">{path.name}</div>
+                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                        {pdfUrl && (
+                          <a
+                            href={pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                          >
+                            <FileText className="h-3 w-3" />
+                            View career path diagram
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    {careerPathId === path.id && (
+                      <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                        <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
