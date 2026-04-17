@@ -4,7 +4,8 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { RatingPicker, RatingBadge } from "@/components/RatingButton";
-import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
+import { JobSpecModal } from "@/components/JobSpecModal";
+import { ArrowRight, ChevronDown, ChevronUp, FileText } from "lucide-react";
 
 type Rating = "red" | "amber" | "green";
 
@@ -41,7 +42,7 @@ export default function CurrentRole() {
   const [, navigate] = useLocation();
   const { sessionId, currentRoleId } = useSessionStore();
   const queryClient = useQueryClient();
-  const [jobSpecOpen, setJobSpecOpen] = useState(false);
+  const [jobSpecModalOpen, setJobSpecModalOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
 
   const { data: role, isLoading: roleLoading } = useGetRole(currentRoleId!, {
@@ -102,25 +103,18 @@ export default function CurrentRole() {
         <h2 className="text-2xl font-bold text-foreground tracking-tight">{role.title}</h2>
       </div>
 
-      {/* Job Spec — collapsible */}
-      <div className="bg-card border border-border rounded-xl p-5 mb-6">
-        <button
-          onClick={() => setJobSpecOpen(v => !v)}
-          className="w-full flex items-center justify-between text-left"
-        >
-          <h3 className="text-sm font-semibold text-foreground">Job Specification</h3>
-          {jobSpecOpen
-            ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
-        </button>
+      {/* Job Spec link */}
+      <button
+        onClick={() => setJobSpecModalOpen(true)}
+        className="flex items-center gap-2 text-sm text-primary font-medium hover:opacity-80 transition-opacity mb-6"
+      >
+        <FileText className="h-4 w-4" />
+        View Job Specification
+      </button>
 
-        {!jobSpecOpen && (
-          <p className="text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-3">{role.jobSpec}</p>
-        )}
-        {jobSpecOpen && (
-          <p className="text-sm text-muted-foreground mt-2 leading-relaxed whitespace-pre-wrap">{role.jobSpec}</p>
-        )}
-      </div>
+      {jobSpecModalOpen && (
+        <JobSpecModal title={role.title} jobSpec={role.jobSpec} onClose={() => setJobSpecModalOpen(false)} />
+      )}
 
       {/* Readiness bar */}
       <ReadinessBar assessments={assessments} total={(role.competencies ?? []).length} />
