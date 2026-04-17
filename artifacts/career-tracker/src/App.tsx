@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
+import Splash from "@/pages/splash";
 import Home from "@/pages/home";
 import CurrentRole from "@/pages/current-role";
 import TargetRole from "@/pages/target-role";
@@ -17,16 +18,20 @@ const queryClient = new QueryClient({
 
 function Router() {
   return (
-    <Layout>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/setup" component={Home} />
-        <Route path="/current-role" component={CurrentRole} />
-        <Route path="/target-role" component={TargetRole} />
-        <Route path="/summary" component={Summary} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+    <Switch>
+      <Route path="/" component={Splash} />
+      <Route>
+        <Layout>
+          <Switch>
+            <Route path="/setup" component={Home} />
+            <Route path="/current-role" component={CurrentRole} />
+            <Route path="/target-role" component={TargetRole} />
+            <Route path="/summary" component={Summary} />
+            <Route component={NotFound} />
+          </Switch>
+        </Layout>
+      </Route>
+    </Switch>
   );
 }
 

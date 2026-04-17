@@ -12,7 +12,7 @@ interface NavItemProps {
 
 function NavItem({ href, label, icon, disabled }: NavItemProps) {
   const [location] = useLocation();
-  const isActive = location === href || (href === "/" && location === "/setup");
+  const isActive = location === href || (href === "/setup" && location === "/");
 
   if (disabled) {
     return (
@@ -50,7 +50,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <p className="text-xs text-sidebar-foreground/50 mt-0.5">Your path to promotion</p>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
-          <NavItem href="/" label="Setup" icon={<LayoutDashboard className="h-4 w-4" />} />
+          <NavItem href="/setup" label="Setup" icon={<LayoutDashboard className="h-4 w-4" />} />
           <NavItem
             href="/current-role"
             label="Current Role"
