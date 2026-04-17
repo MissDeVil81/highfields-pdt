@@ -420,8 +420,10 @@ export default function TargetRole() {
                   : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
               </button>
               {jobSpecOpen && (
-                <div className="px-5 py-4 border-t border-border">
-                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{role.jobSpec}</p>
+                <div className="px-5 py-4 border-t border-border space-y-2">
+                  {role.jobSpec.split("\n").filter(l => l.trim()).map((line, i) => (
+                    <p key={i} className="text-sm text-muted-foreground leading-relaxed">{line.trim()}</p>
+                  ))}
                 </div>
               )}
             </div>
