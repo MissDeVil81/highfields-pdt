@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { RatingPicker, RatingBadge } from "@/components/RatingButton";
+import { JobSpecModal } from "@/components/JobSpecModal";
 import { JOB_SPEC_FILES } from "@/lib/jobSpecFiles";
 import { ArrowRight, ChevronDown, ChevronUp, FileText } from "lucide-react";
 
@@ -42,6 +43,7 @@ export default function CurrentRole() {
   const [, navigate] = useLocation();
   const { sessionId, currentRoleId } = useSessionStore();
   const queryClient = useQueryClient();
+  const [jobSpecModalOpen, setJobSpecModalOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
 
   const { data: role, isLoading: roleLoading } = useGetRole(currentRoleId!, {
@@ -104,15 +106,21 @@ export default function CurrentRole() {
 
       {/* Job Spec link */}
       {JOB_SPEC_FILES[currentRoleId] && (
-        <a
-          href={JOB_SPEC_FILES[currentRoleId]}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={() => setJobSpecModalOpen(true)}
           className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:opacity-80 transition-opacity mb-6"
         >
           <FileText className="h-4 w-4" />
           View Job Specification
-        </a>
+        </button>
+      )}
+
+      {jobSpecModalOpen && currentRoleId && JOB_SPEC_FILES[currentRoleId] && (
+        <JobSpecModal
+          title={role.title}
+          fileUrl={JOB_SPEC_FILES[currentRoleId]}
+          onClose={() => setJobSpecModalOpen(false)}
+        />
       )}
 
       {/* Readiness bar */}
