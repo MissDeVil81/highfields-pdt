@@ -98,24 +98,12 @@ export default function CurrentRole() {
       <div className="mb-6">
         <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">Current Role</div>
         <h2 className="text-2xl font-bold text-foreground tracking-tight">{role.title}</h2>
-        <div className="text-xs text-muted-foreground mt-0.5">Level {role.level}</div>
       </div>
 
       {/* Job Spec */}
       <div className="bg-card border border-border rounded-xl p-5 mb-6">
-        <div
-          className="flex items-center justify-between cursor-pointer"
-          onClick={() => setExpanded(e => ({ ...e, jobspec: !e.jobspec }))}
-        >
-          <h3 className="text-sm font-semibold text-foreground">Job Specification</h3>
-          {expanded.jobspec ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-        </div>
-        {expanded.jobspec && (
-          <p className="text-sm text-muted-foreground mt-3 leading-relaxed whitespace-pre-wrap">{role.jobSpec}</p>
-        )}
-        {!expanded.jobspec && (
-          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{role.jobSpec}</p>
-        )}
+        <h3 className="text-sm font-semibold text-foreground mb-3">Job Specification</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{role.jobSpec}</p>
       </div>
 
       {/* Readiness bar */}

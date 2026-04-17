@@ -1,6 +1,7 @@
 import {
   useGetRole,
   useListRoles,
+  useListCareerPaths,
   useListAssessments,
   useUpsertAssessment,
   useListEvidence,
@@ -15,10 +16,18 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { RatingPicker, RatingBadge } from "@/components/RatingButton";
-import { ArrowRight, Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Check } from "lucide-react";
+import { ArrowRight, Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Check, Briefcase, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Rating = "red" | "amber" | "green";
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+const CAREER_PATH_PDFS: Record<number, string> = {
+  1: `${basePath}/pdfs/360-career-path.pdf`,
+  2: `${basePath}/pdfs/180-delivery-career-path.pdf`,
+  3: `${basePath}/pdfs/account-management-career-path.pdf`,
+};
 
 interface EvidenceFormProps {
   sessionId: string;
@@ -134,16 +143,20 @@ function ReadinessBar({ assessments, total, evidenceCount }: { assessments: Arra
 
 export default function TargetRole() {
   const [, navigate] = useLocation();
-  const { sessionId, currentRoleId, targetRoleId, careerPathId, setTargetRoleId } = useSessionStore();
+  const {
+    sessionId, currentRoleId, targetRoleId, targetCareerPathId,
+    setTargetRoleId, setTargetCareerPathId,
+  } = useSessionStore();
   const queryClient = useQueryClient();
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [addingEvidence, setAddingEvidence] = useState<number | null>(null);
   const [editingEvidence, setEditingEvidence] = useState<number | null>(null);
-  const [expandedJobSpec, setExpandedJobSpec] = useState(false);
 
-  const { data: roles } = useListRoles(
-    { careerPathId: careerPathId ?? undefined },
-    { query: { enabled: !!careerPathId } }
+  const { data: careerPaths, isLoading: pathsLoading } = useListCareerPaths();
+
+  const { data: targetRoles, isLoading: rolesLoading } = useListRoles(
+    { careerPathId: targetCareerPathId ?? undefined },
+    { query: { enabled: !!targetCareerPathId } }
   );
 
   const { data: role, isLoading: roleLoading } = useGetRole(targetRoleId!, {
@@ -185,9 +198,12 @@ export default function TargetRole() {
     );
   }
 
-  // Available target roles: same career path, level higher than current
-  const currentRole = roles?.find(r => r.id === currentRoleId);
-  const targetOptions = roles?.filter(r => r.id !== currentRoleId && r.level > (currentRole?.level ?? 0)) ?? [];
+  function handleSelectPath(id: number) {
+    if (id !== targetCareerPathId) {
+      setTargetCareerPathId(id);
+      setTargetRoleId(null);
+    }
+  }
 
   const assessmentMap = new Map(assessments.map(a => [a.competencyId, a]));
   const evidenceByComp = new Map<number, typeof evidence>();
@@ -204,40 +220,124 @@ export default function TargetRole() {
 
   return (
     <div className="max-w-3xl mx-auto px-8 py-10">
-      <div className="mb-6">
-        <div className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">Target Role</div>
-        <h2 className="text-2xl font-bold text-foreground tracking-tight">
-          {targetRoleId && role ? role.title : "Select Target Role"}
-        </h2>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-foreground tracking-tight">Target Role</h2>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Choose the career path and role you are working towards.
+        </p>
       </div>
 
-      {/* Target role picker */}
-      <div className="mb-6">
-        <label className="text-xs font-semibold text-foreground uppercase tracking-wider block mb-2">Which role are you aiming for?</label>
-        {targetOptions.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-4 text-center text-muted-foreground text-sm">
-            No higher roles available in this career path.
+      {/* Step 1: Career Path */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">1</div>
+          <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Select Career Path</h3>
+        </div>
+        {pathsLoading ? (
+          <div className="space-y-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
+            ))}
           </div>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {targetOptions.map(r => (
-              <button
-                key={r.id}
-                onClick={() => setTargetRoleId(r.id)}
-                className={cn(
-                  "px-4 py-2 rounded-xl border text-sm font-medium transition-all duration-150",
-                  targetRoleId === r.id
-                    ? "border-primary bg-accent text-accent-foreground"
-                    : "border-border bg-card hover:border-primary/40 text-foreground"
-                )}
-              >
-                {r.title} <span className="text-muted-foreground text-xs">(L{r.level})</span>
-              </button>
-            ))}
+          <div className="space-y-2">
+            {(careerPaths ?? []).map(path => {
+              const pdfUrl = CAREER_PATH_PDFS[path.id];
+              return (
+                <div
+                  key={path.id}
+                  onClick={() => handleSelectPath(path.id)}
+                  className={cn(
+                    "w-full text-left rounded-xl border p-4 transition-all duration-150 cursor-pointer",
+                    targetCareerPathId === path.id
+                      ? "border-primary bg-accent shadow-sm"
+                      : "border-border bg-card hover:border-primary/40 hover:bg-accent/50"
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-foreground text-sm">{path.name}</div>
+                      {pdfUrl && (
+                        <a
+                          href={pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium mt-1.5"
+                        >
+                          <FileText className="h-3 w-3" />
+                          View career path diagram
+                        </a>
+                      )}
+                    </div>
+                    {targetCareerPathId === path.id && (
+                      <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                        <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
+      {/* Step 2: Role Picker */}
+      {targetCareerPathId && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">2</div>
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Select Your Target Role</h3>
+          </div>
+          {rolesLoading ? (
+            <div className="space-y-2">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : !targetRoles?.length ? (
+            <div className="rounded-xl border border-dashed border-border p-6 text-center text-muted-foreground text-sm">
+              No roles found for this career path.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {targetRoles.map(r => (
+                <button
+                  key={r.id}
+                  onClick={() => setTargetRoleId(r.id)}
+                  className={cn(
+                    "w-full text-left rounded-xl border p-4 transition-all duration-150 cursor-pointer",
+                    targetRoleId === r.id
+                      ? "border-primary bg-accent shadow-sm"
+                      : "border-border bg-card hover:border-primary/40 hover:bg-accent/50"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted text-muted-foreground flex-shrink-0">
+                        <Briefcase className="h-4 w-4" />
+                      </div>
+                      <div className="font-semibold text-foreground text-sm">{r.title}</div>
+                    </div>
+                    {targetRoleId === r.id && (
+                      <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                        <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Role detail + competencies */}
       {targetRoleId && roleLoading && (
         <div className="space-y-4">
           <div className="h-32 rounded-xl bg-muted animate-pulse" />
@@ -249,18 +349,8 @@ export default function TargetRole() {
         <>
           {/* Job Spec */}
           <div className="bg-card border border-border rounded-xl p-5 mb-6">
-            <div
-              className="flex items-center justify-between cursor-pointer"
-              onClick={() => setExpandedJobSpec(v => !v)}
-            >
-              <h3 className="text-sm font-semibold text-foreground">Job Specification</h3>
-              {expandedJobSpec ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-            </div>
-            {expandedJobSpec ? (
-              <p className="text-sm text-muted-foreground mt-3 leading-relaxed whitespace-pre-wrap">{role.jobSpec}</p>
-            ) : (
-              <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{role.jobSpec}</p>
-            )}
+            <h3 className="text-sm font-semibold text-foreground mb-3">Job Specification</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{role.jobSpec}</p>
           </div>
 
           {/* Readiness bar */}

@@ -7,10 +7,12 @@ interface SessionState {
   currentRoleId: number | null;
   targetRoleId: number | null;
   careerPathId: number | null;
+  targetCareerPathId: number | null;
   setSessionId: (id: string) => void;
   setCurrentRoleId: (id: number | null) => void;
   setTargetRoleId: (id: number | null) => void;
   setCareerPathId: (id: number | null) => void;
+  setTargetCareerPathId: (id: number | null) => void;
   reset: () => void;
 }
 
@@ -21,11 +23,13 @@ export const useSessionStore = create<SessionState>()(
       currentRoleId: null,
       targetRoleId: null,
       careerPathId: null,
+      targetCareerPathId: null,
       setSessionId: (id) => set({ sessionId: id }),
       setCurrentRoleId: (id) => set({ currentRoleId: id }),
       setTargetRoleId: (id) => set({ targetRoleId: id }),
       setCareerPathId: (id) => set({ careerPathId: id }),
-      reset: () => set({ currentRoleId: null, targetRoleId: null, careerPathId: null }),
+      setTargetCareerPathId: (id) => set({ targetCareerPathId: id }),
+      reset: () => set({ currentRoleId: null, targetRoleId: null, careerPathId: null, targetCareerPathId: null }),
     }),
     {
       name: 'career-tracker-session',

@@ -145,7 +145,6 @@ export default function Home() {
                       </div>
                       <div>
                         <div className="font-semibold text-foreground text-sm">{role.title}</div>
-                        <div className="text-xs text-muted-foreground">Level {role.level}</div>
                       </div>
                     </div>
                     {currentRoleId === role.id && (
