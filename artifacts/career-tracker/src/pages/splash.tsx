@@ -1,5 +1,6 @@
 import { useLocation } from "wouter";
 import { ArrowRight } from "lucide-react";
+import hpsLogo from "@assets/HPS_logo_1776427719304.png";
 
 export default function Splash() {
   const [, navigate] = useLocation();
@@ -20,6 +21,14 @@ export default function Splash() {
       </div>
 
       <div className="relative z-10 text-center max-w-xl">
+
+        {/* Logo */}
+        <img
+          src={hpsLogo}
+          alt="Highfield Professional Solutions"
+          className="mx-auto mb-8 w-48"
+          style={{ filter: "brightness(0) invert(1)" }}
+        />
 
         {/* Main heading */}
         <h1
