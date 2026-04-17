@@ -16,6 +16,7 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { RatingPicker, RatingBadge } from "@/components/RatingButton";
+import { JobSpecText } from "@/components/JobSpecText";
 import { ArrowRight, Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Check, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -242,7 +243,7 @@ export default function TargetRole() {
       <div className="mb-8">
         <h2 className="font-script text-4xl text-foreground">Target Role</h2>
         <p className="text-muted-foreground mt-1 text-sm">
-          Choose the career path and role you are working towards.
+          Choose the career path, role you are working towards and collect evidence in one place ready for a potential promotion.
         </p>
       </div>
 
@@ -420,10 +421,8 @@ export default function TargetRole() {
                   : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
               </button>
               {jobSpecOpen && (
-                <div className="px-5 py-4 border-t border-border space-y-2 bg-white">
-                  {role.jobSpec.split("\n").filter(l => l.trim()).map((line, i) => (
-                    <p key={i} className="text-sm text-muted-foreground leading-relaxed">{line.trim()}</p>
-                  ))}
+                <div className="px-5 py-4 border-t border-border bg-white">
+                  <JobSpecText text={role.jobSpec} />
                 </div>
               )}
             </div>

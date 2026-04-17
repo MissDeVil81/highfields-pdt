@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { RatingPicker, RatingBadge } from "@/components/RatingButton";
+import { JobSpecText } from "@/components/JobSpecText";
 import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 
 type Rating = "red" | "amber" | "green";
@@ -115,10 +116,8 @@ export default function CurrentRole() {
               : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
           </button>
           {jobSpecOpen && (
-            <div className="px-5 py-4 border-t border-border space-y-2 bg-white">
-              {role.jobSpec.split("\n").filter(l => l.trim()).map((line, i) => (
-                <p key={i} className="text-sm text-muted-foreground leading-relaxed">{line.trim()}</p>
-              ))}
+            <div className="px-5 py-4 border-t border-border bg-white">
+              <JobSpecText text={role.jobSpec} />
             </div>
           )}
         </div>

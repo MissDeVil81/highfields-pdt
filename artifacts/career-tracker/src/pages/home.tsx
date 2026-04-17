@@ -1,7 +1,7 @@
 import { useListCareerPaths, useListRoles } from "@workspace/api-client-react";
 import { useSessionStore } from "@/lib/session";
 import { useLocation } from "wouter";
-import { Briefcase, ArrowRight, FileText } from "lucide-react";
+import { ArrowRight, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -126,38 +126,19 @@ export default function Home() {
               No roles found for this career path.
             </div>
           ) : (
-            <div className="space-y-2">
+            <select
+              value={currentRoleId ?? ""}
+              onChange={e => {
+                const id = parseInt(e.target.value);
+                if (!isNaN(id)) handleSelectRole(id);
+              }}
+              className="w-full rounded-xl border border-border bg-card text-foreground text-sm px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+            >
+              <option value="">— Select your role —</option>
               {roles.map(role => (
-                <button
-                  key={role.id}
-                  onClick={() => handleSelectRole(role.id)}
-                  className={cn(
-                    "w-full text-left rounded-xl border p-4 transition-all duration-150 cursor-pointer",
-                    currentRoleId === role.id
-                      ? "border-primary bg-accent shadow-sm"
-                      : "border-border bg-card hover:border-primary/40 hover:bg-accent/50"
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted text-muted-foreground flex-shrink-0">
-                        <Briefcase className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-foreground text-sm">{role.title}</div>
-                      </div>
-                    </div>
-                    {currentRoleId === role.id && (
-                      <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                        <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                </button>
+                <option key={role.id} value={role.id}>{role.title}</option>
               ))}
-            </div>
+            </select>
           )}
         </div>
       )}
