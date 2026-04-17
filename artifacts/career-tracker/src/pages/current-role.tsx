@@ -4,9 +4,7 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { RatingPicker, RatingBadge } from "@/components/RatingButton";
-import { JobSpecModal } from "@/components/JobSpecModal";
-import { JOB_SPEC_FILES } from "@/lib/jobSpecFiles";
-import { ArrowRight, ChevronDown, ChevronUp, FileText } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 
 type Rating = "red" | "amber" | "green";
 
@@ -43,7 +41,7 @@ export default function CurrentRole() {
   const [, navigate] = useLocation();
   const { sessionId, currentRoleId } = useSessionStore();
   const queryClient = useQueryClient();
-  const [jobSpecModalOpen, setJobSpecModalOpen] = useState(false);
+  const [jobSpecOpen, setJobSpecOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
 
   const { data: role, isLoading: roleLoading } = useGetRole(currentRoleId!, {
@@ -104,23 +102,24 @@ export default function CurrentRole() {
         <h2 className="text-2xl font-bold text-foreground tracking-tight">{role.title}</h2>
       </div>
 
-      {/* Job Spec link */}
-      {JOB_SPEC_FILES[currentRoleId] && (
-        <button
-          onClick={() => setJobSpecModalOpen(true)}
-          className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:opacity-80 transition-opacity mb-6"
-        >
-          <FileText className="h-4 w-4" />
-          View Job Specification
-        </button>
-      )}
-
-      {jobSpecModalOpen && currentRoleId && JOB_SPEC_FILES[currentRoleId] && (
-        <JobSpecModal
-          title={role.title}
-          fileUrl={JOB_SPEC_FILES[currentRoleId]}
-          onClose={() => setJobSpecModalOpen(false)}
-        />
+      {/* Job Spec collapsible */}
+      {role.jobSpec && (
+        <div className="border border-border rounded-xl overflow-hidden mb-6">
+          <button
+            onClick={() => setJobSpecOpen(o => !o)}
+            className="w-full flex items-center justify-between px-5 py-3.5 bg-muted/50 hover:bg-muted transition-colors"
+          >
+            <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Job Specification</span>
+            {jobSpecOpen
+              ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+          </button>
+          {jobSpecOpen && (
+            <div className="px-5 py-4 border-t border-border">
+              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{role.jobSpec}</p>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Readiness bar */}

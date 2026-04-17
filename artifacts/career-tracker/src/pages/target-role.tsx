@@ -16,9 +16,7 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { RatingPicker, RatingBadge } from "@/components/RatingButton";
-import { JobSpecModal } from "@/components/JobSpecModal";
-import { JOB_SPEC_FILES } from "@/lib/jobSpecFiles";
-import { ArrowRight, Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Check, Briefcase, FileText } from "lucide-react";
+import { ArrowRight, Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Check, Briefcase } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Rating = "red" | "amber" | "green";
@@ -153,7 +151,7 @@ export default function TargetRole() {
 
   const [pathPickerOpen, setPathPickerOpen] = useState(!targetCareerPathId);
   const [rolePickerOpen, setRolePickerOpen] = useState(!targetRoleId);
-  const [jobSpecModalOpen, setJobSpecModalOpen] = useState(false);
+  const [jobSpecOpen, setJobSpecOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   const [addingEvidence, setAddingEvidence] = useState<number | null>(null);
   const [editingEvidence, setEditingEvidence] = useState<number | null>(null);
@@ -409,23 +407,24 @@ export default function TargetRole() {
 
       {targetRoleId && role && !roleLoading && (
         <>
-          {/* Job Spec link */}
-          {targetRoleId && JOB_SPEC_FILES[targetRoleId] && (
-            <button
-              onClick={() => setJobSpecModalOpen(true)}
-              className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:opacity-80 transition-opacity mb-6"
-            >
-              <FileText className="h-4 w-4" />
-              View Job Specification
-            </button>
-          )}
-
-          {jobSpecModalOpen && targetRoleId && JOB_SPEC_FILES[targetRoleId] && (
-            <JobSpecModal
-              title={role.title}
-              fileUrl={JOB_SPEC_FILES[targetRoleId]}
-              onClose={() => setJobSpecModalOpen(false)}
-            />
+          {/* Job Spec collapsible */}
+          {role.jobSpec && (
+            <div className="border border-border rounded-xl overflow-hidden mb-6">
+              <button
+                onClick={() => setJobSpecOpen(o => !o)}
+                className="w-full flex items-center justify-between px-5 py-3.5 bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Job Specification</span>
+                {jobSpecOpen
+                  ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+              </button>
+              {jobSpecOpen && (
+                <div className="px-5 py-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{role.jobSpec}</p>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Readiness bar */}
