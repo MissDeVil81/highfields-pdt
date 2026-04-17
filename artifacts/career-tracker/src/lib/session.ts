@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { v4 as uuidv4 } from 'uuid';
 
 interface SessionState {
-  // sessionId is now the Clerk userId — set by ClerkTokenSync after sign-in
   sessionId: string;
   currentRoleId: number | null;
   targetRoleId: number | null;
@@ -17,7 +17,7 @@ interface SessionState {
 export const useSessionStore = create<SessionState>()(
   persist(
     (set) => ({
-      sessionId: "",
+      sessionId: uuidv4(),
       currentRoleId: null,
       targetRoleId: null,
       careerPathId: null,
