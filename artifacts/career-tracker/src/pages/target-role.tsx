@@ -197,7 +197,7 @@ export default function TargetRole() {
       <div className="flex items-center justify-center h-full p-12 text-center">
         <div>
           <p className="text-muted-foreground text-sm mb-3">You haven't selected a current role yet.</p>
-          <button onClick={() => navigate("/")} className="text-primary text-sm font-medium hover:underline">Go to Setup</button>
+          <button onClick={() => navigate("/setup")} className="text-primary text-sm font-medium hover:underline">Go to Setup</button>
         </div>
       </div>
     );
