@@ -17,7 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { RatingPicker, RatingBadge } from "@/components/RatingButton";
 import { JobSpecText } from "@/components/JobSpecText";
-import { ArrowRight, Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Check, Briefcase } from "lucide-react";
+import { ArrowRight, Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Check, Briefcase, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Rating = "red" | "amber" | "green";
