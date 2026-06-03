@@ -13,6 +13,9 @@ import {
   useUpdateProbationAction,
   useDeleteProbationAction,
   getListProbationActionsQueryKey,
+  useListProbationManagerReviews,
+  useUpsertProbationManagerReview,
+  getListProbationManagerReviewsQueryKey,
 } from "@workspace/api-client-react";
 import type { ProbationItem, ProbationAssessment, ProbationAction } from "@workspace/api-client-react";
 import { useSessionStore } from "@/lib/session";
@@ -26,6 +29,7 @@ import {
   FileText,
   Plus,
   Trash2,
+  MessageSquare,
 } from "lucide-react";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
@@ -54,6 +58,7 @@ type ValuesRating = "rarely" | "some" | "most";
 type AnyRating = YNPRating | ValuesRating;
 
 interface ItemState { rating: string | null; note: string; }
+interface ManagerItemState { rating: string | null; comment: string; }
 
 interface ReflectionState {
   wentWell: string;
@@ -67,10 +72,20 @@ interface ReflectionState {
   readyToPass: string;
 }
 
+interface ManagerReviewState {
+  goingWell: string;
+  developmentAreas: string;
+  reviewStatus: string;
+}
+
 const emptyReflection: ReflectionState = {
   wentWell: "", learned: "", moreSupport: "", focusNext: "",
   confidence: "", biggestAchievements: "", mostProudOf: "",
   stillDevelop: "", readyToPass: "",
+};
+
+const emptyManagerReview: ManagerReviewState = {
+  goingWell: "", developmentAreas: "", reviewStatus: "",
 };
 
 const YNP_OPTIONS = [
@@ -95,6 +110,12 @@ const CONFIDENCE_OPTIONS = [
   { value: "green", label: "Feeling good", active: "bg-green-500 text-white border-green-500", inactive: "border-border text-muted-foreground hover:border-green-400 hover:text-green-600" },
   { value: "amber", label: "Getting there", active: "bg-amber-500 text-white border-amber-500", inactive: "border-border text-muted-foreground hover:border-amber-400 hover:text-amber-600" },
   { value: "red", label: "Need support", active: "bg-red-500 text-white border-red-500", inactive: "border-border text-muted-foreground hover:border-red-400 hover:text-red-500" },
+];
+
+const REVIEW_STATUS_OPTIONS = [
+  { value: "on_track", label: "On Track", active: "bg-green-500 text-white border-green-500", inactive: "border-border text-muted-foreground hover:border-green-400 hover:text-green-600" },
+  { value: "needs_support", label: "Needs Support", active: "bg-amber-500 text-white border-amber-500", inactive: "border-border text-muted-foreground hover:border-amber-400 hover:text-amber-600" },
+  { value: "at_risk", label: "At Risk", active: "bg-red-500 text-white border-red-500", inactive: "border-border text-muted-foreground hover:border-red-400 hover:text-red-500" },
 ];
 
 // ─── Helper functions ─────────────────────────────────────────────────────────
@@ -123,76 +144,155 @@ function calcStats(items: ProbationItem[], stateMap: Record<number, ItemState>) 
 
 // ─── Shared components ────────────────────────────────────────────────────────
 
-function ProbationItemRow({ item, state, onRate, onNote, onBlur }: {
+function ProbationItemRow({
+  item,
+  state,
+  managerState,
+  onRate,
+  onNote,
+  onBlur,
+  onManagerRate,
+  onManagerComment,
+  onManagerCommentBlur,
+}: {
   item: ProbationItem;
   state: ItemState;
+  managerState: ManagerItemState;
   onRate: (rating: AnyRating) => void;
   onNote: (note: string) => void;
   onBlur: () => void;
+  onManagerRate: (rating: AnyRating) => void;
+  onManagerComment: (comment: string) => void;
+  onManagerCommentBlur: () => void;
 }) {
   const [showNote, setShowNote] = useState(false);
+  const [showMgrComment, setShowMgrComment] = useState(false);
   const isValues = item.ratingType === "values_rating";
   const options = isValues ? VALUES_OPTIONS : YNP_OPTIONS;
   const rating = state.rating as AnyRating | null;
+  const mgrRating = managerState.rating as AnyRating | null;
 
   return (
-    <div className="border border-border rounded-xl p-4 bg-card transition-colors">
-      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-foreground leading-snug">{item.itemText}</p>
+    <div className="border border-border rounded-xl p-4 bg-card">
+      {/* Item text */}
+      <p className="text-sm text-foreground leading-snug mb-3">{item.itemText}</p>
+
+      {/* Assessment rows */}
+      <div className="space-y-2.5">
+        {/* Employee row */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs text-muted-foreground shrink-0 w-36">My Assessment</span>
+          <div className="flex gap-1.5 flex-wrap">
+            {options.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => onRate(opt.value as AnyRating)}
+                className={cn(
+                  "flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 whitespace-nowrap",
+                  rating === opt.value ? opt.activeClass : opt.inactiveClass
+                )}
+              >
+                {"icon" in opt ? opt.icon : <span>{"★".repeat(opt.stars)}</span>}
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-1.5 shrink-0 flex-wrap">
-          {options.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => onRate(opt.value as AnyRating)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 whitespace-nowrap",
-                rating === opt.value ? opt.activeClass : opt.inactiveClass
-              )}
-            >
-              {"icon" in opt ? opt.icon : <span>{"★".repeat(opt.stars)}</span>}
-              {opt.label}
-            </button>
-          ))}
+
+        {/* Manager row — more prominent */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs font-semibold text-foreground shrink-0 w-36">Manager Rating</span>
+          <div className="flex gap-1.5 flex-wrap">
+            {options.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => onManagerRate(opt.value as AnyRating)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-semibold transition-all duration-150 whitespace-nowrap shadow-sm",
+                  mgrRating === opt.value ? opt.activeClass : opt.inactiveClass
+                )}
+              >
+                {"icon" in opt ? <span className="[&>svg]:h-4 [&>svg]:w-4">{opt.icon}</span> : <span>{"★".repeat(opt.stars)}</span>}
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-      <div className="mt-2.5">
+
+      {/* Toggles */}
+      <div className="mt-3 flex gap-5 flex-wrap">
         <button
           onClick={() => setShowNote(s => !s)}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           <FileText className="h-3 w-3" />
-          {state.note ? "Edit note" : "Add a note or example"}
+          {state.note ? "Edit my note" : "Add my note"}
           {showNote ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         </button>
-        {showNote && (
-          <textarea
-            value={state.note}
-            onChange={e => onNote(e.target.value)}
-            onBlur={onBlur}
-            placeholder="Add a note or example to support this rating…"
-            rows={2}
-            className="mt-2 w-full text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-          />
-        )}
+        <button
+          onClick={() => setShowMgrComment(s => !s)}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <MessageSquare className="h-3 w-3" />
+          {managerState.comment ? "Edit manager comment" : "Add manager comment"}
+          {showMgrComment ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
       </div>
+
+      {showNote && (
+        <textarea
+          value={state.note}
+          onChange={e => onNote(e.target.value)}
+          onBlur={onBlur}
+          placeholder="Add a note or example to support this rating…"
+          rows={2}
+          className="mt-2 w-full text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+        />
+      )}
+      {showMgrComment && (
+        <textarea
+          value={managerState.comment}
+          onChange={e => onManagerComment(e.target.value)}
+          onBlur={onManagerCommentBlur}
+          placeholder="Manager's comment on this item…"
+          rows={2}
+          className="mt-2 w-full text-sm px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+        />
+      )}
     </div>
   );
 }
 
-function SectionBlock({ section, items, stateMap, onRate, onNote, onBlur }: {
+function SectionBlock({
+  section,
+  items,
+  stateMap,
+  managerStateMap,
+  onRate,
+  onNote,
+  onBlur,
+  onManagerRate,
+  onManagerComment,
+  onManagerCommentBlur,
+}: {
   section: string;
   items: ProbationItem[];
   stateMap: Record<number, ItemState>;
+  managerStateMap: Record<number, ManagerItemState>;
   onRate: (itemId: number, rating: AnyRating) => void;
   onNote: (itemId: number, note: string) => void;
   onBlur: (itemId: number) => void;
+  onManagerRate: (itemId: number, rating: AnyRating) => void;
+  onManagerComment: (itemId: number, comment: string) => void;
+  onManagerCommentBlur: (itemId: number) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const yesCount = items.filter(i => { const r = stateMap[i.id]?.rating; return r === "yes" || r === "most"; }).length;
   const allDone = items.every(i => stateMap[i.id]?.rating != null);
   const anyRated = items.some(i => stateMap[i.id]?.rating != null);
+  const mgrYesCount = items.filter(i => { const r = managerStateMap[i.id]?.rating; return r === "yes" || r === "most"; }).length;
+  const mgrAnyRated = items.some(i => managerStateMap[i.id]?.rating != null);
 
   return (
     <div className="border border-border rounded-xl overflow-hidden">
@@ -200,14 +300,19 @@ function SectionBlock({ section, items, stateMap, onRate, onNote, onBlur }: {
         onClick={() => setCollapsed(s => !s)}
         className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <span className="font-semibold text-sm text-foreground">{section}</span>
           {anyRated && (
             <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium",
               allDone ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
                 : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
             )}>
-              {yesCount}/{items.length} ✓
+              Me: {yesCount}/{items.length} ✓
+            </span>
+          )}
+          {mgrAnyRated && (
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary dark:bg-primary/20">
+              Mgr: {mgrYesCount}/{items.length} ✓
             </span>
           )}
         </div>
@@ -223,9 +328,13 @@ function SectionBlock({ section, items, stateMap, onRate, onNote, onBlur }: {
               key={item.id}
               item={item}
               state={stateMap[item.id] ?? { rating: null, note: "" }}
+              managerState={managerStateMap[item.id] ?? { rating: null, comment: "" }}
               onRate={r => onRate(item.id, r)}
               onNote={n => onNote(item.id, n)}
               onBlur={() => onBlur(item.id)}
+              onManagerRate={r => onManagerRate(item.id, r)}
+              onManagerComment={c => onManagerComment(item.id, c)}
+              onManagerCommentBlur={() => onManagerCommentBlur(item.id)}
             />
           ))}
         </div>
@@ -249,7 +358,7 @@ function ProgressSummary({ items, stateMap }: { items: ProbationItem[]; stateMap
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="flex-1">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-semibold text-sm">Overall progress</span>
+            <span className="font-semibold text-sm">My overall progress</span>
             <span className="font-bold text-sm">{stats.pct}%</span>
           </div>
           <div className="h-2.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
@@ -341,7 +450,6 @@ function ActionsSection({ sessionId, reviewPeriod, prevPeriod, prevLabel, nextLa
 
   return (
     <div className="space-y-6">
-      {/* Carried forward from previous period */}
       {prevPeriod && (
         <div>
           <h3 className="text-base font-semibold text-foreground mb-1">Actions agreed at {prevLabel}</h3>
@@ -366,7 +474,6 @@ function ActionsSection({ sessionId, reviewPeriod, prevPeriod, prevLabel, nextLa
         </div>
       )}
 
-      {/* Current period new actions */}
       <div>
         <h3 className="text-base font-semibold text-foreground mb-1">
           {nextLabel ? `My actions before ${nextLabel} Review` : "My actions for this review"}
@@ -487,7 +594,6 @@ function ReflectionSection({ sessionId, reviewPeriod, isMonth6 }: {
         {field("moreSupport", "Where do I need more support?")}
         {field("focusNext", "What am I focusing on before my next review?")}
 
-        {/* Confidence */}
         <div>
           <label className="text-sm font-medium text-foreground mb-2 block">How confident do I feel in my role?</label>
           <div className="flex gap-2 flex-wrap">
@@ -510,7 +616,6 @@ function ReflectionSection({ sessionId, reviewPeriod, isMonth6 }: {
           </div>
         </div>
 
-        {/* Month 6 — Preparing for Probation Review */}
         {isMonth6 && (
           <div className="pt-6 mt-2 border-t border-border">
             <h4 className="text-base font-semibold text-foreground mb-1">Preparing for Probation Review</h4>
@@ -530,6 +635,102 @@ function ReflectionSection({ sessionId, reviewPeriod, isMonth6 }: {
   );
 }
 
+// ─── ManagerReviewSummary ─────────────────────────────────────────────────────
+
+function ManagerReviewSummary({ sessionId, reviewPeriod }: {
+  sessionId: string;
+  reviewPeriod: ReviewPeriod;
+}) {
+  const queryClient = useQueryClient();
+  const [state, setState] = useState<ManagerReviewState>(emptyManagerReview);
+  const [initialized, setInitialized] = useState(false);
+
+  const params = { sessionId, reviewPeriod };
+  const { data: reviews = [], isLoading } = useListProbationManagerReviews(
+    params,
+    { query: { queryKey: getListProbationManagerReviewsQueryKey(params), enabled: !!sessionId } }
+  );
+
+  const upsert = useUpsertProbationManagerReview({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListProbationManagerReviewsQueryKey() }),
+    },
+  });
+
+  useEffect(() => {
+    if (!isLoading && !initialized) {
+      const r = reviews[0];
+      if (r) {
+        setState({
+          goingWell: r.goingWell ?? "",
+          developmentAreas: r.developmentAreas ?? "",
+          reviewStatus: r.reviewStatus ?? "",
+        });
+      }
+      setInitialized(true);
+    }
+  }, [reviews, isLoading, initialized]);
+
+  function save(override?: Partial<ManagerReviewState>) {
+    const s = override ? { ...state, ...override } : state;
+    upsert.mutate({ data: { sessionId, reviewPeriod, ...s } });
+  }
+
+  return (
+    <div className="rounded-xl border border-primary/25 bg-primary/5 p-6">
+      <h3 className="text-lg font-semibold text-foreground mb-1">Manager Review</h3>
+      <p className="text-sm text-muted-foreground mb-5">
+        Complete this section after the review discussion with the employee.
+      </p>
+      <div className="space-y-4">
+        <div>
+          <label className="text-sm font-semibold text-foreground mb-1.5 block">What's Going Well?</label>
+          <textarea
+            value={state.goingWell}
+            onChange={e => setState(prev => ({ ...prev, goingWell: e.target.value }))}
+            onBlur={() => save()}
+            placeholder="Describe areas of strong performance and positive behaviours…"
+            rows={3}
+            className="w-full text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold text-foreground mb-1.5 block">Areas To Focus On Before Next Review</label>
+          <textarea
+            value={state.developmentAreas}
+            onChange={e => setState(prev => ({ ...prev, developmentAreas: e.target.value }))}
+            onBlur={() => save()}
+            placeholder="Identify specific areas where the employee needs to improve or develop…"
+            rows={3}
+            className="w-full text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-semibold text-foreground mb-2 block">Overall Review Status</label>
+          <div className="flex gap-2 flex-wrap">
+            {REVIEW_STATUS_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  const val = state.reviewStatus === opt.value ? "" : opt.value;
+                  setState(prev => ({ ...prev, reviewStatus: val }));
+                  save({ reviewStatus: val });
+                }}
+                className={cn(
+                  "px-5 py-2.5 rounded-lg border text-sm font-semibold transition-all",
+                  state.reviewStatus === opt.value ? opt.active : opt.inactive
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── ReviewContent (single review tab) ───────────────────────────────────────
 
 function ReviewContent({ reviewPeriod, sessionId, items }: {
@@ -540,6 +741,7 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
   const queryClient = useQueryClient();
   const period = PERIODS.find(p => p.id === reviewPeriod)!;
   const [stateMap, setStateMap] = useState<Record<number, ItemState>>({});
+  const [managerStateMap, setManagerStateMap] = useState<Record<number, ManagerItemState>>({});
   const [lastInitKey, setLastInitKey] = useState<string | null>(null);
 
   const reviewAssessmentsParams = { sessionId, reviewPeriod };
@@ -557,18 +759,35 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
   useEffect(() => {
     const key = `${sessionId}|${reviewPeriod}`;
     if (!assessmentsLoading && key !== lastInitKey) {
-      const init: Record<number, ItemState> = {};
+      const empInit: Record<number, ItemState> = {};
+      const mgrInit: Record<number, ManagerItemState> = {};
       for (const a of assessments) {
-        init[a.itemId] = { rating: a.rating ?? null, note: a.note ?? "" };
+        empInit[a.itemId] = { rating: a.rating ?? null, note: a.note ?? "" };
+        mgrInit[a.itemId] = { rating: a.managerRating ?? null, comment: a.managerComment ?? "" };
       }
-      setStateMap(init);
+      setStateMap(empInit);
+      setManagerStateMap(mgrInit);
       setLastInitKey(key);
     }
   }, [assessments, assessmentsLoading, sessionId, reviewPeriod, lastInitKey]);
 
+  function upsertAll(itemId: number, empOverride?: Partial<ItemState>, mgrOverride?: Partial<ManagerItemState>) {
+    const emp = { ...stateMap[itemId] ?? { rating: null, note: "" }, ...empOverride };
+    const mgr = { ...managerStateMap[itemId] ?? { rating: null, comment: "" }, ...mgrOverride };
+    upsert.mutate({
+      data: {
+        sessionId, itemId, reviewPeriod,
+        rating: emp.rating ?? null,
+        note: emp.note ?? null,
+        managerRating: mgr.rating ?? null,
+        managerComment: mgr.comment ?? null,
+      }
+    });
+  }
+
   function handleRate(itemId: number, rating: AnyRating) {
     setStateMap(prev => ({ ...prev, [itemId]: { ...prev[itemId] ?? { note: "" }, rating } }));
-    upsert.mutate({ data: { sessionId, itemId, reviewPeriod, rating, note: stateMap[itemId]?.note ?? null } });
+    upsertAll(itemId, { rating });
   }
 
   function handleNote(itemId: number, note: string) {
@@ -576,8 +795,20 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
   }
 
   function handleBlur(itemId: number) {
-    const s = stateMap[itemId];
-    upsert.mutate({ data: { sessionId, itemId, reviewPeriod, rating: s?.rating ?? null, note: s?.note ?? null } });
+    upsertAll(itemId);
+  }
+
+  function handleManagerRate(itemId: number, rating: AnyRating) {
+    setManagerStateMap(prev => ({ ...prev, [itemId]: { ...prev[itemId] ?? { comment: "" }, rating } }));
+    upsertAll(itemId, undefined, { rating });
+  }
+
+  function handleManagerComment(itemId: number, comment: string) {
+    setManagerStateMap(prev => ({ ...prev, [itemId]: { ...prev[itemId] ?? { rating: null }, comment } }));
+  }
+
+  function handleManagerCommentBlur(itemId: number) {
+    upsertAll(itemId);
   }
 
   const sections = new Map<string, ProbationItem[]>();
@@ -599,9 +830,13 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
               section={section}
               items={sectionItems}
               stateMap={stateMap}
+              managerStateMap={managerStateMap}
               onRate={handleRate}
               onNote={handleNote}
               onBlur={handleBlur}
+              onManagerRate={handleManagerRate}
+              onManagerComment={handleManagerComment}
+              onManagerCommentBlur={handleManagerCommentBlur}
             />
           ))
         }
@@ -622,8 +857,12 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
         />
       </div>
 
+      <div className="border-t border-border mt-8 pt-8">
+        <ManagerReviewSummary sessionId={sessionId} reviewPeriod={reviewPeriod} />
+      </div>
+
       <p className="mt-10 text-xs text-muted-foreground text-center">
-        Everything saves automatically as you go. This is your personal development record — your manager will review separately.
+        Everything saves automatically as you go. This is your personal development record.
       </p>
     </div>
   );
@@ -729,7 +968,6 @@ export default function Probation() {
         </p>
       </div>
 
-      {/* Tab bar */}
       <div className="flex gap-0 mb-7 overflow-x-auto border-b border-border">
         {TABS.map(tab => (
           <button
@@ -747,7 +985,6 @@ export default function Probation() {
         ))}
       </div>
 
-      {/* Tab content */}
       {activeTab === "overview" ? (
         <ProbationOverview
           items={items}

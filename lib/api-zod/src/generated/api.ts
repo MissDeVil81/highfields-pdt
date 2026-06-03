@@ -341,6 +341,8 @@ export const UpsertProbationAssessmentBody = zod.object({
   reviewPeriod: zod.string().optional(),
   rating: zod.string().nullish(),
   note: zod.string().nullish(),
+  managerRating: zod.string().nullish(),
+  managerComment: zod.string().nullish(),
 });
 
 export const UpsertProbationAssessmentResponse = zod.object({
@@ -499,6 +501,50 @@ export const DeleteProbationActionParams = zod.object({
 
 export const DeleteProbationActionResponse = zod.object({
   ok: zod.boolean(),
+});
+
+/**
+ * @summary List manager review summaries for a session
+ */
+export const ListProbationManagerReviewsQueryParams = zod.object({
+  sessionId: zod.coerce.string(),
+  reviewPeriod: zod.coerce.string().optional(),
+});
+
+export const ListProbationManagerReviewsResponseItem = zod.object({
+  id: zod.number(),
+  sessionId: zod.string(),
+  reviewPeriod: zod.string(),
+  goingWell: zod.string().nullish(),
+  developmentAreas: zod.string().nullish(),
+  reviewStatus: zod.string().nullish(),
+  createdAt: zod.coerce.date().optional(),
+  updatedAt: zod.coerce.date().optional(),
+});
+export const ListProbationManagerReviewsResponse = zod.array(
+  ListProbationManagerReviewsResponseItem,
+);
+
+/**
+ * @summary Create or update a manager review summary
+ */
+export const UpsertProbationManagerReviewBody = zod.object({
+  sessionId: zod.string(),
+  reviewPeriod: zod.string(),
+  goingWell: zod.string().nullish(),
+  developmentAreas: zod.string().nullish(),
+  reviewStatus: zod.string().nullish(),
+});
+
+export const UpsertProbationManagerReviewResponse = zod.object({
+  id: zod.number(),
+  sessionId: zod.string(),
+  reviewPeriod: zod.string(),
+  goingWell: zod.string().nullish(),
+  developmentAreas: zod.string().nullish(),
+  reviewStatus: zod.string().nullish(),
+  createdAt: zod.coerce.date().optional(),
+  updatedAt: zod.coerce.date().optional(),
 });
 
 /**

@@ -11,6 +11,8 @@ const upsertSchema = z.object({
   reviewPeriod: z.string().default("month1"),
   rating: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
+  managerRating: z.string().nullable().optional(),
+  managerComment: z.string().nullable().optional(),
 });
 
 router.get("/", async (req, res) => {
@@ -31,7 +33,7 @@ router.post("/", async (req, res) => {
   const result = upsertSchema.safeParse(req.body);
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
-  const { sessionId, itemId, reviewPeriod, rating, note } = result.data;
+  const { sessionId, itemId, reviewPeriod, rating, note, managerRating, managerComment } = result.data;
 
   const existing = await db
     .select()
@@ -47,7 +49,13 @@ router.post("/", async (req, res) => {
   if (existing.length > 0) {
     const [updated] = await db
       .update(probationAssessmentsTable)
-      .set({ rating: rating ?? null, note: note ?? null, updatedAt: new Date() })
+      .set({
+        rating: rating ?? null,
+        note: note ?? null,
+        managerRating: managerRating ?? null,
+        managerComment: managerComment ?? null,
+        updatedAt: new Date(),
+      })
       .where(eq(probationAssessmentsTable.id, existing[0].id))
       .returning();
     return res.json(updated);
@@ -55,7 +63,15 @@ router.post("/", async (req, res) => {
 
   const [created] = await db
     .insert(probationAssessmentsTable)
-    .values({ sessionId, itemId, reviewPeriod, rating: rating ?? null, note: note ?? null })
+    .values({
+      sessionId,
+      itemId,
+      reviewPeriod,
+      rating: rating ?? null,
+      note: note ?? null,
+      managerRating: managerRating ?? null,
+      managerComment: managerComment ?? null,
+    })
     .returning();
   res.json(created);
 });

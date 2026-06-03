@@ -6,12 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface UpsertProbationAssessmentBody {
+export type ListProbationManagerReviewsParams = {
   sessionId: string;
-  itemId: number;
   reviewPeriod?: string;
-  rating?: string | null;
-  note?: string | null;
-  managerRating?: string | null;
-  managerComment?: string | null;
-}
+};

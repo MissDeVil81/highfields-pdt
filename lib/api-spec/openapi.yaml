@@ -574,6 +574,49 @@ paths:
                 required:
                   - ok
 
+  /probation/manager-reviews:
+    get:
+      operationId: listProbationManagerReviews
+      tags: [probation]
+      summary: List manager review summaries for a session
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: reviewPeriod
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of manager review summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProbationManagerReview"
+    post:
+      operationId: upsertProbationManagerReview
+      tags: [probation]
+      summary: Create or update a manager review summary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertProbationManagerReviewBody"
+      responses:
+        "200":
+          description: Upserted manager review summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProbationManagerReview"
+
   /summary/readiness:
     get:
       operationId: getReadinessSummary
@@ -1091,6 +1134,12 @@ components:
         note:
           type: string
           nullable: true
+        managerRating:
+          type: string
+          nullable: true
+        managerComment:
+          type: string
+          nullable: true
       required:
         - sessionId
         - itemId
@@ -1241,3 +1290,52 @@ components:
         status:
           type: string
           enum: [not_started, in_progress, complete]
+
+    ProbationManagerReview:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: string
+        reviewPeriod:
+          type: string
+        goingWell:
+          type: string
+          nullable: true
+        developmentAreas:
+          type: string
+          nullable: true
+        reviewStatus:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - sessionId
+        - reviewPeriod
+
+    UpsertProbationManagerReviewBody:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        reviewPeriod:
+          type: string
+        goingWell:
+          type: string
+          nullable: true
+        developmentAreas:
+          type: string
+          nullable: true
+        reviewStatus:
+          type: string
+          nullable: true
+      required:
+        - sessionId
+        - reviewPeriod

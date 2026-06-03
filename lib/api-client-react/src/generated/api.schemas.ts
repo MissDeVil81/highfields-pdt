@@ -255,6 +255,8 @@ export interface UpsertProbationAssessmentBody {
   reviewPeriod?: string;
   rating?: string | null;
   note?: string | null;
+  managerRating?: string | null;
+  managerComment?: string | null;
 }
 
 export interface ProbationReflection {
@@ -322,6 +324,25 @@ export interface UpdateProbationActionBody {
   status?: UpdateProbationActionBodyStatus;
 }
 
+export interface ProbationManagerReview {
+  id: number;
+  sessionId: string;
+  reviewPeriod: string;
+  goingWell?: string | null;
+  developmentAreas?: string | null;
+  reviewStatus?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UpsertProbationManagerReviewBody {
+  sessionId: string;
+  reviewPeriod: string;
+  goingWell?: string | null;
+  developmentAreas?: string | null;
+  reviewStatus?: string | null;
+}
+
 export type ListRolesParams = {
   careerPathId?: number;
 };
@@ -367,6 +388,11 @@ export type ListProbationActionsParams = {
 
 export type DeleteProbationAction200 = {
   ok: boolean;
+};
+
+export type ListProbationManagerReviewsParams = {
+  sessionId: string;
+  reviewPeriod?: string;
 };
 
 export type GetReadinessSummaryParams = {

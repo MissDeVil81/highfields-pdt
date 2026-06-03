@@ -38,11 +38,13 @@ import type {
   ListFinancialTargetsParams,
   ListProbationActionsParams,
   ListProbationAssessmentsParams,
+  ListProbationManagerReviewsParams,
   ListProbationReflectionsParams,
   ListRolesParams,
   ProbationAction,
   ProbationAssessment,
   ProbationItem,
+  ProbationManagerReview,
   ProbationReflection,
   ReadinessSummary,
   Role,
@@ -52,6 +54,7 @@ import type {
   UpsertAssessmentBody,
   UpsertFinancialProgressBody,
   UpsertProbationAssessmentBody,
+  UpsertProbationManagerReviewBody,
   UpsertProbationReflectionBody,
 } from "./api.schemas";
 
@@ -2460,6 +2463,205 @@ export const useDeleteProbationAction = <
   TContext
 > => {
   return useMutation(getDeleteProbationActionMutationOptions(options));
+};
+
+/**
+ * @summary List manager review summaries for a session
+ */
+export const getListProbationManagerReviewsUrl = (
+  params: ListProbationManagerReviewsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/probation/manager-reviews?${stringifiedParams}`
+    : `/api/probation/manager-reviews`;
+};
+
+export const listProbationManagerReviews = async (
+  params: ListProbationManagerReviewsParams,
+  options?: RequestInit,
+): Promise<ProbationManagerReview[]> => {
+  return customFetch<ProbationManagerReview[]>(
+    getListProbationManagerReviewsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListProbationManagerReviewsQueryKey = (
+  params?: ListProbationManagerReviewsParams,
+) => {
+  return [
+    `/api/probation/manager-reviews`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListProbationManagerReviewsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProbationManagerReviews>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListProbationManagerReviewsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProbationManagerReviews>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListProbationManagerReviewsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProbationManagerReviews>>
+  > = ({ signal }) =>
+    listProbationManagerReviews(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProbationManagerReviews>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProbationManagerReviewsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProbationManagerReviews>>
+>;
+export type ListProbationManagerReviewsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List manager review summaries for a session
+ */
+
+export function useListProbationManagerReviews<
+  TData = Awaited<ReturnType<typeof listProbationManagerReviews>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListProbationManagerReviewsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProbationManagerReviews>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProbationManagerReviewsQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create or update a manager review summary
+ */
+export const getUpsertProbationManagerReviewUrl = () => {
+  return `/api/probation/manager-reviews`;
+};
+
+export const upsertProbationManagerReview = async (
+  upsertProbationManagerReviewBody: UpsertProbationManagerReviewBody,
+  options?: RequestInit,
+): Promise<ProbationManagerReview> => {
+  return customFetch<ProbationManagerReview>(
+    getUpsertProbationManagerReviewUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(upsertProbationManagerReviewBody),
+    },
+  );
+};
+
+export const getUpsertProbationManagerReviewMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertProbationManagerReview>>,
+    TError,
+    { data: BodyType<UpsertProbationManagerReviewBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertProbationManagerReview>>,
+  TError,
+  { data: BodyType<UpsertProbationManagerReviewBody> },
+  TContext
+> => {
+  const mutationKey = ["upsertProbationManagerReview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertProbationManagerReview>>,
+    { data: BodyType<UpsertProbationManagerReviewBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return upsertProbationManagerReview(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertProbationManagerReviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertProbationManagerReview>>
+>;
+export type UpsertProbationManagerReviewMutationBody =
+  BodyType<UpsertProbationManagerReviewBody>;
+export type UpsertProbationManagerReviewMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create or update a manager review summary
+ */
+export const useUpsertProbationManagerReview = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertProbationManagerReview>>,
+    TError,
+    { data: BodyType<UpsertProbationManagerReviewBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof upsertProbationManagerReview>>,
+  TError,
+  { data: BodyType<UpsertProbationManagerReviewBody> },
+  TContext
+> => {
+  return useMutation(getUpsertProbationManagerReviewMutationOptions(options));
 };
 
 /**
