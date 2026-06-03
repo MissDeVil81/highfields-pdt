@@ -5,6 +5,7 @@
  * Career Progression Tracker API
  * OpenAPI spec version: 0.1.0
  */
+import type { ReadinessSummaryTargetRoleFinancialStatus } from "./readinessSummaryTargetRoleFinancialStatus";
 
 export type ReadinessSummaryTargetRole = {
   roleId: number;
@@ -16,4 +17,5 @@ export type ReadinessSummaryTargetRole = {
   unrated: number;
   readinessPercent: number;
   evidenceCount: number;
+  financialStatus?: ReadinessSummaryTargetRoleFinancialStatus;
 } | null;

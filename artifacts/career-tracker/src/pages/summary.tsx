@@ -40,6 +40,7 @@ interface RoleSummaryCardProps {
     unrated: number;
     readinessPercent: number;
     evidenceCount?: number;
+    financialStatus?: "achieved" | "in_progress" | "not_yet" | null;
   };
 }
 
@@ -92,6 +93,32 @@ function RoleSummaryCard({ label, data }: RoleSummaryCardProps) {
         {data.red > 0 && <div className="bg-red-500 rounded-full" style={{ flex: data.red }} />}
         {data.unrated > 0 && <div className="bg-muted rounded-full" style={{ flex: data.unrated }} />}
       </div>
+
+      {/* Financial status */}
+      {data.financialStatus != null && (
+        <div className={cn(
+          "mt-3 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium",
+          data.financialStatus === "achieved"
+            ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+            : data.financialStatus === "in_progress"
+            ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
+            : "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400"
+        )}>
+          <span className="text-base leading-none">
+            {data.financialStatus === "achieved" ? "✓" : data.financialStatus === "in_progress" ? "◕" : "○"}
+          </span>
+          {data.financialStatus === "achieved"
+            ? "Financial target achieved"
+            : data.financialStatus === "in_progress"
+            ? "Financial target in progress"
+            : "Financial target not yet achieved"}
+        </div>
+      )}
+      {data.financialStatus === null && data.evidenceCount !== undefined && (
+        <div className="mt-3 px-3 py-2 rounded-lg text-xs text-muted-foreground bg-muted/50">
+          No financial target set for this role
+        </div>
+      )}
     </div>
   );
 }

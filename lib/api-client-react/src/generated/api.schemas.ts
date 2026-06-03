@@ -153,6 +153,32 @@ export interface UpdateEvidenceBody {
   rating: UpdateEvidenceBodyRating;
 }
 
+export interface FinancialTarget {
+  id: number;
+  roleId: number;
+  label: string;
+  targetAmount: number;
+  periodLabel: string;
+  optionGroup?: number | null;
+  sortOrder: number;
+}
+
+export interface FinancialProgress {
+  id: number;
+  sessionId: string;
+  targetId: number;
+  roleId: number;
+  currentAmount: number;
+  updatedAt: string;
+}
+
+export interface UpsertFinancialProgressBody {
+  sessionId: string;
+  targetId: number;
+  roleId: number;
+  currentAmount: number;
+}
+
 export type ReadinessSummaryCurrentRole = {
   roleId: number;
   title: string;
@@ -164,6 +190,16 @@ export type ReadinessSummaryCurrentRole = {
   readinessPercent: number;
 } | null;
 
+export type ReadinessSummaryTargetRoleFinancialStatus =
+  | (typeof ReadinessSummaryTargetRoleFinancialStatus)[keyof typeof ReadinessSummaryTargetRoleFinancialStatus]
+  | null;
+
+export const ReadinessSummaryTargetRoleFinancialStatus = {
+  achieved: "achieved",
+  in_progress: "in_progress",
+  not_yet: "not_yet",
+} as const;
+
 export type ReadinessSummaryTargetRole = {
   roleId: number;
   title: string;
@@ -174,6 +210,7 @@ export type ReadinessSummaryTargetRole = {
   unrated: number;
   readinessPercent: number;
   evidenceCount: number;
+  financialStatus?: ReadinessSummaryTargetRoleFinancialStatus;
 } | null;
 
 export interface ReadinessSummary {
@@ -198,6 +235,15 @@ export type ListEvidenceParams = {
   sessionId: string;
   roleId?: number;
   competencyId?: number;
+};
+
+export type ListFinancialTargetsParams = {
+  roleId: number;
+};
+
+export type ListFinancialProgressParams = {
+  sessionId: string;
+  roleId: number;
 };
 
 export type GetReadinessSummaryParams = {

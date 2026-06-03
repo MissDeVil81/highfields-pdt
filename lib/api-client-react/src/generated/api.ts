@@ -25,17 +25,22 @@ import type {
   CreateEvidenceBody,
   CreateRoleBody,
   Evidence,
+  FinancialProgress,
+  FinancialTarget,
   GetReadinessSummaryParams,
   HealthStatus,
   ListAssessmentsParams,
   ListCompetenciesParams,
   ListEvidenceParams,
+  ListFinancialProgressParams,
+  ListFinancialTargetsParams,
   ListRolesParams,
   ReadinessSummary,
   Role,
   RoleWithCompetencies,
   UpdateEvidenceBody,
   UpsertAssessmentBody,
+  UpsertFinancialProgressBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1339,6 +1344,293 @@ export const useDeleteEvidence = <
   TContext
 > => {
   return useMutation(getDeleteEvidenceMutationOptions(options));
+};
+
+/**
+ * @summary List financial promotion targets for a role
+ */
+export const getListFinancialTargetsUrl = (
+  params: ListFinancialTargetsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/financial-targets?${stringifiedParams}`
+    : `/api/financial-targets`;
+};
+
+export const listFinancialTargets = async (
+  params: ListFinancialTargetsParams,
+  options?: RequestInit,
+): Promise<FinancialTarget[]> => {
+  return customFetch<FinancialTarget[]>(getListFinancialTargetsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListFinancialTargetsQueryKey = (
+  params?: ListFinancialTargetsParams,
+) => {
+  return [`/api/financial-targets`, ...(params ? [params] : [])] as const;
+};
+
+export const getListFinancialTargetsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFinancialTargets>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListFinancialTargetsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFinancialTargets>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListFinancialTargetsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listFinancialTargets>>
+  > = ({ signal }) =>
+    listFinancialTargets(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFinancialTargets>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFinancialTargetsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFinancialTargets>>
+>;
+export type ListFinancialTargetsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List financial promotion targets for a role
+ */
+
+export function useListFinancialTargets<
+  TData = Awaited<ReturnType<typeof listFinancialTargets>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListFinancialTargetsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFinancialTargets>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFinancialTargetsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List financial progress for a session and role
+ */
+export const getListFinancialProgressUrl = (
+  params: ListFinancialProgressParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/financial-progress?${stringifiedParams}`
+    : `/api/financial-progress`;
+};
+
+export const listFinancialProgress = async (
+  params: ListFinancialProgressParams,
+  options?: RequestInit,
+): Promise<FinancialProgress[]> => {
+  return customFetch<FinancialProgress[]>(getListFinancialProgressUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListFinancialProgressQueryKey = (
+  params?: ListFinancialProgressParams,
+) => {
+  return [`/api/financial-progress`, ...(params ? [params] : [])] as const;
+};
+
+export const getListFinancialProgressQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFinancialProgress>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListFinancialProgressParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFinancialProgress>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListFinancialProgressQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listFinancialProgress>>
+  > = ({ signal }) =>
+    listFinancialProgress(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFinancialProgress>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFinancialProgressQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFinancialProgress>>
+>;
+export type ListFinancialProgressQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List financial progress for a session and role
+ */
+
+export function useListFinancialProgress<
+  TData = Awaited<ReturnType<typeof listFinancialProgress>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListFinancialProgressParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFinancialProgress>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFinancialProgressQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create or update financial progress for a target
+ */
+export const getUpsertFinancialProgressUrl = () => {
+  return `/api/financial-progress`;
+};
+
+export const upsertFinancialProgress = async (
+  upsertFinancialProgressBody: UpsertFinancialProgressBody,
+  options?: RequestInit,
+): Promise<FinancialProgress> => {
+  return customFetch<FinancialProgress>(getUpsertFinancialProgressUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(upsertFinancialProgressBody),
+  });
+};
+
+export const getUpsertFinancialProgressMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertFinancialProgress>>,
+    TError,
+    { data: BodyType<UpsertFinancialProgressBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertFinancialProgress>>,
+  TError,
+  { data: BodyType<UpsertFinancialProgressBody> },
+  TContext
+> => {
+  const mutationKey = ["upsertFinancialProgress"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertFinancialProgress>>,
+    { data: BodyType<UpsertFinancialProgressBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return upsertFinancialProgress(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertFinancialProgressMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertFinancialProgress>>
+>;
+export type UpsertFinancialProgressMutationBody =
+  BodyType<UpsertFinancialProgressBody>;
+export type UpsertFinancialProgressMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create or update financial progress for a target
+ */
+export const useUpsertFinancialProgress = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertFinancialProgress>>,
+    TError,
+    { data: BodyType<UpsertFinancialProgressBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof upsertFinancialProgress>>,
+  TError,
+  { data: BodyType<UpsertFinancialProgressBody> },
+  TContext
+> => {
+  return useMutation(getUpsertFinancialProgressMutationOptions(options));
 };
 
 /**

@@ -6,6 +6,8 @@ import competenciesRouter from "./competencies";
 import assessmentsRouter from "./assessments";
 import evidenceRouter from "./evidence";
 import summaryRouter from "./summary";
+import financialTargetsRouter from "./financialTargets";
+import financialProgressRouter from "./financialProgress";
 
 const router: IRouter = Router();
 
@@ -16,5 +18,7 @@ router.use("/competencies", competenciesRouter);
 router.use("/assessments", assessmentsRouter);
 router.use("/evidence", evidenceRouter);
 router.use("/summary", summaryRouter);
+router.use("/financial-targets", financialTargetsRouter);
+router.use("/financial-progress", financialProgressRouter);
 
 export default router;

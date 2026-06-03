@@ -1,0 +1,76 @@
+I want to add financial promotion targets into the career progression tracker.
+
+Please add a new section above the competencies section called “Financial Targets” on the Target Role screen only.
+
+This section should only appear for roles where we have financial promotion criteria. If no financial targets exist for the selected target role, hide the section completely.
+
+The purpose of this section is to help employees understand the financial performance required for promotion into that role and track their progress towards it.
+
+The user should be able to:
+
+* See the financial target(s) required for promotion into the selected role.
+* Enter their current financial performance/progress.
+* See how close they are to the required target.
+* See a colour-coded status:
+    * Red = not close to target
+    * Amber = close to target
+    * Green = target achieved
+
+Please use sensible thresholds:
+
+* Green = 100% or more of target achieved
+* Amber = 75% to 99% of target achieved
+* Red = below 75% of target achieved
+
+Please include a progress bar or percentage indicator showing how close they are to the financial target.
+
+Financial target data:
+
+Senior Recruitment Consultant Contract:
+
+* £3,000 average over 8 weeks
+
+Senior Recruitment Consultant Perm:
+
+* £80,000 billed in 6 months OR £150,000 billed in 12 months
+
+Principal Consultant Contract:
+
+* £5,000 average over 13 weeks
+
+Principal Consultant Perm:
+
+* £120,000 billed in 6 months OR £220,000 billed in 12 months
+
+Sector Lead Contract:
+
+* £7,000 average over 13 weeks
+
+Sector Lead Perm:
+
+* £250,000 billed in 12 months
+
+Associate Director Contract:
+
+* £10,000 average over 13 weeks
+
+Associate Director Perm:
+
+* £400,000 billed in 12 months
+
+Please save the user’s financial progress in the same way their competency ratings and notes are saved.
+
+Please update the Readiness Summary screen so it adds:
+
+* Target Role financial target status (if applicable)
+
+This should sit alongside the existing Target Role competency readiness tracking and give the user a complete picture of their readiness for promotion.
+
+For the summary screen:
+
+* If financials are achieved, show “Financial target achieved” in green.
+* If financials are close, show “Financial target in progress” in amber.
+* If financials are not close, show “Financial target not yet achieved” in red.
+* If there are no financial targets for that role, either show “No financial target set for this role” or hide the section if it works better with the design.
+
+Please make the wording employee-friendly. The tool should help people understand what is required to progress into their next role and clearly show both competency readiness and financial readiness.

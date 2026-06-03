@@ -1,8 +1,40 @@
 import { Router } from "express";
-import { db, assessmentsTable, evidenceTable, rolesTable, competenciesTable } from "@workspace/db";
+import { db, assessmentsTable, evidenceTable, rolesTable, competenciesTable, financialTargetsTable, financialProgressTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 
 const router = Router();
+
+async function getFinancialStatus(sessionId: string, roleId: number): Promise<"achieved" | "in_progress" | "not_yet" | null> {
+  const targets = await db.select().from(financialTargetsTable).where(eq(financialTargetsTable.roleId, roleId));
+  if (targets.length === 0) return null;
+
+  const progressRows = await db.select().from(financialProgressTable).where(
+    and(eq(financialProgressTable.sessionId, sessionId), eq(financialProgressTable.roleId, roleId))
+  );
+  if (progressRows.length === 0) return "not_yet";
+
+  const progressMap = new Map(progressRows.map(p => [p.targetId, p.currentAmount]));
+
+  const optionGroups = new Map<number | null, typeof targets>();
+  for (const t of targets) {
+    const key = t.optionGroup ?? null;
+    if (!optionGroups.has(key)) optionGroups.set(key, []);
+    optionGroups.get(key)!.push(t);
+  }
+
+  let bestPct = 0;
+  for (const [, groupTargets] of optionGroups) {
+    for (const t of groupTargets) {
+      const current = progressMap.get(t.id) ?? 0;
+      const pct = t.targetAmount > 0 ? (current / t.targetAmount) * 100 : 0;
+      if (pct > bestPct) bestPct = pct;
+    }
+  }
+
+  if (bestPct >= 100) return "achieved";
+  if (bestPct >= 75) return "in_progress";
+  return "not_yet";
+}
 
 async function getRoleSummary(sessionId: string, roleId: number, isTargetRole: boolean) {
   const [role] = await db.select().from(rolesTable).where(eq(rolesTable.id, roleId));
@@ -33,7 +65,8 @@ async function getRoleSummary(sessionId: string, roleId: number, isTargetRole: b
     const evidenceEntries = await db.select().from(evidenceTable).where(
       and(eq(evidenceTable.sessionId, sessionId), eq(evidenceTable.roleId, roleId))
     );
-    return { ...base, evidenceCount: evidenceEntries.length };
+    const financialStatus = await getFinancialStatus(sessionId, roleId);
+    return { ...base, evidenceCount: evidenceEntries.length, financialStatus };
   }
 
   return base;

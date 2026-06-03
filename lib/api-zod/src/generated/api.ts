@@ -234,6 +234,65 @@ export const DeleteEvidenceParams = zod.object({
 });
 
 /**
+ * @summary List financial promotion targets for a role
+ */
+export const ListFinancialTargetsQueryParams = zod.object({
+  roleId: zod.coerce.number(),
+});
+
+export const ListFinancialTargetsResponseItem = zod.object({
+  id: zod.number(),
+  roleId: zod.number(),
+  label: zod.string(),
+  targetAmount: zod.number(),
+  periodLabel: zod.string(),
+  optionGroup: zod.number().nullish(),
+  sortOrder: zod.number(),
+});
+export const ListFinancialTargetsResponse = zod.array(
+  ListFinancialTargetsResponseItem,
+);
+
+/**
+ * @summary List financial progress for a session and role
+ */
+export const ListFinancialProgressQueryParams = zod.object({
+  sessionId: zod.coerce.string(),
+  roleId: zod.coerce.number(),
+});
+
+export const ListFinancialProgressResponseItem = zod.object({
+  id: zod.number(),
+  sessionId: zod.string(),
+  targetId: zod.number(),
+  roleId: zod.number(),
+  currentAmount: zod.number(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListFinancialProgressResponse = zod.array(
+  ListFinancialProgressResponseItem,
+);
+
+/**
+ * @summary Create or update financial progress for a target
+ */
+export const UpsertFinancialProgressBody = zod.object({
+  sessionId: zod.string(),
+  targetId: zod.number(),
+  roleId: zod.number(),
+  currentAmount: zod.number(),
+});
+
+export const UpsertFinancialProgressResponse = zod.object({
+  id: zod.number(),
+  sessionId: zod.string(),
+  targetId: zod.number(),
+  roleId: zod.number(),
+  currentAmount: zod.number(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Get readiness summary for a session across current and target roles
  */
 export const GetReadinessSummaryQueryParams = zod.object({
@@ -266,6 +325,9 @@ export const GetReadinessSummaryResponse = zod.object({
       unrated: zod.number(),
       readinessPercent: zod.number(),
       evidenceCount: zod.number(),
+      financialStatus: zod
+        .enum(["achieved", "in_progress", "not_yet"])
+        .nullish(),
     })
     .nullable(),
 });

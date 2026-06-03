@@ -21,6 +21,10 @@ tags:
     description: Evidence for target role competencies
   - name: summary
     description: Summary and aggregation endpoints
+  - name: financialTargets
+    description: Financial promotion targets per role
+  - name: financialProgress
+    description: User financial progress against targets
 
 paths:
   /healthz:
@@ -314,6 +318,70 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /financial-targets:
+    get:
+      operationId: listFinancialTargets
+      tags: [financialTargets]
+      summary: List financial promotion targets for a role
+      parameters:
+        - name: roleId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of financial targets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FinancialTarget"
+
+  /financial-progress:
+    get:
+      operationId: listFinancialProgress
+      tags: [financialProgress]
+      summary: List financial progress for a session and role
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: roleId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of financial progress entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FinancialProgress"
+    post:
+      operationId: upsertFinancialProgress
+      tags: [financialProgress]
+      summary: Create or update financial progress for a target
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertFinancialProgressBody"
+      responses:
+        "200":
+          description: Upserted financial progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialProgress"
 
   /summary/readiness:
     get:
@@ -615,6 +683,73 @@ components:
         - description
         - rating
 
+    FinancialTarget:
+      type: object
+      properties:
+        id:
+          type: integer
+        roleId:
+          type: integer
+        label:
+          type: string
+        targetAmount:
+          type: integer
+        periodLabel:
+          type: string
+        optionGroup:
+          type: integer
+          nullable: true
+        sortOrder:
+          type: integer
+      required:
+        - id
+        - roleId
+        - label
+        - targetAmount
+        - periodLabel
+        - sortOrder
+
+    FinancialProgress:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: string
+        targetId:
+          type: integer
+        roleId:
+          type: integer
+        currentAmount:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - sessionId
+        - targetId
+        - roleId
+        - currentAmount
+        - updatedAt
+
+    UpsertFinancialProgressBody:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        targetId:
+          type: integer
+        roleId:
+          type: integer
+        currentAmount:
+          type: integer
+      required:
+        - sessionId
+        - targetId
+        - roleId
+        - currentAmount
+
     ReadinessSummary:
       type: object
       properties:
@@ -669,6 +804,10 @@ components:
               type: number
             evidenceCount:
               type: integer
+            financialStatus:
+              type: string
+              enum: [achieved, in_progress, not_yet]
+              nullable: true
           required:
             - roleId
             - title

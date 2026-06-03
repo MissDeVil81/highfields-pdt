@@ -8,13 +8,17 @@ import {
   useCreateEvidence,
   useUpdateEvidence,
   useDeleteEvidence,
+  useListFinancialTargets,
+  useListFinancialProgress,
+  useUpsertFinancialProgress,
   getListAssessmentsQueryKey,
   getListEvidenceQueryKey,
+  getListFinancialProgressQueryKey,
 } from "@workspace/api-client-react";
 import { useSessionStore } from "@/lib/session";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { RatingPicker, RatingBadge } from "@/components/RatingButton";
 import { JobSpecText } from "@/components/JobSpecText";
 import { ArrowRight, Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Check, Briefcase, FileText } from "lucide-react";
@@ -137,6 +141,178 @@ function ReadinessBar({ assessments, total, evidenceCount }: { assessments: Arra
         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500 inline-block" />{amber} in progress</span>
         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500 inline-block" />{red} not ready</span>
         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-muted-foreground/40 inline-block" />{unrated} unrated</span>
+      </div>
+    </div>
+  );
+}
+
+function FinancialTargetsSection({ sessionId, roleId }: { sessionId: string; roleId: number }) {
+  const queryClient = useQueryClient();
+  const [inputs, setInputs] = useState<Record<number, string>>({});
+  const lastInitRoleRef = useRef<number | null>(null);
+
+  const { data: targets = [] } = useListFinancialTargets(
+    { roleId },
+    { query: { enabled: !!roleId } }
+  );
+
+  const { data: progressList = [], isLoading: progressLoading } = useListFinancialProgress(
+    { sessionId, roleId },
+    { query: { enabled: !!roleId } }
+  );
+
+  const upsert = useUpsertFinancialProgress({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListFinancialProgressQueryKey() });
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (!progressLoading && lastInitRoleRef.current !== roleId) {
+      const init: Record<number, string> = {};
+      for (const p of progressList) {
+        init[p.targetId] = String(p.currentAmount);
+      }
+      setInputs(init);
+      lastInitRoleRef.current = roleId;
+    }
+  }, [progressList, progressLoading, roleId]);
+
+  if (targets.length === 0) return null;
+
+  const progressMap = new Map(progressList.map(p => [p.targetId, p.currentAmount]));
+
+  function getDisplayAmount(targetId: number): number {
+    const inputVal = parseInt((inputs[targetId] ?? "").replace(/[^0-9]/g, ""), 10);
+    if (!isNaN(inputVal)) return inputVal;
+    return progressMap.get(targetId) ?? 0;
+  }
+
+  function getPct(targetId: number, targetAmount: number): number {
+    return targetAmount > 0 ? Math.min((getDisplayAmount(targetId) / targetAmount) * 100, 100) : 0;
+  }
+
+  function handleBlur(targetId: number) {
+    const raw = inputs[targetId] ?? "";
+    const amount = parseInt(raw.replace(/[^0-9]/g, ""), 10);
+    if (!isNaN(amount) && amount >= 0) {
+      upsert.mutate({ data: { sessionId, targetId, roleId, currentAmount: amount } });
+    }
+  }
+
+  function ragBarColor(pct: number) {
+    if (pct >= 100) return "bg-green-500";
+    if (pct >= 75) return "bg-amber-500";
+    return "bg-red-500";
+  }
+
+  function ragLabel(pct: number): { text: string; cls: string } {
+    if (pct >= 100) return { text: "Financial target achieved!", cls: "text-green-600" };
+    if (pct >= 75) return { text: "Close to target — keep going!", cls: "text-amber-600" };
+    return { text: "Not yet on track", cls: "text-red-500" };
+  }
+
+  const singleTargets = targets.filter(t => t.optionGroup == null);
+  const groupedMap = new Map<number, typeof targets>();
+  for (const t of targets) {
+    if (t.optionGroup != null) {
+      if (!groupedMap.has(t.optionGroup)) groupedMap.set(t.optionGroup, []);
+      groupedMap.get(t.optionGroup)!.push(t);
+    }
+  }
+
+  return (
+    <div className="border border-primary/20 bg-primary/5 rounded-xl p-5 mb-6">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-primary/15 text-primary font-bold text-sm">
+          £
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Financial Targets</h3>
+          <p className="text-xs text-muted-foreground">Enter your current performance to track your financial readiness for promotion.</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {singleTargets.map(target => {
+          const pct = getPct(target.id, target.targetAmount);
+          const pctDisplay = Math.round(pct);
+          const { text: statusText, cls: statusCls } = ragLabel(pct);
+          return (
+            <div key={target.id} className="bg-card border border-border rounded-xl p-4">
+              <div className="font-medium text-sm text-foreground mb-0.5">{target.label}</div>
+              <div className="text-xs text-muted-foreground mb-3">
+                Promotion target: <span className="font-semibold text-foreground">£{target.targetAmount.toLocaleString()}</span>
+              </div>
+              <label className="text-xs text-muted-foreground block mb-1.5">
+                Your current {target.periodLabel} (£)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={inputs[target.id] ?? ""}
+                onChange={e => setInputs(prev => ({ ...prev, [target.id]: e.target.value }))}
+                onBlur={() => handleBlur(target.id)}
+                placeholder="Enter amount"
+                className="w-full text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <div className="mt-3 h-2 rounded-full overflow-hidden bg-muted">
+                <div className={cn(ragBarColor(pct), "h-full rounded-full transition-all duration-300")} style={{ width: `${pctDisplay}%` }} />
+              </div>
+              <div className="mt-1.5 flex items-center justify-between">
+                <span className={cn("text-xs font-medium", statusCls)}>{statusText}</span>
+                <span className="text-xs text-muted-foreground">{pctDisplay}% of target</span>
+              </div>
+            </div>
+          );
+        })}
+
+        {Array.from(groupedMap.entries()).map(([groupKey, groupTargets]) => {
+          const bestPct = Math.max(...groupTargets.map(t => getPct(t.id, t.targetAmount)));
+          const { text: overallText, cls: overallCls } = ragLabel(bestPct);
+          return (
+            <div key={groupKey}>
+              <p className="text-xs text-muted-foreground mb-2.5">
+                Meet <span className="font-semibold text-foreground">either</span> of these targets to achieve your financial goal:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {groupTargets.map(target => {
+                  const pct = getPct(target.id, target.targetAmount);
+                  const pctDisplay = Math.round(pct);
+                  return (
+                    <div key={target.id} className="bg-card border border-border rounded-xl p-4">
+                      <div className="text-xs font-semibold text-foreground mb-1">{target.label}</div>
+                      <div className="text-xs text-muted-foreground mb-3">
+                        Target: <span className="font-semibold text-foreground">£{target.targetAmount.toLocaleString()}</span>
+                      </div>
+                      <label className="text-xs text-muted-foreground block mb-1.5">Your total (£)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={inputs[target.id] ?? ""}
+                        onChange={e => setInputs(prev => ({ ...prev, [target.id]: e.target.value }))}
+                        onBlur={() => handleBlur(target.id)}
+                        placeholder="Enter amount"
+                        className="w-full text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <div className="mt-3 h-2 rounded-full overflow-hidden bg-muted">
+                        <div className={cn(ragBarColor(pct), "h-full rounded-full transition-all duration-300")} style={{ width: `${pctDisplay}%` }} />
+                      </div>
+                      <div className="mt-1 text-right">
+                        <span className="text-xs text-muted-foreground">{pctDisplay}% of target</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className={cn("mt-2 text-xs font-medium", overallCls)}>
+                Overall status: {overallText}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -432,6 +608,9 @@ export default function TargetRole() {
               )}
             </div>
           )}
+
+          {/* Financial Targets */}
+          <FinancialTargetsSection sessionId={sessionId} roleId={targetRoleId} />
 
           {/* Readiness bar */}
           <ReadinessBar assessments={assessments} total={(role.competencies ?? []).length} evidenceCount={evidence.length} />
