@@ -6,16 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ProbationAssessment {
+export interface ProbationAction {
   id: number;
   sessionId: string;
-  itemId: number;
   reviewPeriod: string;
-  rating?: string | null;
-  note?: string | null;
-  managerRating?: string | null;
+  actionText: string;
+  status: string;
   managerComment?: string | null;
-  managerReviewedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }

@@ -1,0 +1,219 @@
+I would like to enhance the existing Probation section.
+
+IMPORTANT
+
+Please build on top of the existing probation functionality. Do not redesign or rebuild the existing application structure.
+
+The app is currently employee-facing only.
+
+For this phase, I only want to build the employee probation journey and review structure.
+
+Do NOT build:
+- Manager portal
+- Manager login
+- Manager dashboards
+- HR dashboards
+- Notifications
+- Approval workflows
+- Permissions
+
+We will build manager and HR functionality later.
+
+However, please structure the data so that manager reviews can be added in the future without needing to redesign the database.
+
+For example, create placeholder fields such as:
+- managerRating
+- managerComments
+- managerStatus
+- managerReviewedAt
+
+These should not be visible yet.
+
+---
+
+PURPOSE
+
+The probation section should replace our current Word document probation process.
+
+Employees should receive access from Day 1 and use the system throughout their six-month probation period.
+
+The goal is to give employees complete clarity on:
+- What good looks like
+- How they are progressing
+- What they need to improve
+- What they need to demonstrate to pass probation
+
+The probation section should feel like a development and coaching tool rather than an HR form.
+
+---
+
+STRUCTURE
+
+Create four review tabs within the Probation section:
+
+- Month 1 Review
+- Month 3 Review
+- Month 5 Review
+- Month 6 Probation Review
+
+These should all sit within the same probation journey.
+
+Employees should be able to move between reviews and see their progress over time.
+
+---
+
+PROBATION OVERVIEW
+
+Create a Probation Overview screen showing:
+
+Probation Progress:
+- Month 1
+- Month 3
+- Month 5
+- Month 6
+
+Each review should show:
+- Not Started
+- In Progress
+- Complete
+
+Display:
+
+Overall Progress %
+
+Use the same progress calculation and visual style that already exists in the employee probation tracker.
+
+Please do NOT add:
+- Manager score
+- Employee score
+- Alignment score
+- RAG comparison
+
+The employee progress percentage is sufficient.
+
+---
+
+REVIEW CONTENT
+
+Each review should contain the same assessment areas:
+
+- Skills
+- Behaviours
+- Knowledge
+- Activity
+- Financial Awareness
+- Behaviour & Conduct
+- Values
+
+For each item the employee can select:
+
+- Yes / Most
+- In Progress
+- Not Yet
+
+For each item allow:
+
+Employee Notes / Evidence
+
+Free text field
+
+---
+
+EMPLOYEE REFLECTION
+
+At the bottom of each review include:
+
+What has gone well?
+
+Free text
+
+What have I learned?
+
+Free text
+
+Where do I need more support?
+
+Free text
+
+What am I focusing on before the next review?
+
+Free text
+
+How confident do I feel in my role?
+
+- Green
+- Amber
+- Red
+
+---
+
+ACTIONS
+
+At the end of each review include:
+
+Actions Before Next Review
+
+Free text field
+
+These actions should be carried forward automatically into the next review.
+
+For example:
+
+Month 3 should display:
+"Actions agreed at Month 1"
+
+Month 5 should display:
+"Actions agreed at Month 3"
+
+Month 6 should display:
+"Actions agreed at Month 5"
+
+Allow employees to mark each action as:
+
+- Complete
+- In Progress
+- Not Started
+
+This creates accountability and allows employees to track their development over time.
+
+---
+
+MONTH 6 REVIEW
+
+Month 6 should follow the same structure as the other reviews.
+
+However, add a final section called:
+
+Preparing for Probation Review
+
+Questions:
+
+What are your biggest achievements during probation?
+
+Free text
+
+What are you most proud of?
+
+Free text
+
+What areas do you still want to develop?
+
+Free text
+
+Why do you believe you are ready to pass probation?
+
+Free text
+
+This is preparation for the manager-led probation discussion which will be built later.
+
+---
+
+DESIGN PRINCIPLES
+
+- Keep the design consistent with the existing application.
+- Reuse existing progress calculations and styling where possible.
+- Do not redesign the current probation tracker.
+- Focus on employee development and visibility of progress.
+- Keep the interface simple and intuitive.
+- Build only employee functionality in this phase.
+- Prepare the data structure for future manager reviews but do not build manager screens yet.

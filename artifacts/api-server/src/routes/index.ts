@@ -10,6 +10,8 @@ import financialTargetsRouter from "./financialTargets";
 import financialProgressRouter from "./financialProgress";
 import probationItemsRouter from "./probationItems";
 import probationAssessmentsRouter from "./probationAssessments";
+import probationReflectionsRouter from "./probationReflections";
+import probationActionsRouter from "./probationActions";
 
 const router: IRouter = Router();
 
@@ -24,5 +26,7 @@ router.use("/financial-targets", financialTargetsRouter);
 router.use("/financial-progress", financialProgressRouter);
 router.use("/probation/items", probationItemsRouter);
 router.use("/probation/assessments", probationAssessmentsRouter);
+router.use("/probation/reflections", probationReflectionsRouter);
+router.use("/probation/actions", probationActionsRouter);
 
 export default router;

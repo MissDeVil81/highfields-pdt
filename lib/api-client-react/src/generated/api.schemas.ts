@@ -239,6 +239,7 @@ export interface ProbationAssessment {
   id: number;
   sessionId: string;
   itemId: number;
+  reviewPeriod: string;
   rating?: string | null;
   note?: string | null;
   managerRating?: string | null;
@@ -251,8 +252,74 @@ export interface ProbationAssessment {
 export interface UpsertProbationAssessmentBody {
   sessionId: string;
   itemId: number;
+  reviewPeriod?: string;
   rating?: string | null;
   note?: string | null;
+}
+
+export interface ProbationReflection {
+  id: number;
+  sessionId: string;
+  reviewPeriod: string;
+  wentWell?: string | null;
+  learned?: string | null;
+  moreSupport?: string | null;
+  focusNext?: string | null;
+  confidence?: string | null;
+  biggestAchievements?: string | null;
+  mostProudOf?: string | null;
+  stillDevelop?: string | null;
+  readyToPass?: string | null;
+  managerComment?: string | null;
+  managerStatus?: string | null;
+  managerReviewedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UpsertProbationReflectionBody {
+  sessionId: string;
+  reviewPeriod: string;
+  wentWell?: string | null;
+  learned?: string | null;
+  moreSupport?: string | null;
+  focusNext?: string | null;
+  confidence?: string | null;
+  biggestAchievements?: string | null;
+  mostProudOf?: string | null;
+  stillDevelop?: string | null;
+  readyToPass?: string | null;
+}
+
+export interface ProbationAction {
+  id: number;
+  sessionId: string;
+  reviewPeriod: string;
+  actionText: string;
+  status: string;
+  managerComment?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateProbationActionBody {
+  sessionId: string;
+  reviewPeriod: string;
+  actionText: string;
+}
+
+export type UpdateProbationActionBodyStatus =
+  (typeof UpdateProbationActionBodyStatus)[keyof typeof UpdateProbationActionBodyStatus];
+
+export const UpdateProbationActionBodyStatus = {
+  not_started: "not_started",
+  in_progress: "in_progress",
+  complete: "complete",
+} as const;
+
+export interface UpdateProbationActionBody {
+  actionText?: string;
+  status?: UpdateProbationActionBodyStatus;
 }
 
 export type ListRolesParams = {
@@ -285,6 +352,21 @@ export type ListFinancialProgressParams = {
 
 export type ListProbationAssessmentsParams = {
   sessionId: string;
+  reviewPeriod?: string;
+};
+
+export type ListProbationReflectionsParams = {
+  sessionId: string;
+  reviewPeriod?: string;
+};
+
+export type ListProbationActionsParams = {
+  sessionId: string;
+  reviewPeriod?: string;
+};
+
+export type DeleteProbationAction200 = {
+  ok: boolean;
 };
 
 export type GetReadinessSummaryParams = {

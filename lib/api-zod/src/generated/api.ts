@@ -312,12 +312,14 @@ export const ListProbationItemsResponse = zod.array(
  */
 export const ListProbationAssessmentsQueryParams = zod.object({
   sessionId: zod.coerce.string(),
+  reviewPeriod: zod.coerce.string().optional(),
 });
 
 export const ListProbationAssessmentsResponseItem = zod.object({
   id: zod.number(),
   sessionId: zod.string(),
   itemId: zod.number(),
+  reviewPeriod: zod.string(),
   rating: zod.string().nullish(),
   note: zod.string().nullish(),
   managerRating: zod.string().nullish(),
@@ -336,6 +338,7 @@ export const ListProbationAssessmentsResponse = zod.array(
 export const UpsertProbationAssessmentBody = zod.object({
   sessionId: zod.string(),
   itemId: zod.number(),
+  reviewPeriod: zod.string().optional(),
   rating: zod.string().nullish(),
   note: zod.string().nullish(),
 });
@@ -344,6 +347,7 @@ export const UpsertProbationAssessmentResponse = zod.object({
   id: zod.number(),
   sessionId: zod.string(),
   itemId: zod.number(),
+  reviewPeriod: zod.string(),
   rating: zod.string().nullish(),
   note: zod.string().nullish(),
   managerRating: zod.string().nullish(),
@@ -351,6 +355,150 @@ export const UpsertProbationAssessmentResponse = zod.object({
   managerReviewedAt: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date().optional(),
   updatedAt: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary List probation reflections for a session
+ */
+export const ListProbationReflectionsQueryParams = zod.object({
+  sessionId: zod.coerce.string(),
+  reviewPeriod: zod.coerce.string().optional(),
+});
+
+export const ListProbationReflectionsResponseItem = zod.object({
+  id: zod.number(),
+  sessionId: zod.string(),
+  reviewPeriod: zod.string(),
+  wentWell: zod.string().nullish(),
+  learned: zod.string().nullish(),
+  moreSupport: zod.string().nullish(),
+  focusNext: zod.string().nullish(),
+  confidence: zod.string().nullish(),
+  biggestAchievements: zod.string().nullish(),
+  mostProudOf: zod.string().nullish(),
+  stillDevelop: zod.string().nullish(),
+  readyToPass: zod.string().nullish(),
+  managerComment: zod.string().nullish(),
+  managerStatus: zod.string().nullish(),
+  managerReviewedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date().optional(),
+  updatedAt: zod.coerce.date().optional(),
+});
+export const ListProbationReflectionsResponse = zod.array(
+  ListProbationReflectionsResponseItem,
+);
+
+/**
+ * @summary Create or update a probation reflection
+ */
+export const UpsertProbationReflectionBody = zod.object({
+  sessionId: zod.string(),
+  reviewPeriod: zod.string(),
+  wentWell: zod.string().nullish(),
+  learned: zod.string().nullish(),
+  moreSupport: zod.string().nullish(),
+  focusNext: zod.string().nullish(),
+  confidence: zod.string().nullish(),
+  biggestAchievements: zod.string().nullish(),
+  mostProudOf: zod.string().nullish(),
+  stillDevelop: zod.string().nullish(),
+  readyToPass: zod.string().nullish(),
+});
+
+export const UpsertProbationReflectionResponse = zod.object({
+  id: zod.number(),
+  sessionId: zod.string(),
+  reviewPeriod: zod.string(),
+  wentWell: zod.string().nullish(),
+  learned: zod.string().nullish(),
+  moreSupport: zod.string().nullish(),
+  focusNext: zod.string().nullish(),
+  confidence: zod.string().nullish(),
+  biggestAchievements: zod.string().nullish(),
+  mostProudOf: zod.string().nullish(),
+  stillDevelop: zod.string().nullish(),
+  readyToPass: zod.string().nullish(),
+  managerComment: zod.string().nullish(),
+  managerStatus: zod.string().nullish(),
+  managerReviewedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date().optional(),
+  updatedAt: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary List probation actions for a session and review period
+ */
+export const ListProbationActionsQueryParams = zod.object({
+  sessionId: zod.coerce.string(),
+  reviewPeriod: zod.coerce.string().optional(),
+});
+
+export const ListProbationActionsResponseItem = zod.object({
+  id: zod.number(),
+  sessionId: zod.string(),
+  reviewPeriod: zod.string(),
+  actionText: zod.string(),
+  status: zod.string(),
+  managerComment: zod.string().nullish(),
+  createdAt: zod.coerce.date().optional(),
+  updatedAt: zod.coerce.date().optional(),
+});
+export const ListProbationActionsResponse = zod.array(
+  ListProbationActionsResponseItem,
+);
+
+/**
+ * @summary Create a new probation action
+ */
+export const CreateProbationActionBody = zod.object({
+  sessionId: zod.string(),
+  reviewPeriod: zod.string(),
+  actionText: zod.string(),
+});
+
+export const CreateProbationActionResponse = zod.object({
+  id: zod.number(),
+  sessionId: zod.string(),
+  reviewPeriod: zod.string(),
+  actionText: zod.string(),
+  status: zod.string(),
+  managerComment: zod.string().nullish(),
+  createdAt: zod.coerce.date().optional(),
+  updatedAt: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary Update a probation action status or text
+ */
+export const UpdateProbationActionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateProbationActionBody = zod.object({
+  actionText: zod.string().optional(),
+  status: zod.enum(["not_started", "in_progress", "complete"]).optional(),
+});
+
+export const UpdateProbationActionResponse = zod.object({
+  id: zod.number(),
+  sessionId: zod.string(),
+  reviewPeriod: zod.string(),
+  actionText: zod.string(),
+  status: zod.string(),
+  managerComment: zod.string().nullish(),
+  createdAt: zod.coerce.date().optional(),
+  updatedAt: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary Delete a probation action
+ */
+export const DeleteProbationActionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteProbationActionResponse = zod.object({
+  ok: zod.boolean(),
 });
 
 /**

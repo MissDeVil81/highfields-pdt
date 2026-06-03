@@ -5,6 +5,7 @@ export const probationAssessmentsTable = pgTable("probation_assessments", {
   id: serial("id").primaryKey(),
   sessionId: text("session_id").notNull(),
   itemId: integer("item_id").notNull().references(() => probationItemsTable.id),
+  reviewPeriod: text("review_period").notNull().default("month1"),
   rating: text("rating"),
   note: text("note"),
   managerRating: text("manager_rating"),

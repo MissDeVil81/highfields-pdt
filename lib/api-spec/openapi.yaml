@@ -409,6 +409,11 @@ paths:
           required: true
           schema:
             type: string
+        - name: reviewPeriod
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: List of probation assessments
@@ -435,6 +440,139 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProbationAssessment"
+
+  /probation/reflections:
+    get:
+      operationId: listProbationReflections
+      tags: [probation]
+      summary: List probation reflections for a session
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: reviewPeriod
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of probation reflections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProbationReflection"
+    post:
+      operationId: upsertProbationReflection
+      tags: [probation]
+      summary: Create or update a probation reflection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertProbationReflectionBody"
+      responses:
+        "200":
+          description: Upserted probation reflection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProbationReflection"
+
+  /probation/actions:
+    get:
+      operationId: listProbationActions
+      tags: [probation]
+      summary: List probation actions for a session and review period
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: reviewPeriod
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of probation actions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProbationAction"
+    post:
+      operationId: createProbationAction
+      tags: [probation]
+      summary: Create a new probation action
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProbationActionBody"
+      responses:
+        "200":
+          description: Created probation action
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProbationAction"
+
+  /probation/actions/{id}:
+    put:
+      operationId: updateProbationAction
+      tags: [probation]
+      summary: Update a probation action status or text
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProbationActionBody"
+      responses:
+        "200":
+          description: Updated probation action
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProbationAction"
+    delete:
+      operationId: deleteProbationAction
+      tags: [probation]
+      summary: Delete a probation action
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                required:
+                  - ok
 
   /summary/readiness:
     get:
@@ -908,6 +1046,8 @@ components:
           type: string
         itemId:
           type: integer
+        reviewPeriod:
+          type: string
         rating:
           type: string
           nullable: true
@@ -934,6 +1074,7 @@ components:
         - id
         - sessionId
         - itemId
+        - reviewPeriod
 
     UpsertProbationAssessmentBody:
       type: object
@@ -942,6 +1083,8 @@ components:
           type: string
         itemId:
           type: integer
+        reviewPeriod:
+          type: string
         rating:
           type: string
           nullable: true
@@ -951,3 +1094,150 @@ components:
       required:
         - sessionId
         - itemId
+
+    ProbationReflection:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: string
+        reviewPeriod:
+          type: string
+        wentWell:
+          type: string
+          nullable: true
+        learned:
+          type: string
+          nullable: true
+        moreSupport:
+          type: string
+          nullable: true
+        focusNext:
+          type: string
+          nullable: true
+        confidence:
+          type: string
+          nullable: true
+        biggestAchievements:
+          type: string
+          nullable: true
+        mostProudOf:
+          type: string
+          nullable: true
+        stillDevelop:
+          type: string
+          nullable: true
+        readyToPass:
+          type: string
+          nullable: true
+        managerComment:
+          type: string
+          nullable: true
+        managerStatus:
+          type: string
+          nullable: true
+        managerReviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - sessionId
+        - reviewPeriod
+
+    UpsertProbationReflectionBody:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        reviewPeriod:
+          type: string
+        wentWell:
+          type: string
+          nullable: true
+        learned:
+          type: string
+          nullable: true
+        moreSupport:
+          type: string
+          nullable: true
+        focusNext:
+          type: string
+          nullable: true
+        confidence:
+          type: string
+          nullable: true
+        biggestAchievements:
+          type: string
+          nullable: true
+        mostProudOf:
+          type: string
+          nullable: true
+        stillDevelop:
+          type: string
+          nullable: true
+        readyToPass:
+          type: string
+          nullable: true
+      required:
+        - sessionId
+        - reviewPeriod
+
+    ProbationAction:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: string
+        reviewPeriod:
+          type: string
+        actionText:
+          type: string
+        status:
+          type: string
+        managerComment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - sessionId
+        - reviewPeriod
+        - actionText
+        - status
+
+    CreateProbationActionBody:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        reviewPeriod:
+          type: string
+        actionText:
+          type: string
+      required:
+        - sessionId
+        - reviewPeriod
+        - actionText
+
+    UpdateProbationActionBody:
+      type: object
+      properties:
+        actionText:
+          type: string
+        status:
+          type: string
+          enum: [not_started, in_progress, complete]

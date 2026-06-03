@@ -6,10 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface UpsertProbationAssessmentBody {
+export interface CreateProbationActionBody {
   sessionId: string;
-  itemId: number;
-  reviewPeriod?: string;
-  rating?: string | null;
-  note?: string | null;
+  reviewPeriod: string;
+  actionText: string;
 }

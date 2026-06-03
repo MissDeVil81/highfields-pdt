@@ -8,19 +8,22 @@ const router = Router();
 const upsertSchema = z.object({
   sessionId: z.string(),
   itemId: z.number().int(),
+  reviewPeriod: z.string().default("month1"),
   rating: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
 });
 
 router.get("/", async (req, res) => {
   const sessionId = req.query.sessionId as string;
+  const reviewPeriod = req.query.reviewPeriod as string | undefined;
   if (!sessionId) return res.status(400).json({ error: "sessionId is required" });
 
-  const rows = await db
-    .select()
-    .from(probationAssessmentsTable)
-    .where(eq(probationAssessmentsTable.sessionId, sessionId));
+  const conditions = [eq(probationAssessmentsTable.sessionId, sessionId)];
+  if (reviewPeriod) {
+    conditions.push(eq(probationAssessmentsTable.reviewPeriod, reviewPeriod));
+  }
 
+  const rows = await db.select().from(probationAssessmentsTable).where(and(...conditions));
   res.json(rows);
 });
 
@@ -28,7 +31,7 @@ router.post("/", async (req, res) => {
   const result = upsertSchema.safeParse(req.body);
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
-  const { sessionId, itemId, rating, note } = result.data;
+  const { sessionId, itemId, reviewPeriod, rating, note } = result.data;
 
   const existing = await db
     .select()
@@ -36,7 +39,8 @@ router.post("/", async (req, res) => {
     .where(
       and(
         eq(probationAssessmentsTable.sessionId, sessionId),
-        eq(probationAssessmentsTable.itemId, itemId)
+        eq(probationAssessmentsTable.itemId, itemId),
+        eq(probationAssessmentsTable.reviewPeriod, reviewPeriod)
       )
     );
 
@@ -51,7 +55,7 @@ router.post("/", async (req, res) => {
 
   const [created] = await db
     .insert(probationAssessmentsTable)
-    .values({ sessionId, itemId, rating: rating ?? null, note: note ?? null })
+    .values({ sessionId, itemId, reviewPeriod, rating: rating ?? null, note: note ?? null })
     .returning();
   res.json(created);
 });

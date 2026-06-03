@@ -23,7 +23,9 @@ import type {
   CreateCareerPathBody,
   CreateCompetencyBody,
   CreateEvidenceBody,
+  CreateProbationActionBody,
   CreateRoleBody,
+  DeleteProbationAction200,
   Evidence,
   FinancialProgress,
   FinancialTarget,
@@ -34,17 +36,23 @@ import type {
   ListEvidenceParams,
   ListFinancialProgressParams,
   ListFinancialTargetsParams,
+  ListProbationActionsParams,
   ListProbationAssessmentsParams,
+  ListProbationReflectionsParams,
   ListRolesParams,
+  ProbationAction,
   ProbationAssessment,
   ProbationItem,
+  ProbationReflection,
   ReadinessSummary,
   Role,
   RoleWithCompetencies,
   UpdateEvidenceBody,
+  UpdateProbationActionBody,
   UpsertAssessmentBody,
   UpsertFinancialProgressBody,
   UpsertProbationAssessmentBody,
+  UpsertProbationReflectionBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1900,6 +1908,558 @@ export const useUpsertProbationAssessment = <
   TContext
 > => {
   return useMutation(getUpsertProbationAssessmentMutationOptions(options));
+};
+
+/**
+ * @summary List probation reflections for a session
+ */
+export const getListProbationReflectionsUrl = (
+  params: ListProbationReflectionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/probation/reflections?${stringifiedParams}`
+    : `/api/probation/reflections`;
+};
+
+export const listProbationReflections = async (
+  params: ListProbationReflectionsParams,
+  options?: RequestInit,
+): Promise<ProbationReflection[]> => {
+  return customFetch<ProbationReflection[]>(
+    getListProbationReflectionsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListProbationReflectionsQueryKey = (
+  params?: ListProbationReflectionsParams,
+) => {
+  return [`/api/probation/reflections`, ...(params ? [params] : [])] as const;
+};
+
+export const getListProbationReflectionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProbationReflections>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListProbationReflectionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProbationReflections>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListProbationReflectionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProbationReflections>>
+  > = ({ signal }) =>
+    listProbationReflections(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProbationReflections>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProbationReflectionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProbationReflections>>
+>;
+export type ListProbationReflectionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List probation reflections for a session
+ */
+
+export function useListProbationReflections<
+  TData = Awaited<ReturnType<typeof listProbationReflections>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListProbationReflectionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProbationReflections>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProbationReflectionsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create or update a probation reflection
+ */
+export const getUpsertProbationReflectionUrl = () => {
+  return `/api/probation/reflections`;
+};
+
+export const upsertProbationReflection = async (
+  upsertProbationReflectionBody: UpsertProbationReflectionBody,
+  options?: RequestInit,
+): Promise<ProbationReflection> => {
+  return customFetch<ProbationReflection>(getUpsertProbationReflectionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(upsertProbationReflectionBody),
+  });
+};
+
+export const getUpsertProbationReflectionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertProbationReflection>>,
+    TError,
+    { data: BodyType<UpsertProbationReflectionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertProbationReflection>>,
+  TError,
+  { data: BodyType<UpsertProbationReflectionBody> },
+  TContext
+> => {
+  const mutationKey = ["upsertProbationReflection"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertProbationReflection>>,
+    { data: BodyType<UpsertProbationReflectionBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return upsertProbationReflection(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertProbationReflectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertProbationReflection>>
+>;
+export type UpsertProbationReflectionMutationBody =
+  BodyType<UpsertProbationReflectionBody>;
+export type UpsertProbationReflectionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create or update a probation reflection
+ */
+export const useUpsertProbationReflection = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertProbationReflection>>,
+    TError,
+    { data: BodyType<UpsertProbationReflectionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof upsertProbationReflection>>,
+  TError,
+  { data: BodyType<UpsertProbationReflectionBody> },
+  TContext
+> => {
+  return useMutation(getUpsertProbationReflectionMutationOptions(options));
+};
+
+/**
+ * @summary List probation actions for a session and review period
+ */
+export const getListProbationActionsUrl = (
+  params: ListProbationActionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/probation/actions?${stringifiedParams}`
+    : `/api/probation/actions`;
+};
+
+export const listProbationActions = async (
+  params: ListProbationActionsParams,
+  options?: RequestInit,
+): Promise<ProbationAction[]> => {
+  return customFetch<ProbationAction[]>(getListProbationActionsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListProbationActionsQueryKey = (
+  params?: ListProbationActionsParams,
+) => {
+  return [`/api/probation/actions`, ...(params ? [params] : [])] as const;
+};
+
+export const getListProbationActionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProbationActions>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListProbationActionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProbationActions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListProbationActionsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProbationActions>>
+  > = ({ signal }) =>
+    listProbationActions(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProbationActions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProbationActionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProbationActions>>
+>;
+export type ListProbationActionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List probation actions for a session and review period
+ */
+
+export function useListProbationActions<
+  TData = Awaited<ReturnType<typeof listProbationActions>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListProbationActionsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProbationActions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProbationActionsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new probation action
+ */
+export const getCreateProbationActionUrl = () => {
+  return `/api/probation/actions`;
+};
+
+export const createProbationAction = async (
+  createProbationActionBody: CreateProbationActionBody,
+  options?: RequestInit,
+): Promise<ProbationAction> => {
+  return customFetch<ProbationAction>(getCreateProbationActionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createProbationActionBody),
+  });
+};
+
+export const getCreateProbationActionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProbationAction>>,
+    TError,
+    { data: BodyType<CreateProbationActionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createProbationAction>>,
+  TError,
+  { data: BodyType<CreateProbationActionBody> },
+  TContext
+> => {
+  const mutationKey = ["createProbationAction"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createProbationAction>>,
+    { data: BodyType<CreateProbationActionBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createProbationAction(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateProbationActionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createProbationAction>>
+>;
+export type CreateProbationActionMutationBody =
+  BodyType<CreateProbationActionBody>;
+export type CreateProbationActionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a new probation action
+ */
+export const useCreateProbationAction = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProbationAction>>,
+    TError,
+    { data: BodyType<CreateProbationActionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createProbationAction>>,
+  TError,
+  { data: BodyType<CreateProbationActionBody> },
+  TContext
+> => {
+  return useMutation(getCreateProbationActionMutationOptions(options));
+};
+
+/**
+ * @summary Update a probation action status or text
+ */
+export const getUpdateProbationActionUrl = (id: number) => {
+  return `/api/probation/actions/${id}`;
+};
+
+export const updateProbationAction = async (
+  id: number,
+  updateProbationActionBody: UpdateProbationActionBody,
+  options?: RequestInit,
+): Promise<ProbationAction> => {
+  return customFetch<ProbationAction>(getUpdateProbationActionUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateProbationActionBody),
+  });
+};
+
+export const getUpdateProbationActionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProbationAction>>,
+    TError,
+    { id: number; data: BodyType<UpdateProbationActionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateProbationAction>>,
+  TError,
+  { id: number; data: BodyType<UpdateProbationActionBody> },
+  TContext
+> => {
+  const mutationKey = ["updateProbationAction"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateProbationAction>>,
+    { id: number; data: BodyType<UpdateProbationActionBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateProbationAction(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateProbationActionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateProbationAction>>
+>;
+export type UpdateProbationActionMutationBody =
+  BodyType<UpdateProbationActionBody>;
+export type UpdateProbationActionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a probation action status or text
+ */
+export const useUpdateProbationAction = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProbationAction>>,
+    TError,
+    { id: number; data: BodyType<UpdateProbationActionBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateProbationAction>>,
+  TError,
+  { id: number; data: BodyType<UpdateProbationActionBody> },
+  TContext
+> => {
+  return useMutation(getUpdateProbationActionMutationOptions(options));
+};
+
+/**
+ * @summary Delete a probation action
+ */
+export const getDeleteProbationActionUrl = (id: number) => {
+  return `/api/probation/actions/${id}`;
+};
+
+export const deleteProbationAction = async (
+  id: number,
+  options?: RequestInit,
+): Promise<DeleteProbationAction200> => {
+  return customFetch<DeleteProbationAction200>(
+    getDeleteProbationActionUrl(id),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteProbationActionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteProbationAction>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteProbationAction>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteProbationAction"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteProbationAction>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteProbationAction(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteProbationActionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteProbationAction>>
+>;
+
+export type DeleteProbationActionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a probation action
+ */
+export const useDeleteProbationAction = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteProbationAction>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteProbationAction>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteProbationActionMutationOptions(options));
 };
 
 /**

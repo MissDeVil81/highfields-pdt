@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ListProbationAssessmentsParams = {
-  sessionId: string;
-  reviewPeriod?: string;
+export type DeleteProbationAction200 = {
+  ok: boolean;
 };
