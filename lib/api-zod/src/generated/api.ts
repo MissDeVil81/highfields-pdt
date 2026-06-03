@@ -518,6 +518,7 @@ export const ListProbationManagerReviewsResponseItem = zod.object({
   goingWell: zod.string().nullish(),
   developmentAreas: zod.string().nullish(),
   reviewStatus: zod.string().nullish(),
+  reviewDate: zod.string().nullish(),
   createdAt: zod.coerce.date().optional(),
   updatedAt: zod.coerce.date().optional(),
 });
@@ -534,6 +535,7 @@ export const UpsertProbationManagerReviewBody = zod.object({
   goingWell: zod.string().nullish(),
   developmentAreas: zod.string().nullish(),
   reviewStatus: zod.string().nullish(),
+  reviewDate: zod.string().nullish(),
 });
 
 export const UpsertProbationManagerReviewResponse = zod.object({
@@ -543,6 +545,7 @@ export const UpsertProbationManagerReviewResponse = zod.object({
   goingWell: zod.string().nullish(),
   developmentAreas: zod.string().nullish(),
   reviewStatus: zod.string().nullish(),
+  reviewDate: zod.string().nullish(),
   createdAt: zod.coerce.date().optional(),
   updatedAt: zod.coerce.date().optional(),
 });

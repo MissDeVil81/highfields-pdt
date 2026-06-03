@@ -30,6 +30,7 @@ import {
   Plus,
   Trash2,
   MessageSquare,
+  CalendarDays,
 } from "lucide-react";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
@@ -76,6 +77,7 @@ interface ManagerReviewState {
   goingWell: string;
   developmentAreas: string;
   reviewStatus: string;
+  reviewDate: string;
 }
 
 const emptyReflection: ReflectionState = {
@@ -85,7 +87,7 @@ const emptyReflection: ReflectionState = {
 };
 
 const emptyManagerReview: ManagerReviewState = {
-  goingWell: "", developmentAreas: "", reviewStatus: "",
+  goingWell: "", developmentAreas: "", reviewStatus: "", reviewDate: "",
 };
 
 const YNP_OPTIONS = [
@@ -113,9 +115,9 @@ const CONFIDENCE_OPTIONS = [
 ];
 
 const REVIEW_STATUS_OPTIONS = [
-  { value: "on_track", label: "On Track", active: "bg-green-500 text-white border-green-500", inactive: "border-border text-muted-foreground hover:border-green-400 hover:text-green-600" },
-  { value: "needs_support", label: "Needs Support", active: "bg-amber-500 text-white border-amber-500", inactive: "border-border text-muted-foreground hover:border-amber-400 hover:text-amber-600" },
-  { value: "at_risk", label: "At Risk", active: "bg-red-500 text-white border-red-500", inactive: "border-border text-muted-foreground hover:border-red-400 hover:text-red-500" },
+  { value: "on_track", label: "On Track", active: "bg-green-500 text-white border-green-500", inactive: "border-border/50 text-muted-foreground/50" },
+  { value: "needs_support", label: "Needs Support", active: "bg-amber-500 text-white border-amber-500", inactive: "border-border/50 text-muted-foreground/50" },
+  { value: "at_risk", label: "At Risk", active: "bg-red-500 text-white border-red-500", inactive: "border-border/50 text-muted-foreground/50" },
 ];
 
 // ─── Helper functions ─────────────────────────────────────────────────────────
@@ -142,6 +144,50 @@ function calcStats(items: ProbationItem[], stateMap: Record<number, ItemState>) 
   return { yesCount, inProgressCount, noCount, unratedCount, total, pct, color, label };
 }
 
+// ─── ReviewDateField ──────────────────────────────────────────────────────────
+
+function ReviewDateField({ sessionId, reviewPeriod }: { sessionId: string; reviewPeriod: ReviewPeriod }) {
+  const [date, setDate] = useState("");
+  const [initialized, setInitialized] = useState(false);
+
+  const params = { sessionId, reviewPeriod };
+  const { data: reviews = [], isLoading } = useListProbationManagerReviews(
+    params,
+    { query: { queryKey: getListProbationManagerReviewsQueryKey(params), enabled: !!sessionId } }
+  );
+
+  const upsert = useUpsertProbationManagerReview();
+
+  useEffect(() => {
+    if (!isLoading && !initialized) {
+      const r = reviews[0];
+      if (r) setDate(r.reviewDate ?? "");
+      setInitialized(true);
+    }
+  }, [reviews, isLoading, initialized]);
+
+  function save() {
+    upsert.mutate({ data: { sessionId, reviewPeriod, reviewDate: date || null } });
+  }
+
+  return (
+    <div className="flex items-center gap-2.5 mb-6 p-3 rounded-xl border border-border bg-muted/20">
+      <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
+      <label htmlFor={`review-date-${reviewPeriod}`} className="text-sm font-medium text-foreground shrink-0">
+        Date of Review
+      </label>
+      <input
+        id={`review-date-${reviewPeriod}`}
+        type="date"
+        value={date}
+        onChange={e => setDate(e.target.value)}
+        onBlur={save}
+        className="text-sm px-2.5 py-1 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+      />
+    </div>
+  );
+}
+
 // ─── Shared components ────────────────────────────────────────────────────────
 
 function ProbationItemRow({
@@ -151,9 +197,6 @@ function ProbationItemRow({
   onRate,
   onNote,
   onBlur,
-  onManagerRate,
-  onManagerComment,
-  onManagerCommentBlur,
 }: {
   item: ProbationItem;
   state: ItemState;
@@ -161,9 +204,6 @@ function ProbationItemRow({
   onRate: (rating: AnyRating) => void;
   onNote: (note: string) => void;
   onBlur: () => void;
-  onManagerRate: (rating: AnyRating) => void;
-  onManagerComment: (comment: string) => void;
-  onManagerCommentBlur: () => void;
 }) {
   const [showNote, setShowNote] = useState(false);
   const [showMgrComment, setShowMgrComment] = useState(false);
@@ -171,15 +211,16 @@ function ProbationItemRow({
   const options = isValues ? VALUES_OPTIONS : YNP_OPTIONS;
   const rating = state.rating as AnyRating | null;
   const mgrRating = managerState.rating as AnyRating | null;
+  const hasMgrComment = !!managerState.comment;
 
   return (
     <div className="border border-border rounded-xl p-4 bg-card">
       {/* Item text */}
       <p className="text-sm text-foreground leading-snug mb-3">{item.itemText}</p>
 
-      {/* Assessment rows */}
-      <div className="space-y-2.5">
-        {/* Employee row */}
+      {/* Assessment rows — same sizing for both */}
+      <div className="space-y-2">
+        {/* Employee row — editable */}
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-xs text-muted-foreground shrink-0 w-36">My Assessment</span>
           <div className="flex gap-1.5 flex-wrap">
@@ -199,23 +240,26 @@ function ProbationItemRow({
           </div>
         </div>
 
-        {/* Manager row — more prominent */}
+        {/* Manager row — read-only display, same size */}
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xs font-semibold text-foreground shrink-0 w-36">Manager Rating</span>
+          <span className="text-xs font-medium text-foreground shrink-0 w-36">Manager Rating</span>
           <div className="flex gap-1.5 flex-wrap">
-            {options.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => onManagerRate(opt.value as AnyRating)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-semibold transition-all duration-150 whitespace-nowrap shadow-sm",
-                  mgrRating === opt.value ? opt.activeClass : opt.inactiveClass
-                )}
-              >
-                {"icon" in opt ? <span className="[&>svg]:h-4 [&>svg]:w-4">{opt.icon}</span> : <span>{"★".repeat(opt.stars)}</span>}
-                {opt.label}
-              </button>
-            ))}
+            {mgrRating == null ? (
+              <span className="text-xs text-muted-foreground/60 italic">Not yet rated</span>
+            ) : (
+              options.map(opt => (
+                <span
+                  key={opt.value}
+                  className={cn(
+                    "flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium whitespace-nowrap",
+                    mgrRating === opt.value ? opt.activeClass : "border-border/30 text-muted-foreground/30"
+                  )}
+                >
+                  {"icon" in opt ? opt.icon : <span>{"★".repeat(opt.stars)}</span>}
+                  {opt.label}
+                </span>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -235,7 +279,7 @@ function ProbationItemRow({
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           <MessageSquare className="h-3 w-3" />
-          {managerState.comment ? "Edit manager comment" : "Add manager comment"}
+          {hasMgrComment ? "View manager comment" : "Manager comment"}
           {showMgrComment ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         </button>
       </div>
@@ -250,15 +294,19 @@ function ProbationItemRow({
           className="mt-2 w-full text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
         />
       )}
+
       {showMgrComment && (
-        <textarea
-          value={managerState.comment}
-          onChange={e => onManagerComment(e.target.value)}
-          onBlur={onManagerCommentBlur}
-          placeholder="Manager's comment on this item…"
-          rows={2}
-          className="mt-2 w-full text-sm px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
-        />
+        <div className="mt-2">
+          {hasMgrComment ? (
+            <p className="text-sm px-3 py-2 rounded-lg border border-border/50 bg-muted/30 text-foreground leading-relaxed">
+              {managerState.comment}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground/60 italic px-3 py-2">
+              No manager comment recorded yet.
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
@@ -272,9 +320,6 @@ function SectionBlock({
   onRate,
   onNote,
   onBlur,
-  onManagerRate,
-  onManagerComment,
-  onManagerCommentBlur,
 }: {
   section: string;
   items: ProbationItem[];
@@ -283,9 +328,6 @@ function SectionBlock({
   onRate: (itemId: number, rating: AnyRating) => void;
   onNote: (itemId: number, note: string) => void;
   onBlur: (itemId: number) => void;
-  onManagerRate: (itemId: number, rating: AnyRating) => void;
-  onManagerComment: (itemId: number, comment: string) => void;
-  onManagerCommentBlur: (itemId: number) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const yesCount = items.filter(i => { const r = stateMap[i.id]?.rating; return r === "yes" || r === "most"; }).length;
@@ -332,9 +374,6 @@ function SectionBlock({
               onRate={r => onRate(item.id, r)}
               onNote={n => onNote(item.id, n)}
               onBlur={() => onBlur(item.id)}
-              onManagerRate={r => onManagerRate(item.id, r)}
-              onManagerComment={c => onManagerComment(item.id, c)}
-              onManagerCommentBlur={() => onManagerCommentBlur(item.id)}
             />
           ))}
         </div>
@@ -377,7 +416,7 @@ function ProgressSummary({ items, stateMap }: { items: ProbationItem[]; stateMap
   );
 }
 
-// ─── Action item (used in ActionsSection) ─────────────────────────────────────
+// ─── Action item ──────────────────────────────────────────────────────────────
 
 function ActionItem({ action, showDelete, onDelete, onStatusChange }: {
   action: ProbationAction;
@@ -461,11 +500,7 @@ function ActionsSection({ sessionId, reviewPeriod, prevPeriod, prevLabel, nextLa
           ) : (
             <div className="space-y-2">
               {prevActions.map(a => (
-                <ActionItem
-                  key={a.id}
-                  action={a}
-                  showDelete={false}
-                  onDelete={() => {}}
+                <ActionItem key={a.id} action={a} showDelete={false} onDelete={() => {}}
                   onStatusChange={(id, status) => updateAction.mutate({ id, data: { status: status as "not_started" | "in_progress" | "complete" } })}
                 />
               ))}
@@ -481,21 +516,16 @@ function ActionsSection({ sessionId, reviewPeriod, prevPeriod, prevLabel, nextLa
         <p className="text-sm text-muted-foreground mb-3">
           Add the actions you want to focus on. These will be carried forward into your next review.
         </p>
-
         {currentActions.length > 0 && (
           <div className="space-y-2 mb-3">
             {currentActions.map(a => (
-              <ActionItem
-                key={a.id}
-                action={a}
-                showDelete
+              <ActionItem key={a.id} action={a} showDelete
                 onDelete={id => deleteAction.mutate({ id })}
                 onStatusChange={(id, status) => updateAction.mutate({ id, data: { status: status as "not_started" | "in_progress" | "complete" } })}
               />
             ))}
           </div>
         )}
-
         <div className="flex gap-2">
           <input
             type="text"
@@ -587,13 +617,11 @@ function ReflectionSection({ sessionId, reviewPeriod, isMonth6 }: {
     <div>
       <h3 className="text-lg font-semibold text-foreground mb-1">My Reflection</h3>
       <p className="text-sm text-muted-foreground mb-5">Take a moment to reflect on your progress since the last review.</p>
-
       <div className="space-y-4">
         {field("wentWell", "What has gone well?")}
         {field("learned", "What have I learned?")}
         {field("moreSupport", "Where do I need more support?")}
         {field("focusNext", "What am I focusing on before my next review?")}
-
         <div>
           <label className="text-sm font-medium text-foreground mb-2 block">How confident do I feel in my role?</label>
           <div className="flex gap-2 flex-wrap">
@@ -605,8 +633,7 @@ function ReflectionSection({ sessionId, reviewPeriod, isMonth6 }: {
                   setState(prev => ({ ...prev, confidence: val }));
                   save({ confidence: val });
                 }}
-                className={cn(
-                  "px-4 py-2 rounded-lg border text-sm font-medium transition-all",
+                className={cn("px-4 py-2 rounded-lg border text-sm font-medium transition-all",
                   state.confidence === opt.value ? opt.active : opt.inactive
                 )}
               >
@@ -615,7 +642,6 @@ function ReflectionSection({ sessionId, reviewPeriod, isMonth6 }: {
             ))}
           </div>
         </div>
-
         {isMonth6 && (
           <div className="pt-6 mt-2 border-t border-border">
             <h4 className="text-base font-semibold text-foreground mb-1">Preparing for Probation Review</h4>
@@ -635,14 +661,15 @@ function ReflectionSection({ sessionId, reviewPeriod, isMonth6 }: {
   );
 }
 
-// ─── ManagerReviewSummary ─────────────────────────────────────────────────────
+// ─── ManagerReviewSummary — read-only for employees ──────────────────────────
 
 function ManagerReviewSummary({ sessionId, reviewPeriod }: {
   sessionId: string;
   reviewPeriod: ReviewPeriod;
 }) {
-  const queryClient = useQueryClient();
-  const [state, setState] = useState<ManagerReviewState>(emptyManagerReview);
+  const [state, setState] = useState<Omit<ManagerReviewState, "reviewDate">>(
+    { goingWell: "", developmentAreas: "", reviewStatus: "" }
+  );
   const [initialized, setInitialized] = useState(false);
 
   const params = { sessionId, reviewPeriod };
@@ -650,12 +677,6 @@ function ManagerReviewSummary({ sessionId, reviewPeriod }: {
     params,
     { query: { queryKey: getListProbationManagerReviewsQueryKey(params), enabled: !!sessionId } }
   );
-
-  const upsert = useUpsertProbationManagerReview({
-    mutation: {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListProbationManagerReviewsQueryKey() }),
-    },
-  });
 
   useEffect(() => {
     if (!isLoading && !initialized) {
@@ -671,62 +692,62 @@ function ManagerReviewSummary({ sessionId, reviewPeriod }: {
     }
   }, [reviews, isLoading, initialized]);
 
-  function save(override?: Partial<ManagerReviewState>) {
-    const s = override ? { ...state, ...override } : state;
-    upsert.mutate({ data: { sessionId, reviewPeriod, ...s } });
-  }
+  const hasAnyContent = state.goingWell || state.developmentAreas || state.reviewStatus;
 
   return (
     <div className="rounded-xl border border-primary/25 bg-primary/5 p-6">
-      <h3 className="text-lg font-semibold text-foreground mb-1">Manager Review</h3>
-      <p className="text-sm text-muted-foreground mb-5">
-        Complete this section after the review discussion with the employee.
-      </p>
-      <div className="space-y-4">
-        <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">What's Going Well?</label>
-          <textarea
-            value={state.goingWell}
-            onChange={e => setState(prev => ({ ...prev, goingWell: e.target.value }))}
-            onBlur={() => save()}
-            placeholder="Describe areas of strong performance and positive behaviours…"
-            rows={3}
-            className="w-full text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold text-foreground mb-1.5 block">Areas To Focus On Before Next Review</label>
-          <textarea
-            value={state.developmentAreas}
-            onChange={e => setState(prev => ({ ...prev, developmentAreas: e.target.value }))}
-            onBlur={() => save()}
-            placeholder="Identify specific areas where the employee needs to improve or develop…"
-            rows={3}
-            className="w-full text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-semibold text-foreground mb-2 block">Overall Review Status</label>
-          <div className="flex gap-2 flex-wrap">
-            {REVIEW_STATUS_OPTIONS.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => {
-                  const val = state.reviewStatus === opt.value ? "" : opt.value;
-                  setState(prev => ({ ...prev, reviewStatus: val }));
-                  save({ reviewStatus: val });
-                }}
-                className={cn(
-                  "px-5 py-2.5 rounded-lg border text-sm font-semibold transition-all",
-                  state.reviewStatus === opt.value ? opt.active : opt.inactive
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="flex items-start justify-between gap-3 mb-1">
+        <h3 className="text-lg font-semibold text-foreground">Manager Review</h3>
+        <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium shrink-0 mt-0.5">
+          Manager only
+        </span>
       </div>
+      <p className="text-sm text-muted-foreground mb-5">
+        Your manager's assessment will appear here after your review meeting.
+      </p>
+
+      {!hasAnyContent ? (
+        <p className="text-sm text-muted-foreground/70 italic text-center py-4">
+          No manager review recorded yet for this period.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {state.goingWell && (
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-1.5">What's Going Well</p>
+              <p className="text-sm px-3 py-2.5 rounded-lg border border-border/50 bg-background text-foreground leading-relaxed">
+                {state.goingWell}
+              </p>
+            </div>
+          )}
+          {state.developmentAreas && (
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-1.5">Areas To Focus On Before Next Review</p>
+              <p className="text-sm px-3 py-2.5 rounded-lg border border-border/50 bg-background text-foreground leading-relaxed">
+                {state.developmentAreas}
+              </p>
+            </div>
+          )}
+          {state.reviewStatus && (
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-2">Overall Review Status</p>
+              <div className="flex gap-2 flex-wrap">
+                {REVIEW_STATUS_OPTIONS.map(opt => (
+                  <span
+                    key={opt.value}
+                    className={cn(
+                      "px-4 py-2 rounded-lg border text-sm font-medium",
+                      state.reviewStatus === opt.value ? opt.active : opt.inactive
+                    )}
+                  >
+                    {opt.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -771,9 +792,9 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
     }
   }, [assessments, assessmentsLoading, sessionId, reviewPeriod, lastInitKey]);
 
-  function upsertAll(itemId: number, empOverride?: Partial<ItemState>, mgrOverride?: Partial<ManagerItemState>) {
+  function upsertAll(itemId: number, empOverride?: Partial<ItemState>) {
     const emp = { ...stateMap[itemId] ?? { rating: null, note: "" }, ...empOverride };
-    const mgr = { ...managerStateMap[itemId] ?? { rating: null, comment: "" }, ...mgrOverride };
+    const mgr = managerStateMap[itemId] ?? { rating: null, comment: "" };
     upsert.mutate({
       data: {
         sessionId, itemId, reviewPeriod,
@@ -798,19 +819,6 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
     upsertAll(itemId);
   }
 
-  function handleManagerRate(itemId: number, rating: AnyRating) {
-    setManagerStateMap(prev => ({ ...prev, [itemId]: { ...prev[itemId] ?? { comment: "" }, rating } }));
-    upsertAll(itemId, undefined, { rating });
-  }
-
-  function handleManagerComment(itemId: number, comment: string) {
-    setManagerStateMap(prev => ({ ...prev, [itemId]: { ...prev[itemId] ?? { rating: null }, comment } }));
-  }
-
-  function handleManagerCommentBlur(itemId: number) {
-    upsertAll(itemId);
-  }
-
   const sections = new Map<string, ProbationItem[]>();
   for (const item of items) {
     if (!sections.has(item.section)) sections.set(item.section, []);
@@ -819,6 +827,9 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
 
   return (
     <div>
+      {/* Date of Review */}
+      <ReviewDateField sessionId={sessionId} reviewPeriod={reviewPeriod} />
+
       <ProgressSummary items={items} stateMap={stateMap} />
 
       <div className="space-y-4 mt-6">
@@ -834,9 +845,6 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
               onRate={handleRate}
               onNote={handleNote}
               onBlur={handleBlur}
-              onManagerRate={handleManagerRate}
-              onManagerComment={handleManagerComment}
-              onManagerCommentBlur={handleManagerCommentBlur}
             />
           ))
         }
@@ -895,16 +903,9 @@ function ProbationOverview({ items, allAssessments, onSelect }: {
 
           let statusLabel = "Not Started";
           let statusClass = "bg-muted text-muted-foreground";
-          if (rated === 0) {
-            statusLabel = "Not Started";
-            statusClass = "bg-muted text-muted-foreground";
-          } else if (stats.unratedCount === 0) {
-            statusLabel = "Complete";
-            statusClass = "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400";
-          } else {
-            statusLabel = "In Progress";
-            statusClass = "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400";
-          }
+          if (rated === 0) { statusLabel = "Not Started"; statusClass = "bg-muted text-muted-foreground"; }
+          else if (stats.unratedCount === 0) { statusLabel = "Complete"; statusClass = "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"; }
+          else { statusLabel = "In Progress"; statusClass = "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"; }
 
           return (
             <button
@@ -924,10 +925,7 @@ function ProbationOverview({ items, allAssessments, onSelect }: {
                   <span className="text-xs font-semibold">{stats.pct}%</span>
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className={cn(barColors[stats.color], "h-full rounded-full transition-all duration-500")}
-                    style={{ width: `${stats.pct}%` }}
-                  />
+                  <div className={cn(barColors[stats.color], "h-full rounded-full transition-all duration-500")} style={{ width: `${stats.pct}%` }} />
                 </div>
               </div>
               <p className="text-xs text-primary font-medium group-hover:underline">Open review →</p>

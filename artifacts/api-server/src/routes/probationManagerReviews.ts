@@ -11,6 +11,7 @@ const upsertSchema = z.object({
   goingWell: z.string().nullable().optional(),
   developmentAreas: z.string().nullable().optional(),
   reviewStatus: z.string().nullable().optional(),
+  reviewDate: z.string().nullable().optional(),
 });
 
 router.get("/", async (req, res) => {
@@ -31,7 +32,7 @@ router.post("/", async (req, res) => {
   const result = upsertSchema.safeParse(req.body);
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
-  const { sessionId, reviewPeriod, goingWell, developmentAreas, reviewStatus } = result.data;
+  const { sessionId, reviewPeriod, goingWell, developmentAreas, reviewStatus, reviewDate } = result.data;
 
   const existing = await db
     .select()
@@ -50,6 +51,7 @@ router.post("/", async (req, res) => {
         goingWell: goingWell ?? null,
         developmentAreas: developmentAreas ?? null,
         reviewStatus: reviewStatus ?? null,
+        reviewDate: reviewDate ?? null,
         updatedAt: new Date(),
       })
       .where(eq(probationManagerReviewsTable.id, existing[0].id))
@@ -59,7 +61,7 @@ router.post("/", async (req, res) => {
 
   const [created] = await db
     .insert(probationManagerReviewsTable)
-    .values({ sessionId, reviewPeriod, goingWell: goingWell ?? null, developmentAreas: developmentAreas ?? null, reviewStatus: reviewStatus ?? null })
+    .values({ sessionId, reviewPeriod, goingWell: goingWell ?? null, developmentAreas: developmentAreas ?? null, reviewStatus: reviewStatus ?? null, reviewDate: reviewDate ?? null })
     .returning();
   res.json(created);
 });

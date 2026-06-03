@@ -13,6 +13,7 @@ export interface ProbationManagerReview {
   goingWell?: string | null;
   developmentAreas?: string | null;
   reviewStatus?: string | null;
+  reviewDate?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }

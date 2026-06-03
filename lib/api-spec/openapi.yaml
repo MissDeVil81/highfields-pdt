@@ -1309,6 +1309,9 @@ components:
         reviewStatus:
           type: string
           nullable: true
+        reviewDate:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -1334,6 +1337,9 @@ components:
           type: string
           nullable: true
         reviewStatus:
+          type: string
+          nullable: true
+        reviewDate:
           type: string
           nullable: true
       required:

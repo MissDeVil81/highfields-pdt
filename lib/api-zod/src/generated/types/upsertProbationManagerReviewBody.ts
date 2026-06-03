@@ -12,4 +12,5 @@ export interface UpsertProbationManagerReviewBody {
   goingWell?: string | null;
   developmentAreas?: string | null;
   reviewStatus?: string | null;
+  reviewDate?: string | null;
 }
