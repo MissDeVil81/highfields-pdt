@@ -1,0 +1,3 @@
+- [Probation init pattern](probation-init.md) — use `lastInitSession` state (not a ref) to re-init stateMap when sessionId changes, avoiding stale-closure bug with Zustand hydration.
+- [E2E test localStorage](e2e-localstorage.md) — testing subagent uses fresh browser contexts; localStorage doesn't persist across hard-reload in tests, so only test within-session persistence (navigate away/back), not full-reload persistence.
+- [DB seed approach](db-seed-approach.md) — scripts/ package can't easily import @workspace/db due to drizzle-orm not hoisting; prefer direct psql SQL inserts for seeding data.

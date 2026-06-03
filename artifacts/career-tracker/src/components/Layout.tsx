@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/lib/session";
-import { ChevronRight, LayoutDashboard, Briefcase, Target, BarChart3 } from "lucide-react";
+import { ChevronRight, LayoutDashboard, Briefcase, Target, BarChart3, ClipboardCheck } from "lucide-react";
 
 interface NavItemProps {
   href: string;
@@ -68,6 +68,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             label="Readiness Summary"
             icon={<BarChart3 className="h-4 w-4" />}
             disabled={!currentRoleId}
+          />
+          <div className="pt-2 pb-1">
+            <p className="px-3 text-xs font-semibold text-sidebar-foreground/30 uppercase tracking-wider">New Starters</p>
+          </div>
+          <NavItem
+            href="/probation"
+            label="Probation"
+            icon={<ClipboardCheck className="h-4 w-4" />}
           />
         </nav>
         <div className="px-4 py-4 border-t border-sidebar-border">

@@ -8,6 +8,7 @@ import Home from "@/pages/home";
 import CurrentRole from "@/pages/current-role";
 import TargetRole from "@/pages/target-role";
 import Summary from "@/pages/summary";
+import Probation from "@/pages/probation";
 import Layout from "@/components/Layout";
 
 const queryClient = new QueryClient({
@@ -27,6 +28,7 @@ function Router() {
             <Route path="/current-role" component={CurrentRole} />
             <Route path="/target-role" component={TargetRole} />
             <Route path="/summary" component={Summary} />
+            <Route path="/probation" component={Probation} />
             <Route component={NotFound} />
           </Switch>
         </Layout>

@@ -293,6 +293,67 @@ export const UpsertFinancialProgressResponse = zod.object({
 });
 
 /**
+ * @summary List all probation assessment items
+ */
+export const ListProbationItemsResponseItem = zod.object({
+  id: zod.number(),
+  section: zod.string(),
+  sectionOrder: zod.number(),
+  itemText: zod.string(),
+  itemOrder: zod.number(),
+  ratingType: zod.enum(["yes_no_progress", "values_rating"]),
+});
+export const ListProbationItemsResponse = zod.array(
+  ListProbationItemsResponseItem,
+);
+
+/**
+ * @summary List probation assessments for a session
+ */
+export const ListProbationAssessmentsQueryParams = zod.object({
+  sessionId: zod.coerce.string(),
+});
+
+export const ListProbationAssessmentsResponseItem = zod.object({
+  id: zod.number(),
+  sessionId: zod.string(),
+  itemId: zod.number(),
+  rating: zod.string().nullish(),
+  note: zod.string().nullish(),
+  managerRating: zod.string().nullish(),
+  managerComment: zod.string().nullish(),
+  managerReviewedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date().optional(),
+  updatedAt: zod.coerce.date().optional(),
+});
+export const ListProbationAssessmentsResponse = zod.array(
+  ListProbationAssessmentsResponseItem,
+);
+
+/**
+ * @summary Create or update a probation assessment item
+ */
+export const UpsertProbationAssessmentBody = zod.object({
+  sessionId: zod.string(),
+  itemId: zod.number(),
+  rating: zod.string().nullish(),
+  note: zod.string().nullish(),
+});
+
+export const UpsertProbationAssessmentResponse = zod.object({
+  id: zod.number(),
+  sessionId: zod.string(),
+  itemId: zod.number(),
+  rating: zod.string().nullish(),
+  note: zod.string().nullish(),
+  managerRating: zod.string().nullish(),
+  managerComment: zod.string().nullish(),
+  managerReviewedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date().optional(),
+  updatedAt: zod.coerce.date().optional(),
+});
+
+/**
  * @summary Get readiness summary for a session across current and target roles
  */
 export const GetReadinessSummaryQueryParams = zod.object({

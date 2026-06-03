@@ -218,6 +218,43 @@ export interface ReadinessSummary {
   targetRole: ReadinessSummaryTargetRole;
 }
 
+export type ProbationItemRatingType =
+  (typeof ProbationItemRatingType)[keyof typeof ProbationItemRatingType];
+
+export const ProbationItemRatingType = {
+  yes_no_progress: "yes_no_progress",
+  values_rating: "values_rating",
+} as const;
+
+export interface ProbationItem {
+  id: number;
+  section: string;
+  sectionOrder: number;
+  itemText: string;
+  itemOrder: number;
+  ratingType: ProbationItemRatingType;
+}
+
+export interface ProbationAssessment {
+  id: number;
+  sessionId: string;
+  itemId: number;
+  rating?: string | null;
+  note?: string | null;
+  managerRating?: string | null;
+  managerComment?: string | null;
+  managerReviewedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UpsertProbationAssessmentBody {
+  sessionId: string;
+  itemId: number;
+  rating?: string | null;
+  note?: string | null;
+}
+
 export type ListRolesParams = {
   careerPathId?: number;
 };
@@ -244,6 +281,10 @@ export type ListFinancialTargetsParams = {
 export type ListFinancialProgressParams = {
   sessionId: string;
   roleId: number;
+};
+
+export type ListProbationAssessmentsParams = {
+  sessionId: string;
 };
 
 export type GetReadinessSummaryParams = {

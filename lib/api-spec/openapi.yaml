@@ -383,6 +383,59 @@ paths:
               schema:
                 $ref: "#/components/schemas/FinancialProgress"
 
+  /probation/items:
+    get:
+      operationId: listProbationItems
+      tags: [probation]
+      summary: List all probation assessment items
+      responses:
+        "200":
+          description: List of probation items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProbationItem"
+
+  /probation/assessments:
+    get:
+      operationId: listProbationAssessments
+      tags: [probation]
+      summary: List probation assessments for a session
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of probation assessments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProbationAssessment"
+    post:
+      operationId: upsertProbationAssessment
+      tags: [probation]
+      summary: Create or update a probation assessment item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertProbationAssessmentBody"
+      responses:
+        "200":
+          description: Upserted probation assessment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProbationAssessment"
+
   /summary/readiness:
     get:
       operationId: getReadinessSummary
@@ -821,3 +874,80 @@ components:
       required:
         - currentRole
         - targetRole
+
+    ProbationItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        section:
+          type: string
+        sectionOrder:
+          type: integer
+        itemText:
+          type: string
+        itemOrder:
+          type: integer
+        ratingType:
+          type: string
+          enum: [yes_no_progress, values_rating]
+      required:
+        - id
+        - section
+        - sectionOrder
+        - itemText
+        - itemOrder
+        - ratingType
+
+    ProbationAssessment:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: string
+        itemId:
+          type: integer
+        rating:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+        managerRating:
+          type: string
+          nullable: true
+        managerComment:
+          type: string
+          nullable: true
+        managerReviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - sessionId
+        - itemId
+
+    UpsertProbationAssessmentBody:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        itemId:
+          type: integer
+        rating:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+      required:
+        - sessionId
+        - itemId

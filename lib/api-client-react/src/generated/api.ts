@@ -34,13 +34,17 @@ import type {
   ListEvidenceParams,
   ListFinancialProgressParams,
   ListFinancialTargetsParams,
+  ListProbationAssessmentsParams,
   ListRolesParams,
+  ProbationAssessment,
+  ProbationItem,
   ReadinessSummary,
   Role,
   RoleWithCompetencies,
   UpdateEvidenceBody,
   UpsertAssessmentBody,
   UpsertFinancialProgressBody,
+  UpsertProbationAssessmentBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1631,6 +1635,271 @@ export const useUpsertFinancialProgress = <
   TContext
 > => {
   return useMutation(getUpsertFinancialProgressMutationOptions(options));
+};
+
+/**
+ * @summary List all probation assessment items
+ */
+export const getListProbationItemsUrl = () => {
+  return `/api/probation/items`;
+};
+
+export const listProbationItems = async (
+  options?: RequestInit,
+): Promise<ProbationItem[]> => {
+  return customFetch<ProbationItem[]>(getListProbationItemsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListProbationItemsQueryKey = () => {
+  return [`/api/probation/items`] as const;
+};
+
+export const getListProbationItemsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProbationItems>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listProbationItems>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListProbationItemsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProbationItems>>
+  > = ({ signal }) => listProbationItems({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProbationItems>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProbationItemsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProbationItems>>
+>;
+export type ListProbationItemsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all probation assessment items
+ */
+
+export function useListProbationItems<
+  TData = Awaited<ReturnType<typeof listProbationItems>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listProbationItems>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProbationItemsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List probation assessments for a session
+ */
+export const getListProbationAssessmentsUrl = (
+  params: ListProbationAssessmentsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/probation/assessments?${stringifiedParams}`
+    : `/api/probation/assessments`;
+};
+
+export const listProbationAssessments = async (
+  params: ListProbationAssessmentsParams,
+  options?: RequestInit,
+): Promise<ProbationAssessment[]> => {
+  return customFetch<ProbationAssessment[]>(
+    getListProbationAssessmentsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListProbationAssessmentsQueryKey = (
+  params?: ListProbationAssessmentsParams,
+) => {
+  return [`/api/probation/assessments`, ...(params ? [params] : [])] as const;
+};
+
+export const getListProbationAssessmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProbationAssessments>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListProbationAssessmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProbationAssessments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListProbationAssessmentsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProbationAssessments>>
+  > = ({ signal }) =>
+    listProbationAssessments(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProbationAssessments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProbationAssessmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProbationAssessments>>
+>;
+export type ListProbationAssessmentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List probation assessments for a session
+ */
+
+export function useListProbationAssessments<
+  TData = Awaited<ReturnType<typeof listProbationAssessments>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListProbationAssessmentsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProbationAssessments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProbationAssessmentsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create or update a probation assessment item
+ */
+export const getUpsertProbationAssessmentUrl = () => {
+  return `/api/probation/assessments`;
+};
+
+export const upsertProbationAssessment = async (
+  upsertProbationAssessmentBody: UpsertProbationAssessmentBody,
+  options?: RequestInit,
+): Promise<ProbationAssessment> => {
+  return customFetch<ProbationAssessment>(getUpsertProbationAssessmentUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(upsertProbationAssessmentBody),
+  });
+};
+
+export const getUpsertProbationAssessmentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertProbationAssessment>>,
+    TError,
+    { data: BodyType<UpsertProbationAssessmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertProbationAssessment>>,
+  TError,
+  { data: BodyType<UpsertProbationAssessmentBody> },
+  TContext
+> => {
+  const mutationKey = ["upsertProbationAssessment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertProbationAssessment>>,
+    { data: BodyType<UpsertProbationAssessmentBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return upsertProbationAssessment(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertProbationAssessmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertProbationAssessment>>
+>;
+export type UpsertProbationAssessmentMutationBody =
+  BodyType<UpsertProbationAssessmentBody>;
+export type UpsertProbationAssessmentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create or update a probation assessment item
+ */
+export const useUpsertProbationAssessment = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertProbationAssessment>>,
+    TError,
+    { data: BodyType<UpsertProbationAssessmentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof upsertProbationAssessment>>,
+  TError,
+  { data: BodyType<UpsertProbationAssessmentBody> },
+  TContext
+> => {
+  return useMutation(getUpsertProbationAssessmentMutationOptions(options));
 };
 
 /**

@@ -1,0 +1,81 @@
+Please add a new section to the existing app called “Probation” in the left-hand menu.
+
+Important: keep this as a focused first build. Do not rebuild the existing career path, current role, target role or readiness summary sections. Only add the new Probation section and connect it to the existing app navigation and save state.
+
+Purpose of the Probation section:
+This will replace our current Word document probation form. New starters should be able to access it from day one so they understand what they need to demonstrate to pass probation. For now, this should be designed for the individual employee to track their own progress. Manager editing and manager comments will be added later, so please structure the code/data in a way that could support that later, but do not build manager functionality yet.
+
+Please create the Probation section using these headings and assessment items:
+
+1. Skills
+- Can use core systems and tools required for the role at a basic, functional level
+- Is able to log accurate, appropriate information on Bullhorn and other company systems
+- Demonstrates basic role competence required to operate safely and effectively
+- Follows agreed ways of working and Highfield / DataX / Data Exec way of working
+
+2. Behaviours
+- Can demonstrate professional conduct at work
+- Displays a constructive and respectful attitude
+- Engages appropriately with feedback and guidance
+- Shows willingness to learn and improve
+
+3. Knowledge
+- Has a basic understanding of the role and the recruitment lifecycle
+- Demonstrates developing awareness of their sector and market
+- Understands what is expected of them in the role
+
+4. Activity
+- Activity levels broadly align to expectations for the stage of their role
+- Demonstrates consistent effort and application
+- Is engaging with required activity rather than avoiding it
+
+5. Financial Awareness
+- Understands how individual activity contributes to revenue
+- Is developing commercial awareness appropriate to probation stage
+
+6. Behaviour and Conduct
+- Behaviours are aligned to company standards
+- No conduct or behavioural concerns identified
+
+7. Values
+- Driven
+- Disciplined
+- Competitive
+- Committed
+- Positive
+- Resilient
+
+For sections 1 to 6, allow the employee to mark each item as:
+- Yes
+- No
+- In Progress
+
+Also allow them to add a short note/evidence comment against each item.
+
+For the Values section, allow the employee to rate each value as:
+- Rarely
+- Some of the time
+- Most of the time
+
+Also allow a short note/evidence comment against each value.
+
+Add an overall probation progress summary at the top of the Probation screen showing:
+- Overall completion percentage
+- Number of items marked Yes
+- Number of items marked In Progress
+- Number of items marked No
+- A simple colour status:
+  - Green = mostly Yes / Most of the time
+  - Amber = mixed progress
+  - Red = several No or Rarely ratings
+
+Please make the language supportive and employee-friendly. This should feel like a clear guide to what good looks like during probation, not a scary HR form.
+
+Please save the employee’s probation ratings and notes in the same way the current competency ratings and evidence are saved.
+
+Please add placeholder structure in the data model for future manager review fields, but do not build manager editing yet. For example:
+- managerRating
+- managerComment
+- managerReviewedAt
+
+Please keep the UI consistent with the existing app design.
