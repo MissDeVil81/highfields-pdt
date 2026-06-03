@@ -1,0 +1,157 @@
+I would like to enhance the existing Probation Reviews.
+
+IMPORTANT
+
+Please do not build a manager portal, separate manager login, permissions, workflows, dashboards, notifications or approvals yet.
+
+The employee-facing experience should remain exactly as it is today.
+
+However, I now want to add manager review functionality within each review tab so that both employee and manager assessments can be captured side-by-side.
+
+This is preparation for a future manager portal.
+
+Please build on top of the existing probation functionality and do not redesign the current screens.
+
+---
+
+CURRENT STRUCTURE
+
+The employee currently completes:
+
+- Month 1 Review
+- Month 3 Review
+- Month 5 Review
+- Month 6 Review
+
+For each assessment area they provide ratings and comments.
+
+Please keep all existing functionality exactly as it is.
+
+---
+
+NEW REQUIREMENT
+
+For every assessment area within each review, display:
+
+| Assessment Area | Employee Rating | Manager Rating |
+|-----------------|----------------|----------------|
+| Skills | Existing | New |
+| Behaviours | Existing | New |
+| Knowledge | Existing | New |
+| Activity | Existing | New |
+| Financial Awareness | Existing | New |
+| Behaviour & Conduct | Existing | New |
+| Values | Existing | New |
+
+The employee rating should remain exactly as it is today.
+
+Add a new Manager Rating column beside it.
+
+Manager ratings should use exactly the same options currently used by the employee:
+
+- Yes / Most
+- In Progress
+- Not Yet
+
+The manager rating should be visually more prominent than the employee rating because probation decisions are based on the manager assessment.
+
+The employee rating is there to support self-reflection and coaching conversations.
+
+---
+
+MANAGER COMMENTS
+
+Under each assessment area add:
+
+Manager Comments
+
+Free text field
+
+Example:
+
+Skills
+
+Employee Rating: In Progress
+
+Manager Rating: Yes
+
+Manager Comments:
+[text box]
+
+---
+
+MANAGER REVIEW SUMMARY
+
+At the bottom of each review tab add a Manager Review section.
+
+Include:
+
+What's Going Well?
+
+[text box]
+
+Areas To Focus On Before Next Review
+
+[text box]
+
+Overall Review Status
+
+- On Track
+- Needs Support
+- At Risk
+
+---
+
+IMPORTANT DESIGN PRINCIPLES
+
+The manager assessment should become the primary assessment for probation decisions.
+
+The employee assessment is there to encourage self-reflection and identify gaps in perception.
+
+Both should be visible together.
+
+Do not calculate employee scores versus manager scores.
+
+Do not create alignment scores.
+
+Do not create comparison percentages.
+
+Do not duplicate the existing Actions functionality that already exists within the review process.
+
+Simply allow both ratings to sit alongside each other so differences can be discussed during review meetings.
+
+---
+
+DATA STRUCTURE
+
+Please store:
+
+employeeRating
+employeeComment
+
+managerRating
+managerComment
+
+managerReviewStatus
+
+managerStrengths
+
+managerDevelopmentAreas
+
+These fields will be used later when we build a dedicated manager portal.
+
+---
+
+DO NOT BUILD
+
+- Manager login
+- Manager portal
+- Manager permissions
+- HR dashboard
+- Notifications
+- Approval workflows
+- Reporting
+
+Only add the manager review fields and side-by-side assessment structure within the existing probation reviews.
+
+Before making any changes, please explain your implementation plan and list the files you intend to modify. Do not make any changes until I approve the plan.
