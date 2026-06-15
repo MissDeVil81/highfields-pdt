@@ -1,11 +1,16 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { Compass, User, Target, BarChart2 } from "lucide-react";
+import { Compass, User, Target, BarChart2, LogOut } from "lucide-react";
 import { useSessionStore } from "@/lib/session";
 
 export function Shell({ children }: { children: ReactNode }) {
-  const [location] = useLocation();
-  const { currentRoleId, targetRoleId } = useSessionStore();
+  const [location, navigate] = useLocation();
+  const { currentRoleId, targetRoleId, userName, clearUser } = useSessionStore();
+
+  function handleSwitch() {
+    clearUser();
+    navigate("/setup");
+  }
 
   const navItems = [
     { href: "/", label: "Path Selection", icon: Compass, exact: true },
@@ -65,6 +70,24 @@ export function Shell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
+
+        <div className="mt-auto pt-4 border-t border-border">
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <span className="text-[10px] font-semibold text-primary">
+                {userName?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
+              </span>
+            </div>
+            <span className="text-sm font-medium text-foreground truncate">{userName}</span>
+          </div>
+          <button
+            onClick={handleSwitch}
+            className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Switch user
+          </button>
+        </div>
       </aside>
       
       <main className="flex-1 overflow-auto">
