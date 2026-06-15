@@ -24,10 +24,10 @@ import { ArrowLeft, Save, Send, Loader2, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const REVIEW_PERIODS = [
-  { value: "1_month", label: "1 Month" },
-  { value: "3_month", label: "3 Months" },
-  { value: "5_month", label: "5 Months" },
-  { value: "6_month", label: "6 Months" },
+  { value: "month1", label: "1 Month" },
+  { value: "month3", label: "3 Months" },
+  { value: "month5", label: "5 Months" },
+  { value: "month6", label: "6 Months" },
 ];
 
 const RATING_OPTIONS = ["red", "amber", "green"];
@@ -82,7 +82,7 @@ export default function EmployeeProbation() {
   const { manager } = useManagerStore();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("1_month");
+  const [activeTab, setActiveTab] = useState("month1");
 
   useEffect(() => {
     if (!manager) navigate("/");
