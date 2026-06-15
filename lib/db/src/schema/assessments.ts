@@ -7,7 +7,7 @@ import { usersTable } from "./users";
 
 export const assessmentsTable = pgTable("assessments", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  userId: integer("user_id").references(() => usersTable.id, { onDelete: "cascade" }),
   competencyId: integer("competency_id").notNull().references(() => competenciesTable.id),
   roleId: integer("role_id").notNull().references(() => rolesTable.id),
   rating: text("rating", { enum: ["red", "amber", "green"] }).notNull(),

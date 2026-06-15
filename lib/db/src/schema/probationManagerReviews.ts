@@ -3,7 +3,7 @@ import { usersTable } from "./users";
 
 export const probationManagerReviewsTable = pgTable("probation_manager_reviews", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  userId: integer("user_id").references(() => usersTable.id, { onDelete: "cascade" }),
   reviewPeriod: text("review_period").notNull(),
   goingWell: text("going_well"),
   developmentAreas: text("development_areas"),
