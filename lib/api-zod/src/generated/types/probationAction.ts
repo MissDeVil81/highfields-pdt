@@ -8,7 +8,7 @@
 
 export interface ProbationAction {
   id: number;
-  sessionId: string;
+  userId: number;
   reviewPeriod: string;
   actionText: string;
   status: string;

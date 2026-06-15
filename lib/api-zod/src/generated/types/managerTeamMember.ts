@@ -19,8 +19,6 @@ export interface ManagerTeamMember {
   startDate?: string | null;
   /** @nullable */
   probationStatus?: string | null;
-  /** @nullable */
-  sessionId?: string | null;
   isActive: string;
   /** @nullable */
   latestReviewPeriod?: string | null;

@@ -6,7 +6,7 @@ import { z } from "zod";
 const router = Router();
 
 const upsertSchema = z.object({
-  sessionId: z.string(),
+  userId: z.number().int(),
   reviewPeriod: z.string(),
   wentWell: z.string().nullable().optional(),
   learned: z.string().nullable().optional(),
@@ -20,31 +20,31 @@ const upsertSchema = z.object({
 });
 
 router.get("/", async (req, res) => {
-  const sessionId = req.query.sessionId as string;
+  const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
   const reviewPeriod = req.query.reviewPeriod as string | undefined;
-  if (!sessionId) return res.status(400).json({ error: "sessionId is required" });
+  if (!userId) return res.status(400).json({ error: "userId is required" });
 
-  const conditions = [eq(probationReflectionsTable.sessionId, sessionId)];
+  const conditions = [eq(probationReflectionsTable.userId, userId)];
   if (reviewPeriod) {
     conditions.push(eq(probationReflectionsTable.reviewPeriod, reviewPeriod));
   }
 
   const rows = await db.select().from(probationReflectionsTable).where(and(...conditions));
-  res.json(rows);
+  return res.json(rows);
 });
 
 router.post("/", async (req, res) => {
   const result = upsertSchema.safeParse(req.body);
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
-  const { sessionId, reviewPeriod, ...fields } = result.data;
+  const { userId, reviewPeriod, ...fields } = result.data;
 
   const existing = await db
     .select()
     .from(probationReflectionsTable)
     .where(
       and(
-        eq(probationReflectionsTable.sessionId, sessionId),
+        eq(probationReflectionsTable.userId, userId),
         eq(probationReflectionsTable.reviewPeriod, reviewPeriod)
       )
     );
@@ -72,9 +72,9 @@ router.post("/", async (req, res) => {
 
   const [created] = await db
     .insert(probationReflectionsTable)
-    .values({ sessionId, reviewPeriod, ...setFields })
+    .values({ userId, reviewPeriod, ...setFields })
     .returning();
-  res.json(created);
+  return res.json(created);
 });
 
 export default router;

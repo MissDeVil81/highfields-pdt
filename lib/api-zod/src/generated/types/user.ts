@@ -15,8 +15,6 @@ export interface User {
   /** @nullable */
   managerId?: number | null;
   /** @nullable */
-  sessionId?: string | null;
-  /** @nullable */
   department?: string | null;
   /** @nullable */
   jobTitle?: string | null;
@@ -24,6 +22,8 @@ export interface User {
   startDate?: string | null;
   /** @nullable */
   probationStatus?: string | null;
+  /** @nullable */
+  targetRoleId?: number | null;
   isActive: string;
   createdAt: Date;
   updatedAt: Date;

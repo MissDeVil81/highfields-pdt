@@ -15,6 +15,29 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Look up a user by email address (used by employee app on first visit)
+ */
+export const IdentifyUserQueryParams = zod.object({
+  email: zod.coerce.string(),
+});
+
+export const IdentifyUserResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string().nullish(),
+  roles: zod.array(zod.string()),
+  managerId: zod.number().nullish(),
+  department: zod.string().nullish(),
+  jobTitle: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  probationStatus: zod.string().nullish(),
+  targetRoleId: zod.number().nullish(),
+  isActive: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary List all career paths
  */
 export const ListCareerPathsResponseItem = zod.object({
@@ -128,20 +151,20 @@ export const CreateCompetencyBody = zod.object({
 });
 
 /**
- * @summary List assessments for a user session
+ * @summary List assessments for a user
  */
 export const ListAssessmentsQueryParams = zod.object({
-  sessionId: zod.coerce.string(),
+  userId: zod.coerce.number(),
   roleId: zod.coerce.number().optional(),
 });
 
 export const ListAssessmentsResponseItem = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   competencyId: zod.number(),
   roleId: zod.number(),
   rating: zod.enum(["red", "amber", "green"]),
-  notes: zod.string().optional(),
+  notes: zod.string().nullish(),
   updatedAt: zod.coerce.date(),
 });
 export const ListAssessmentsResponse = zod.array(ListAssessmentsResponseItem);
@@ -150,7 +173,7 @@ export const ListAssessmentsResponse = zod.array(ListAssessmentsResponseItem);
  * @summary Create or update an assessment for a competency
  */
 export const UpsertAssessmentBody = zod.object({
-  sessionId: zod.string(),
+  userId: zod.number(),
   competencyId: zod.number(),
   roleId: zod.number(),
   rating: zod.enum(["red", "amber", "green"]),
@@ -159,26 +182,26 @@ export const UpsertAssessmentBody = zod.object({
 
 export const UpsertAssessmentResponse = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   competencyId: zod.number(),
   roleId: zod.number(),
   rating: zod.enum(["red", "amber", "green"]),
-  notes: zod.string().optional(),
+  notes: zod.string().nullish(),
   updatedAt: zod.coerce.date(),
 });
 
 /**
- * @summary List evidence entries for a user session and role
+ * @summary List evidence entries for a user and role
  */
 export const ListEvidenceQueryParams = zod.object({
-  sessionId: zod.coerce.string(),
+  userId: zod.coerce.number(),
   roleId: zod.coerce.number().optional(),
   competencyId: zod.coerce.number().optional(),
 });
 
 export const ListEvidenceResponseItem = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   competencyId: zod.number(),
   roleId: zod.number(),
   title: zod.string(),
@@ -193,7 +216,7 @@ export const ListEvidenceResponse = zod.array(ListEvidenceResponseItem);
  * @summary Add an evidence entry for a competency
  */
 export const CreateEvidenceBody = zod.object({
-  sessionId: zod.string(),
+  userId: zod.number(),
   competencyId: zod.number(),
   roleId: zod.number(),
   title: zod.string(),
@@ -216,7 +239,7 @@ export const UpdateEvidenceBody = zod.object({
 
 export const UpdateEvidenceResponse = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   competencyId: zod.number(),
   roleId: zod.number(),
   title: zod.string(),
@@ -254,16 +277,16 @@ export const ListFinancialTargetsResponse = zod.array(
 );
 
 /**
- * @summary List financial progress for a session and role
+ * @summary List financial progress for a user and role
  */
 export const ListFinancialProgressQueryParams = zod.object({
-  sessionId: zod.coerce.string(),
+  userId: zod.coerce.number(),
   roleId: zod.coerce.number(),
 });
 
 export const ListFinancialProgressResponseItem = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   targetId: zod.number(),
   roleId: zod.number(),
   currentAmount: zod.number(),
@@ -277,7 +300,7 @@ export const ListFinancialProgressResponse = zod.array(
  * @summary Create or update financial progress for a target
  */
 export const UpsertFinancialProgressBody = zod.object({
-  sessionId: zod.string(),
+  userId: zod.number(),
   targetId: zod.number(),
   roleId: zod.number(),
   currentAmount: zod.number(),
@@ -285,7 +308,7 @@ export const UpsertFinancialProgressBody = zod.object({
 
 export const UpsertFinancialProgressResponse = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   targetId: zod.number(),
   roleId: zod.number(),
   currentAmount: zod.number(),
@@ -308,16 +331,16 @@ export const ListProbationItemsResponse = zod.array(
 );
 
 /**
- * @summary List probation assessments for a session
+ * @summary List probation assessments for a user
  */
 export const ListProbationAssessmentsQueryParams = zod.object({
-  sessionId: zod.coerce.string(),
+  userId: zod.coerce.number(),
   reviewPeriod: zod.coerce.string().optional(),
 });
 
 export const ListProbationAssessmentsResponseItem = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   itemId: zod.number(),
   reviewPeriod: zod.string(),
   rating: zod.string().nullish(),
@@ -336,7 +359,7 @@ export const ListProbationAssessmentsResponse = zod.array(
  * @summary Create or update a probation assessment item
  */
 export const UpsertProbationAssessmentBody = zod.object({
-  sessionId: zod.string(),
+  userId: zod.number(),
   itemId: zod.number(),
   reviewPeriod: zod.string().optional(),
   rating: zod.string().nullish(),
@@ -347,7 +370,7 @@ export const UpsertProbationAssessmentBody = zod.object({
 
 export const UpsertProbationAssessmentResponse = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   itemId: zod.number(),
   reviewPeriod: zod.string(),
   rating: zod.string().nullish(),
@@ -360,16 +383,16 @@ export const UpsertProbationAssessmentResponse = zod.object({
 });
 
 /**
- * @summary List probation reflections for a session
+ * @summary List probation reflections for a user
  */
 export const ListProbationReflectionsQueryParams = zod.object({
-  sessionId: zod.coerce.string(),
+  userId: zod.coerce.number(),
   reviewPeriod: zod.coerce.string().optional(),
 });
 
 export const ListProbationReflectionsResponseItem = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   reviewPeriod: zod.string(),
   wentWell: zod.string().nullish(),
   learned: zod.string().nullish(),
@@ -394,7 +417,7 @@ export const ListProbationReflectionsResponse = zod.array(
  * @summary Create or update a probation reflection
  */
 export const UpsertProbationReflectionBody = zod.object({
-  sessionId: zod.string(),
+  userId: zod.number(),
   reviewPeriod: zod.string(),
   wentWell: zod.string().nullish(),
   learned: zod.string().nullish(),
@@ -409,7 +432,7 @@ export const UpsertProbationReflectionBody = zod.object({
 
 export const UpsertProbationReflectionResponse = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   reviewPeriod: zod.string(),
   wentWell: zod.string().nullish(),
   learned: zod.string().nullish(),
@@ -428,16 +451,16 @@ export const UpsertProbationReflectionResponse = zod.object({
 });
 
 /**
- * @summary List probation actions for a session and review period
+ * @summary List probation actions for a user and review period
  */
 export const ListProbationActionsQueryParams = zod.object({
-  sessionId: zod.coerce.string(),
+  userId: zod.coerce.number(),
   reviewPeriod: zod.coerce.string().optional(),
 });
 
 export const ListProbationActionsResponseItem = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   reviewPeriod: zod.string(),
   actionText: zod.string(),
   status: zod.string(),
@@ -453,14 +476,14 @@ export const ListProbationActionsResponse = zod.array(
  * @summary Create a new probation action
  */
 export const CreateProbationActionBody = zod.object({
-  sessionId: zod.string(),
+  userId: zod.number(),
   reviewPeriod: zod.string(),
   actionText: zod.string(),
 });
 
 export const CreateProbationActionResponse = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   reviewPeriod: zod.string(),
   actionText: zod.string(),
   status: zod.string(),
@@ -483,7 +506,7 @@ export const UpdateProbationActionBody = zod.object({
 
 export const UpdateProbationActionResponse = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   reviewPeriod: zod.string(),
   actionText: zod.string(),
   status: zod.string(),
@@ -504,16 +527,16 @@ export const DeleteProbationActionResponse = zod.object({
 });
 
 /**
- * @summary List manager review summaries for a session
+ * @summary List manager review summaries for a user
  */
 export const ListProbationManagerReviewsQueryParams = zod.object({
-  sessionId: zod.coerce.string(),
+  userId: zod.coerce.number(),
   reviewPeriod: zod.coerce.string().optional(),
 });
 
 export const ListProbationManagerReviewsResponseItem = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   reviewPeriod: zod.string(),
   goingWell: zod.string().nullish(),
   developmentAreas: zod.string().nullish(),
@@ -531,7 +554,7 @@ export const ListProbationManagerReviewsResponse = zod.array(
  * @summary Create or update a manager review summary
  */
 export const UpsertProbationManagerReviewBody = zod.object({
-  sessionId: zod.string(),
+  userId: zod.number(),
   reviewPeriod: zod.string(),
   goingWell: zod.string().nullish(),
   developmentAreas: zod.string().nullish(),
@@ -541,7 +564,7 @@ export const UpsertProbationManagerReviewBody = zod.object({
 
 export const UpsertProbationManagerReviewResponse = zod.object({
   id: zod.number(),
-  sessionId: zod.string(),
+  userId: zod.number(),
   reviewPeriod: zod.string(),
   goingWell: zod.string().nullish(),
   developmentAreas: zod.string().nullish(),
@@ -553,10 +576,31 @@ export const UpsertProbationManagerReviewResponse = zod.object({
 });
 
 /**
- * @summary Get readiness summary for a session across current and target roles
+ * @summary Publish a manager review (making it visible to the employee)
+ */
+export const PublishProbationManagerReviewBody = zod.object({
+  userId: zod.number(),
+  reviewPeriod: zod.string(),
+});
+
+export const PublishProbationManagerReviewResponse = zod.object({
+  id: zod.number(),
+  userId: zod.number(),
+  reviewPeriod: zod.string(),
+  goingWell: zod.string().nullish(),
+  developmentAreas: zod.string().nullish(),
+  reviewStatus: zod.string().nullish(),
+  reviewDate: zod.string().nullish(),
+  publishedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date().optional(),
+  updatedAt: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary Get readiness summary for a user across current and target roles
  */
 export const GetReadinessSummaryQueryParams = zod.object({
-  sessionId: zod.coerce.string(),
+  userId: zod.coerce.number(),
   currentRoleId: zod.coerce.number().optional(),
   targetRoleId: zod.coerce.number().optional(),
 });
@@ -597,7 +641,7 @@ export const GetReadinessSummaryResponse = zod.object({
  */
 export const ListUsersQueryParams = zod.object({
   managerId: zod.coerce.number().optional(),
-  sessionId: zod.coerce.string().optional(),
+  role: zod.coerce.string().optional(),
 });
 
 export const ListUsersResponseItem = zod.object({
@@ -606,11 +650,11 @@ export const ListUsersResponseItem = zod.object({
   email: zod.string().nullish(),
   roles: zod.array(zod.string()),
   managerId: zod.number().nullish(),
-  sessionId: zod.string().nullish(),
   department: zod.string().nullish(),
   jobTitle: zod.string().nullish(),
   startDate: zod.string().nullish(),
   probationStatus: zod.string().nullish(),
+  targetRoleId: zod.number().nullish(),
   isActive: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -625,11 +669,11 @@ export const CreateUserBody = zod.object({
   email: zod.string().optional(),
   roles: zod.array(zod.string()).optional(),
   managerId: zod.number().optional(),
-  sessionId: zod.string().optional(),
   department: zod.string().optional(),
   jobTitle: zod.string().optional(),
   startDate: zod.string().optional(),
   probationStatus: zod.string().optional(),
+  targetRoleId: zod.number().optional(),
   isActive: zod.string().optional(),
 });
 
@@ -646,11 +690,11 @@ export const GetUserResponse = zod.object({
   email: zod.string().nullish(),
   roles: zod.array(zod.string()),
   managerId: zod.number().nullish(),
-  sessionId: zod.string().nullish(),
   department: zod.string().nullish(),
   jobTitle: zod.string().nullish(),
   startDate: zod.string().nullish(),
   probationStatus: zod.string().nullish(),
+  targetRoleId: zod.number().nullish(),
   isActive: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
@@ -668,11 +712,11 @@ export const UpdateUserBody = zod.object({
   email: zod.string().optional(),
   roles: zod.array(zod.string()).optional(),
   managerId: zod.number().nullish(),
-  sessionId: zod.string().optional(),
   department: zod.string().optional(),
   jobTitle: zod.string().optional(),
   startDate: zod.string().optional(),
   probationStatus: zod.string().optional(),
+  targetRoleId: zod.number().nullish(),
   isActive: zod.string().optional(),
 });
 
@@ -682,14 +726,21 @@ export const UpdateUserResponse = zod.object({
   email: zod.string().nullish(),
   roles: zod.array(zod.string()),
   managerId: zod.number().nullish(),
-  sessionId: zod.string().nullish(),
   department: zod.string().nullish(),
   jobTitle: zod.string().nullish(),
   startDate: zod.string().nullish(),
   probationStatus: zod.string().nullish(),
+  targetRoleId: zod.number().nullish(),
   isActive: zod.string(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a user
+ */
+export const DeleteUserParams = zod.object({
+  id: zod.coerce.number(),
 });
 
 /**
@@ -707,7 +758,6 @@ export const GetManagerTeamResponseItem = zod.object({
   department: zod.string().nullish(),
   startDate: zod.string().nullish(),
   probationStatus: zod.string().nullish(),
-  sessionId: zod.string().nullish(),
   isActive: zod.string(),
   latestReviewPeriod: zod.string().nullish(),
   latestReviewPublishedAt: zod.coerce.date().nullish(),
@@ -728,25 +778,4 @@ export const GetManagerDashboardStatsResponse = zod.object({
   pendingReviews: zod.number(),
   publishedReviews: zod.number(),
   needingAttention: zod.number(),
-});
-
-/**
- * @summary Publish a manager review (making it visible to the employee)
- */
-export const PublishProbationManagerReviewBody = zod.object({
-  sessionId: zod.string(),
-  reviewPeriod: zod.string(),
-});
-
-export const PublishProbationManagerReviewResponse = zod.object({
-  id: zod.number(),
-  sessionId: zod.string(),
-  reviewPeriod: zod.string(),
-  goingWell: zod.string().nullish(),
-  developmentAreas: zod.string().nullish(),
-  reviewStatus: zod.string().nullish(),
-  reviewDate: zod.string().nullish(),
-  publishedAt: zod.coerce.date().nullish(),
-  createdAt: zod.coerce.date().optional(),
-  updatedAt: zod.coerce.date().optional(),
 });

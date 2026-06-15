@@ -9,7 +9,7 @@ import type { EvidenceRating } from "./evidenceRating";
 
 export interface Evidence {
   id: number;
-  sessionId: string;
+  userId: number;
   competencyId: number;
   roleId: number;
   title: string;

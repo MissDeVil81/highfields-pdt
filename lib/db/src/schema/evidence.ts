@@ -3,10 +3,11 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { competenciesTable } from "./competencies";
 import { rolesTable } from "./roles";
+import { usersTable } from "./users";
 
 export const evidenceTable = pgTable("evidence", {
   id: serial("id").primaryKey(),
-  sessionId: text("session_id").notNull(),
+  userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
   competencyId: integer("competency_id").notNull().references(() => competenciesTable.id),
   roleId: integer("role_id").notNull().references(() => rolesTable.id),
   title: text("title").notNull(),

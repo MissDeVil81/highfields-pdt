@@ -1,4 +1,4 @@
-import { useListCareerPaths, useListRoles } from "@workspace/api-client-react";
+import { useListCareerPaths, useListRoles, getListRolesQueryKey } from "@workspace/api-client-react";
 import { useSessionStore } from "@/lib/session";
 import { useLocation } from "wouter";
 import { ArrowRight, FileText } from "lucide-react";
@@ -17,9 +17,10 @@ export default function Home() {
   const { careerPathId, currentRoleId, setCareerPathId, setCurrentRoleId, setTargetRoleId } = useSessionStore();
 
   const { data: careerPaths, isLoading: pathsLoading } = useListCareerPaths();
+  const rolesParams = { careerPathId: careerPathId ?? undefined };
   const { data: roles, isLoading: rolesLoading } = useListRoles(
-    { careerPathId: careerPathId ?? undefined },
-    { query: { enabled: !!careerPathId } }
+    rolesParams,
+    { query: { queryKey: getListRolesQueryKey(rolesParams), enabled: !!careerPathId } }
   );
 
   function handleSelectPath(id: number) {

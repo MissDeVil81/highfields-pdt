@@ -6,7 +6,7 @@ import { z } from "zod";
 const router = Router();
 
 const createSchema = z.object({
-  sessionId: z.string(),
+  userId: z.number().int(),
   competencyId: z.number().int(),
   roleId: z.number().int(),
   title: z.string(),
@@ -21,24 +21,24 @@ const updateSchema = z.object({
 });
 
 router.get("/", async (req, res) => {
-  const sessionId = req.query.sessionId as string;
+  const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
   const roleId = req.query.roleId ? parseInt(req.query.roleId as string) : undefined;
   const competencyId = req.query.competencyId ? parseInt(req.query.competencyId as string) : undefined;
-  if (!sessionId) return res.status(400).json({ error: "sessionId is required" });
+  if (!userId) return res.status(400).json({ error: "userId is required" });
 
-  const conditions = [eq(evidenceTable.sessionId, sessionId)];
+  const conditions = [eq(evidenceTable.userId, userId)];
   if (roleId) conditions.push(eq(evidenceTable.roleId, roleId));
   if (competencyId) conditions.push(eq(evidenceTable.competencyId, competencyId));
 
   const evidence = await db.select().from(evidenceTable).where(and(...conditions)).orderBy(evidenceTable.createdAt);
-  res.json(evidence);
+  return res.json(evidence);
 });
 
 router.post("/", async (req, res) => {
   const result = createSchema.safeParse(req.body);
   if (!result.success) return res.status(400).json({ error: result.error.message });
   const [created] = await db.insert(evidenceTable).values(result.data).returning();
-  res.status(201).json(created);
+  return res.status(201).json(created);
 });
 
 router.put("/:id", async (req, res) => {
@@ -47,13 +47,13 @@ router.put("/:id", async (req, res) => {
   if (!result.success) return res.status(400).json({ error: result.error.message });
   const [updated] = await db.update(evidenceTable).set({ ...result.data, updatedAt: new Date() }).where(eq(evidenceTable.id, id)).returning();
   if (!updated) return res.status(404).json({ error: "Evidence not found" });
-  res.json(updated);
+  return res.json(updated);
 });
 
 router.delete("/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   await db.delete(evidenceTable).where(eq(evidenceTable.id, id));
-  res.status(204).send();
+  return res.status(204).send();
 });
 
 export default router;

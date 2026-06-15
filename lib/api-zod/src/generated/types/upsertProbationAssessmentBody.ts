@@ -7,7 +7,7 @@
  */
 
 export interface UpsertProbationAssessmentBody {
-  sessionId: string;
+  userId: number;
   itemId: number;
   reviewPeriod?: string;
   rating?: string | null;

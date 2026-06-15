@@ -7,6 +7,6 @@
  */
 
 export type ListFinancialProgressParams = {
-  sessionId: string;
+  userId: number;
   roleId: number;
 };

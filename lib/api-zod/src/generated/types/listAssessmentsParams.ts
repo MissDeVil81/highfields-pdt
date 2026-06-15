@@ -7,6 +7,6 @@
  */
 
 export type ListAssessmentsParams = {
-  sessionId: string;
+  userId: number;
   roleId?: number;
 };

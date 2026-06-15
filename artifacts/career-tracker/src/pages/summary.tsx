@@ -1,4 +1,4 @@
-import { useGetReadinessSummary, useListEvidence } from "@workspace/api-client-react";
+import { useGetReadinessSummary, useListEvidence, getGetReadinessSummaryQueryKey, getListEvidenceQueryKey } from "@workspace/api-client-react";
 import { useSessionStore } from "@/lib/session";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -125,16 +125,18 @@ function RoleSummaryCard({ label, data }: RoleSummaryCardProps) {
 
 export default function Summary() {
   const [, navigate] = useLocation();
-  const { sessionId, currentRoleId, targetRoleId } = useSessionStore();
+  const { userId, currentRoleId, targetRoleId } = useSessionStore();
 
+  const summaryParams = { userId: userId ?? 0, currentRoleId: currentRoleId ?? undefined, targetRoleId: targetRoleId ?? undefined };
   const { data: summary, isLoading } = useGetReadinessSummary(
-    { sessionId, currentRoleId: currentRoleId ?? undefined, targetRoleId: targetRoleId ?? undefined },
-    { query: { enabled: !!currentRoleId } }
+    summaryParams,
+    { query: { queryKey: getGetReadinessSummaryQueryKey(summaryParams), enabled: !!currentRoleId && !!userId } }
   );
 
+  const evidenceParams = { userId: userId ?? 0, roleId: targetRoleId ?? undefined };
   const { data: evidence = [] } = useListEvidence(
-    { sessionId, roleId: targetRoleId ?? undefined },
-    { query: { enabled: !!targetRoleId } }
+    evidenceParams,
+    { query: { queryKey: getListEvidenceQueryKey(evidenceParams), enabled: !!targetRoleId && !!userId } }
   );
 
   if (!currentRoleId) {

@@ -10,6 +10,7 @@ import TargetRole from "@/pages/target-role";
 import Summary from "@/pages/summary";
 import Probation from "@/pages/probation";
 import Layout from "@/components/Layout";
+import IdentityGate from "@/components/IdentityGate";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,16 +23,18 @@ function Router() {
     <Switch>
       <Route path="/" component={Splash} />
       <Route>
-        <Layout>
-          <Switch>
-            <Route path="/setup" component={Home} />
-            <Route path="/current-role" component={CurrentRole} />
-            <Route path="/target-role" component={TargetRole} />
-            <Route path="/summary" component={Summary} />
-            <Route path="/probation" component={Probation} />
-            <Route component={NotFound} />
-          </Switch>
-        </Layout>
+        <IdentityGate>
+          <Layout>
+            <Switch>
+              <Route path="/setup" component={Home} />
+              <Route path="/current-role" component={CurrentRole} />
+              <Route path="/target-role" component={TargetRole} />
+              <Route path="/summary" component={Summary} />
+              <Route path="/probation" component={Probation} />
+              <Route component={NotFound} />
+            </Switch>
+          </Layout>
+        </IdentityGate>
       </Route>
     </Switch>
   );

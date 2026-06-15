@@ -92,18 +92,18 @@ export default function EmployeeProbation() {
     query: { queryKey: getGetUserQueryKey(employeeId), enabled: !isNaN(employeeId) },
   });
 
-  const sessionId = employee?.sessionId ?? "";
+  const userId = !isNaN(employeeId) ? employeeId : 0;
 
   const { data: items = [] } = useListProbationItems({
     query: { queryKey: getListProbationItemsQueryKey(), enabled: true },
   });
   const { data: assessments = [], isLoading: loadingAssessments } = useListProbationAssessments(
-    { sessionId, reviewPeriod: activeTab },
-    { query: { queryKey: getListProbationAssessmentsQueryKey({ sessionId, reviewPeriod: activeTab }), enabled: !!sessionId } }
+    { userId, reviewPeriod: activeTab },
+    { query: { queryKey: getListProbationAssessmentsQueryKey({ userId, reviewPeriod: activeTab }), enabled: !!userId } }
   );
   const { data: managerReviews = [] } = useListProbationManagerReviews(
-    { sessionId, reviewPeriod: activeTab },
-    { query: { queryKey: getListProbationManagerReviewsQueryKey({ sessionId, reviewPeriod: activeTab }), enabled: !!sessionId } }
+    { userId, reviewPeriod: activeTab },
+    { query: { queryKey: getListProbationManagerReviewsQueryKey({ userId, reviewPeriod: activeTab }), enabled: !!userId } }
   );
 
   const upsertManagerReview = useUpsertProbationManagerReview();
@@ -140,11 +140,11 @@ export default function EmployeeProbation() {
     localManagerComments[itemId] ?? assessmentMap.get(itemId)?.managerComment ?? "";
 
   const handleSave = async () => {
-    if (!sessionId) return;
+    if (!userId) return;
 
     await upsertManagerReview.mutateAsync({
       data: {
-        sessionId,
+        userId,
         reviewPeriod: activeTab,
         goingWell: goingWell || null,
         developmentAreas: developmentAreas || null,
@@ -164,7 +164,7 @@ export default function EmployeeProbation() {
         const existing = assessmentMap.get(itemId);
         return upsertAssessment.mutateAsync({
           data: {
-            sessionId,
+            userId,
             itemId,
             reviewPeriod: activeTab,
             rating: existing?.rating ?? null,
@@ -177,10 +177,10 @@ export default function EmployeeProbation() {
     );
 
     await queryClient.invalidateQueries({
-      queryKey: getListProbationAssessmentsQueryKey({ sessionId, reviewPeriod: activeTab }),
+      queryKey: getListProbationAssessmentsQueryKey({ userId, reviewPeriod: activeTab }),
     });
     await queryClient.invalidateQueries({
-      queryKey: getListProbationManagerReviewsQueryKey({ sessionId }),
+      queryKey: getListProbationManagerReviewsQueryKey({ userId }),
     });
 
     setLocalManagerRatings({});
@@ -189,11 +189,11 @@ export default function EmployeeProbation() {
   };
 
   const handlePublish = async () => {
-    if (!sessionId) return;
+    if (!userId) return;
     await handleSave();
-    await publishReview.mutateAsync({ data: { sessionId, reviewPeriod: activeTab } });
+    await publishReview.mutateAsync({ data: { userId, reviewPeriod: activeTab } });
     await queryClient.invalidateQueries({
-      queryKey: getListProbationManagerReviewsQueryKey({ sessionId }),
+      queryKey: getListProbationManagerReviewsQueryKey({ userId }),
     });
     toast({ title: "Review published", description: "The employee can now see this review." });
   };
@@ -238,7 +238,7 @@ export default function EmployeeProbation() {
             size="sm"
             variant="secondary"
             onClick={handleSave}
-            disabled={isSaving || !sessionId}
+            disabled={isSaving || !userId}
             className="gap-1.5"
           >
             {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
@@ -247,7 +247,7 @@ export default function EmployeeProbation() {
           <Button
             size="sm"
             onClick={handlePublish}
-            disabled={isPublishing || !sessionId}
+            disabled={isPublishing || !userId}
             className="gap-1.5"
           >
             {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
@@ -294,11 +294,11 @@ export default function EmployeeProbation() {
               </div>
 
               {/* Assessments table */}
-              {!sessionId ? (
+              {!userId ? (
                 <Card>
                   <CardContent className="py-8 text-center">
                     <p className="text-sm text-muted-foreground">
-                      This employee has no session linked. Ask them to open their Career Tracker app first.
+                      No employee data available.
                     </p>
                   </CardContent>
                 </Card>

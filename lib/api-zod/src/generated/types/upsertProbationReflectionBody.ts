@@ -7,7 +7,7 @@
  */
 
 export interface UpsertProbationReflectionBody {
-  sessionId: string;
+  userId: number;
   reviewPeriod: string;
   wentWell?: string | null;
   learned?: string | null;

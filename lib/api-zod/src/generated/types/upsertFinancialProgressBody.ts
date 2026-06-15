@@ -7,7 +7,7 @@
  */
 
 export interface UpsertFinancialProgressBody {
-  sessionId: string;
+  userId: number;
   targetId: number;
   roleId: number;
   currentAmount: number;

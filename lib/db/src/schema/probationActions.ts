@@ -1,8 +1,9 @@
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { usersTable } from "./users";
 
 export const probationActionsTable = pgTable("probation_actions", {
   id: serial("id").primaryKey(),
-  sessionId: text("session_id").notNull(),
+  userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
   reviewPeriod: text("review_period").notNull(),
   actionText: text("action_text").notNull(),
   status: text("status").notNull().default("not_started"),

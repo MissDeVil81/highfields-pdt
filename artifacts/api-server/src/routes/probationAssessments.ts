@@ -6,7 +6,7 @@ import { z } from "zod";
 const router = Router();
 
 const upsertSchema = z.object({
-  sessionId: z.string(),
+  userId: z.number().int(),
   itemId: z.number().int(),
   reviewPeriod: z.string().default("month1"),
   rating: z.string().nullable().optional(),
@@ -16,31 +16,31 @@ const upsertSchema = z.object({
 });
 
 router.get("/", async (req, res) => {
-  const sessionId = req.query.sessionId as string;
+  const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
   const reviewPeriod = req.query.reviewPeriod as string | undefined;
-  if (!sessionId) return res.status(400).json({ error: "sessionId is required" });
+  if (!userId) return res.status(400).json({ error: "userId is required" });
 
-  const conditions = [eq(probationAssessmentsTable.sessionId, sessionId)];
+  const conditions = [eq(probationAssessmentsTable.userId, userId)];
   if (reviewPeriod) {
     conditions.push(eq(probationAssessmentsTable.reviewPeriod, reviewPeriod));
   }
 
   const rows = await db.select().from(probationAssessmentsTable).where(and(...conditions));
-  res.json(rows);
+  return res.json(rows);
 });
 
 router.post("/", async (req, res) => {
   const result = upsertSchema.safeParse(req.body);
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
-  const { sessionId, itemId, reviewPeriod, rating, note, managerRating, managerComment } = result.data;
+  const { userId, itemId, reviewPeriod, rating, note, managerRating, managerComment } = result.data;
 
   const existing = await db
     .select()
     .from(probationAssessmentsTable)
     .where(
       and(
-        eq(probationAssessmentsTable.sessionId, sessionId),
+        eq(probationAssessmentsTable.userId, userId),
         eq(probationAssessmentsTable.itemId, itemId),
         eq(probationAssessmentsTable.reviewPeriod, reviewPeriod)
       )
@@ -64,7 +64,7 @@ router.post("/", async (req, res) => {
   const [created] = await db
     .insert(probationAssessmentsTable)
     .values({
-      sessionId,
+      userId,
       itemId,
       reviewPeriod,
       rating: rating ?? null,
@@ -73,7 +73,7 @@ router.post("/", async (req, res) => {
       managerComment: managerComment ?? null,
     })
     .returning();
-  res.json(created);
+  return res.json(created);
 });
 
 export default router;

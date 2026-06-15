@@ -7,6 +7,6 @@
  */
 
 export type ListProbationManagerReviewsParams = {
-  sessionId: string;
+  userId: number;
   reviewPeriod?: string;
 };

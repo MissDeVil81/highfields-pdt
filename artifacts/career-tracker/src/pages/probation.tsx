@@ -146,14 +146,14 @@ function calcStats(items: ProbationItem[], stateMap: Record<number, ItemState>) 
 
 // ─── ReviewDateField ──────────────────────────────────────────────────────────
 
-function ReviewDateField({ sessionId, reviewPeriod }: { sessionId: string; reviewPeriod: ReviewPeriod }) {
+function ReviewDateField({ userId, reviewPeriod }: { userId: number; reviewPeriod: ReviewPeriod }) {
   const [date, setDate] = useState("");
   const [initialized, setInitialized] = useState(false);
 
-  const params = { sessionId, reviewPeriod };
+  const params = { userId, reviewPeriod };
   const { data: reviews = [], isLoading } = useListProbationManagerReviews(
     params,
-    { query: { queryKey: getListProbationManagerReviewsQueryKey(params), enabled: !!sessionId } }
+    { query: { queryKey: getListProbationManagerReviewsQueryKey(params), enabled: !!userId } }
   );
 
   const upsert = useUpsertProbationManagerReview();
@@ -167,7 +167,7 @@ function ReviewDateField({ sessionId, reviewPeriod }: { sessionId: string; revie
   }, [reviews, isLoading, initialized]);
 
   function save() {
-    upsert.mutate({ data: { sessionId, reviewPeriod, reviewDate: date || null } });
+    upsert.mutate({ data: { userId, reviewPeriod, reviewDate: date || null } });
   }
 
   return (
@@ -453,8 +453,8 @@ function ActionItem({ action, showDelete, onDelete, onStatusChange }: {
 
 // ─── ActionsSection ───────────────────────────────────────────────────────────
 
-function ActionsSection({ sessionId, reviewPeriod, prevPeriod, prevLabel, nextLabel }: {
-  sessionId: string;
+function ActionsSection({ userId, reviewPeriod, prevPeriod, prevLabel, nextLabel }: {
+  userId: number;
   reviewPeriod: ReviewPeriod;
   prevPeriod?: ReviewPeriod;
   prevLabel?: string;
@@ -463,16 +463,16 @@ function ActionsSection({ sessionId, reviewPeriod, prevPeriod, prevLabel, nextLa
   const queryClient = useQueryClient();
   const [newActionText, setNewActionText] = useState("");
 
-  const currentActionsParams = { sessionId, reviewPeriod };
+  const currentActionsParams = { userId, reviewPeriod };
   const { data: currentActions = [] } = useListProbationActions(
     currentActionsParams,
-    { query: { queryKey: getListProbationActionsQueryKey(currentActionsParams), enabled: !!sessionId } }
+    { query: { queryKey: getListProbationActionsQueryKey(currentActionsParams), enabled: !!userId } }
   );
 
-  const prevActionsParams = { sessionId, reviewPeriod: prevPeriod ?? "month1" };
+  const prevActionsParams = { userId, reviewPeriod: prevPeriod ?? "month1" };
   const { data: prevActions = [] } = useListProbationActions(
     prevActionsParams,
-    { query: { queryKey: getListProbationActionsQueryKey(prevActionsParams), enabled: !!sessionId && !!prevPeriod } }
+    { query: { queryKey: getListProbationActionsQueryKey(prevActionsParams), enabled: !!userId && !!prevPeriod } }
   );
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListProbationActionsQueryKey() });
@@ -483,7 +483,7 @@ function ActionsSection({ sessionId, reviewPeriod, prevPeriod, prevLabel, nextLa
   function handleAdd() {
     const text = newActionText.trim();
     if (!text) return;
-    createAction.mutate({ data: { sessionId, reviewPeriod, actionText: text } });
+    createAction.mutate({ data: { userId, reviewPeriod, actionText: text } });
     setNewActionText("");
   }
 
@@ -551,8 +551,8 @@ function ActionsSection({ sessionId, reviewPeriod, prevPeriod, prevLabel, nextLa
 
 // ─── ReflectionSection ────────────────────────────────────────────────────────
 
-function ReflectionSection({ sessionId, reviewPeriod, isMonth6 }: {
-  sessionId: string;
+function ReflectionSection({ userId, reviewPeriod, isMonth6 }: {
+  userId: number;
   reviewPeriod: ReviewPeriod;
   isMonth6: boolean;
 }) {
@@ -560,10 +560,10 @@ function ReflectionSection({ sessionId, reviewPeriod, isMonth6 }: {
   const [state, setState] = useState<ReflectionState>(emptyReflection);
   const [initialized, setInitialized] = useState(false);
 
-  const reflectionsParams = { sessionId, reviewPeriod };
+  const reflectionsParams = { userId, reviewPeriod };
   const { data: reflections = [], isLoading } = useListProbationReflections(
     reflectionsParams,
-    { query: { queryKey: getListProbationReflectionsQueryKey(reflectionsParams), enabled: !!sessionId } }
+    { query: { queryKey: getListProbationReflectionsQueryKey(reflectionsParams), enabled: !!userId } }
   );
 
   const upsert = useUpsertProbationReflection({
@@ -594,7 +594,7 @@ function ReflectionSection({ sessionId, reviewPeriod, isMonth6 }: {
 
   function save(override?: Partial<ReflectionState>) {
     const s = override ? { ...state, ...override } : state;
-    upsert.mutate({ data: { sessionId, reviewPeriod, ...s } });
+    upsert.mutate({ data: { userId, reviewPeriod, ...s } });
   }
 
   function field(key: keyof ReflectionState, label: string, placeholder = "Share your thoughts…") {
@@ -663,8 +663,8 @@ function ReflectionSection({ sessionId, reviewPeriod, isMonth6 }: {
 
 // ─── ManagerReviewSummary — read-only for employees ──────────────────────────
 
-function ManagerReviewSummary({ sessionId, reviewPeriod }: {
-  sessionId: string;
+function ManagerReviewSummary({ userId, reviewPeriod }: {
+  userId: number;
   reviewPeriod: ReviewPeriod;
 }) {
   const [state, setState] = useState<Omit<ManagerReviewState, "reviewDate">>(
@@ -672,10 +672,10 @@ function ManagerReviewSummary({ sessionId, reviewPeriod }: {
   );
   const [initialized, setInitialized] = useState(false);
 
-  const params = { sessionId, reviewPeriod };
+  const params = { userId, reviewPeriod };
   const { data: reviews = [], isLoading } = useListProbationManagerReviews(
     params,
-    { query: { queryKey: getListProbationManagerReviewsQueryKey(params), enabled: !!sessionId } }
+    { query: { queryKey: getListProbationManagerReviewsQueryKey(params), enabled: !!userId } }
   );
 
   useEffect(() => {
@@ -754,9 +754,9 @@ function ManagerReviewSummary({ sessionId, reviewPeriod }: {
 
 // ─── ReviewContent (single review tab) ───────────────────────────────────────
 
-function ReviewContent({ reviewPeriod, sessionId, items }: {
+function ReviewContent({ reviewPeriod, userId, items }: {
   reviewPeriod: ReviewPeriod;
-  sessionId: string;
+  userId: number;
   items: ProbationItem[];
 }) {
   const queryClient = useQueryClient();
@@ -765,10 +765,10 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
   const [managerStateMap, setManagerStateMap] = useState<Record<number, ManagerItemState>>({});
   const [lastInitKey, setLastInitKey] = useState<string | null>(null);
 
-  const reviewAssessmentsParams = { sessionId, reviewPeriod };
+  const reviewAssessmentsParams = { userId, reviewPeriod };
   const { data: assessments = [], isLoading: assessmentsLoading } = useListProbationAssessments(
     reviewAssessmentsParams,
-    { query: { queryKey: getListProbationAssessmentsQueryKey(reviewAssessmentsParams), enabled: !!sessionId } }
+    { query: { queryKey: getListProbationAssessmentsQueryKey(reviewAssessmentsParams), enabled: !!userId } }
   );
 
   const upsert = useUpsertProbationAssessment({
@@ -778,7 +778,7 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
   });
 
   useEffect(() => {
-    const key = `${sessionId}|${reviewPeriod}`;
+    const key = `${userId}|${reviewPeriod}`;
     if (!assessmentsLoading && key !== lastInitKey) {
       const empInit: Record<number, ItemState> = {};
       const mgrInit: Record<number, ManagerItemState> = {};
@@ -790,14 +790,14 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
       setManagerStateMap(mgrInit);
       setLastInitKey(key);
     }
-  }, [assessments, assessmentsLoading, sessionId, reviewPeriod, lastInitKey]);
+  }, [assessments, assessmentsLoading, userId, reviewPeriod, lastInitKey]);
 
   function upsertAll(itemId: number, empOverride?: Partial<ItemState>) {
     const emp = { ...stateMap[itemId] ?? { rating: null, note: "" }, ...empOverride };
     const mgr = managerStateMap[itemId] ?? { rating: null, comment: "" };
     upsert.mutate({
       data: {
-        sessionId, itemId, reviewPeriod,
+        userId, itemId, reviewPeriod,
         rating: emp.rating ?? null,
         note: emp.note ?? null,
         managerRating: mgr.rating ?? null,
@@ -828,7 +828,7 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
   return (
     <div>
       {/* Date of Review */}
-      <ReviewDateField sessionId={sessionId} reviewPeriod={reviewPeriod} />
+      <ReviewDateField userId={userId} reviewPeriod={reviewPeriod} />
 
       <ProgressSummary items={items} stateMap={stateMap} />
 
@@ -851,13 +851,13 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
       </div>
 
       <div className="border-t border-border mt-10 pt-8">
-        <ReflectionSection sessionId={sessionId} reviewPeriod={reviewPeriod} isMonth6={reviewPeriod === "month6"} />
+        <ReflectionSection userId={userId} reviewPeriod={reviewPeriod} isMonth6={reviewPeriod === "month6"} />
       </div>
 
       <div className="border-t border-border mt-8 pt-8">
         <h3 className="text-lg font-semibold text-foreground mb-4">Actions</h3>
         <ActionsSection
-          sessionId={sessionId}
+          userId={userId}
           reviewPeriod={reviewPeriod}
           prevPeriod={period.prevPeriod}
           prevLabel={period.prevLabel}
@@ -866,7 +866,7 @@ function ReviewContent({ reviewPeriod, sessionId, items }: {
       </div>
 
       <div className="border-t border-border mt-8 pt-8">
-        <ManagerReviewSummary sessionId={sessionId} reviewPeriod={reviewPeriod} />
+        <ManagerReviewSummary userId={userId} reviewPeriod={reviewPeriod} />
       </div>
 
       <p className="mt-10 text-xs text-muted-foreground text-center">
@@ -940,14 +940,14 @@ function ProbationOverview({ items, allAssessments, onSelect }: {
 // ─── Main Probation page ──────────────────────────────────────────────────────
 
 export default function Probation() {
-  const { sessionId } = useSessionStore();
+  const { userId } = useSessionStore();
   const [activeTab, setActiveTab] = useState<TabId>("overview");
 
   const { data: items = [] } = useListProbationItems();
-  const allAssessmentsParams = { sessionId };
+  const allAssessmentsParams = { userId: userId ?? 0 };
   const { data: allAssessments = [] } = useListProbationAssessments(
     allAssessmentsParams,
-    { query: { queryKey: getListProbationAssessmentsQueryKey(allAssessmentsParams), enabled: !!sessionId } }
+    { query: { queryKey: getListProbationAssessmentsQueryKey(allAssessmentsParams), enabled: !!userId } }
   );
 
   const TABS: { id: TabId; label: string }[] = [
@@ -1005,7 +1005,7 @@ export default function Probation() {
           <ReviewContent
             key={activeTab}
             reviewPeriod={activeTab as ReviewPeriod}
-            sessionId={sessionId}
+            userId={userId ?? 0}
             items={items}
           />
         </>

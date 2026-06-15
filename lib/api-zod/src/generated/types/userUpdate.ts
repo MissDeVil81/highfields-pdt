@@ -12,10 +12,11 @@ export interface UserUpdate {
   roles?: string[];
   /** @nullable */
   managerId?: number | null;
-  sessionId?: string;
   department?: string;
   jobTitle?: string;
   startDate?: string;
   probationStatus?: string;
+  /** @nullable */
+  targetRoleId?: number | null;
   isActive?: string;
 }

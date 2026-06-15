@@ -9,6 +9,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Identity and authentication operations
   - name: careerPaths
     description: Career path operations
   - name: roles
@@ -25,6 +27,8 @@ tags:
     description: Financial promotion targets per role
   - name: financialProgress
     description: User financial progress against targets
+  - name: probation
+    description: Probation review operations
   - name: users
     description: User management operations
   - name: manager
@@ -43,6 +47,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/identify:
+    get:
+      operationId: identifyUser
+      tags: [auth]
+      summary: Look up a user by email address (used by employee app on first visit)
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matched user record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: No user found with that email
 
   /career-paths:
     get:
@@ -198,13 +223,13 @@ paths:
     get:
       operationId: listAssessments
       tags: [assessments]
-      summary: List assessments for a user session
+      summary: List assessments for a user
       parameters:
-        - name: sessionId
+        - name: userId
           in: query
           required: true
           schema:
-            type: string
+            type: integer
         - name: roleId
           in: query
           required: false
@@ -241,13 +266,13 @@ paths:
     get:
       operationId: listEvidence
       tags: [evidence]
-      summary: List evidence entries for a user session and role
+      summary: List evidence entries for a user and role
       parameters:
-        - name: sessionId
+        - name: userId
           in: query
           required: true
           schema:
-            type: string
+            type: integer
         - name: roleId
           in: query
           required: false
@@ -348,13 +373,13 @@ paths:
     get:
       operationId: listFinancialProgress
       tags: [financialProgress]
-      summary: List financial progress for a session and role
+      summary: List financial progress for a user and role
       parameters:
-        - name: sessionId
+        - name: userId
           in: query
           required: true
           schema:
-            type: string
+            type: integer
         - name: roleId
           in: query
           required: true
@@ -406,13 +431,13 @@ paths:
     get:
       operationId: listProbationAssessments
       tags: [probation]
-      summary: List probation assessments for a session
+      summary: List probation assessments for a user
       parameters:
-        - name: sessionId
+        - name: userId
           in: query
           required: true
           schema:
-            type: string
+            type: integer
         - name: reviewPeriod
           in: query
           required: false
@@ -449,13 +474,13 @@ paths:
     get:
       operationId: listProbationReflections
       tags: [probation]
-      summary: List probation reflections for a session
+      summary: List probation reflections for a user
       parameters:
-        - name: sessionId
+        - name: userId
           in: query
           required: true
           schema:
-            type: string
+            type: integer
         - name: reviewPeriod
           in: query
           required: false
@@ -492,13 +517,13 @@ paths:
     get:
       operationId: listProbationActions
       tags: [probation]
-      summary: List probation actions for a session and review period
+      summary: List probation actions for a user and review period
       parameters:
-        - name: sessionId
+        - name: userId
           in: query
           required: true
           schema:
-            type: string
+            type: integer
         - name: reviewPeriod
           in: query
           required: false
@@ -582,13 +607,13 @@ paths:
     get:
       operationId: listProbationManagerReviews
       tags: [probation]
-      summary: List manager review summaries for a session
+      summary: List manager review summaries for a user
       parameters:
-        - name: sessionId
+        - name: userId
           in: query
           required: true
           schema:
-            type: string
+            type: integer
         - name: reviewPeriod
           in: query
           required: false
@@ -621,17 +646,36 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProbationManagerReview"
 
+  /probation/manager-reviews/publish:
+    post:
+      operationId: publishProbationManagerReview
+      tags: [probation]
+      summary: Publish a manager review (making it visible to the employee)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishProbationReviewInput"
+      responses:
+        "200":
+          description: Published review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProbationManagerReview"
+
   /summary/readiness:
     get:
       operationId: getReadinessSummary
       tags: [summary]
-      summary: Get readiness summary for a session across current and target roles
+      summary: Get readiness summary for a user across current and target roles
       parameters:
-        - name: sessionId
+        - name: userId
           in: query
           required: true
           schema:
-            type: string
+            type: integer
         - name: currentRoleId
           in: query
           required: false
@@ -661,7 +705,7 @@ paths:
           required: false
           schema:
             type: integer
-        - name: sessionId
+        - name: role
           in: query
           required: false
           schema:
@@ -736,6 +780,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   /manager/team:
     get:
@@ -776,25 +833,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ManagerDashboardStats"
-
-  /probation/manager-reviews/publish:
-    post:
-      operationId: publishProbationManagerReview
-      tags: [probation]
-      summary: Publish a manager review (making it visible to the employee)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/PublishProbationReviewInput"
-      responses:
-        "200":
-          description: Published review
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProbationManagerReview"
 
 components:
   schemas:
@@ -951,8 +989,8 @@ components:
       properties:
         id:
           type: integer
-        sessionId:
-          type: string
+        userId:
+          type: integer
         competencyId:
           type: integer
         roleId:
@@ -961,13 +999,13 @@ components:
           type: string
           enum: [red, amber, green]
         notes:
-          type: string
+          type: ["string", "null"]
         updatedAt:
           type: string
           format: date-time
       required:
         - id
-        - sessionId
+        - userId
         - competencyId
         - roleId
         - rating
@@ -976,8 +1014,8 @@ components:
     UpsertAssessmentBody:
       type: object
       properties:
-        sessionId:
-          type: string
+        userId:
+          type: integer
         competencyId:
           type: integer
         roleId:
@@ -988,7 +1026,7 @@ components:
         notes:
           type: string
       required:
-        - sessionId
+        - userId
         - competencyId
         - roleId
         - rating
@@ -998,8 +1036,8 @@ components:
       properties:
         id:
           type: integer
-        sessionId:
-          type: string
+        userId:
+          type: integer
         competencyId:
           type: integer
         roleId:
@@ -1019,7 +1057,7 @@ components:
           format: date-time
       required:
         - id
-        - sessionId
+        - userId
         - competencyId
         - roleId
         - title
@@ -1031,8 +1069,8 @@ components:
     CreateEvidenceBody:
       type: object
       properties:
-        sessionId:
-          type: string
+        userId:
+          type: integer
         competencyId:
           type: integer
         roleId:
@@ -1045,7 +1083,7 @@ components:
           type: string
           enum: [red, amber, green]
       required:
-        - sessionId
+        - userId
         - competencyId
         - roleId
         - title
@@ -1098,8 +1136,8 @@ components:
       properties:
         id:
           type: integer
-        sessionId:
-          type: string
+        userId:
+          type: integer
         targetId:
           type: integer
         roleId:
@@ -1111,7 +1149,7 @@ components:
           format: date-time
       required:
         - id
-        - sessionId
+        - userId
         - targetId
         - roleId
         - currentAmount
@@ -1120,8 +1158,8 @@ components:
     UpsertFinancialProgressBody:
       type: object
       properties:
-        sessionId:
-          type: string
+        userId:
+          type: integer
         targetId:
           type: integer
         roleId:
@@ -1129,7 +1167,7 @@ components:
         currentAmount:
           type: integer
       required:
-        - sessionId
+        - userId
         - targetId
         - roleId
         - currentAmount
@@ -1235,8 +1273,8 @@ components:
       properties:
         id:
           type: integer
-        sessionId:
-          type: string
+        userId:
+          type: integer
         itemId:
           type: integer
         reviewPeriod:
@@ -1265,15 +1303,15 @@ components:
           format: date-time
       required:
         - id
-        - sessionId
+        - userId
         - itemId
         - reviewPeriod
 
     UpsertProbationAssessmentBody:
       type: object
       properties:
-        sessionId:
-          type: string
+        userId:
+          type: integer
         itemId:
           type: integer
         reviewPeriod:
@@ -1291,7 +1329,7 @@ components:
           type: string
           nullable: true
       required:
-        - sessionId
+        - userId
         - itemId
 
     ProbationReflection:
@@ -1299,8 +1337,8 @@ components:
       properties:
         id:
           type: integer
-        sessionId:
-          type: string
+        userId:
+          type: integer
         reviewPeriod:
           type: string
         wentWell:
@@ -1348,14 +1386,14 @@ components:
           format: date-time
       required:
         - id
-        - sessionId
+        - userId
         - reviewPeriod
 
     UpsertProbationReflectionBody:
       type: object
       properties:
-        sessionId:
-          type: string
+        userId:
+          type: integer
         reviewPeriod:
           type: string
         wentWell:
@@ -1386,7 +1424,7 @@ components:
           type: string
           nullable: true
       required:
-        - sessionId
+        - userId
         - reviewPeriod
 
     ProbationAction:
@@ -1394,8 +1432,8 @@ components:
       properties:
         id:
           type: integer
-        sessionId:
-          type: string
+        userId:
+          type: integer
         reviewPeriod:
           type: string
         actionText:
@@ -1413,7 +1451,7 @@ components:
           format: date-time
       required:
         - id
-        - sessionId
+        - userId
         - reviewPeriod
         - actionText
         - status
@@ -1421,14 +1459,14 @@ components:
     CreateProbationActionBody:
       type: object
       properties:
-        sessionId:
-          type: string
+        userId:
+          type: integer
         reviewPeriod:
           type: string
         actionText:
           type: string
       required:
-        - sessionId
+        - userId
         - reviewPeriod
         - actionText
 
@@ -1446,8 +1484,8 @@ components:
       properties:
         id:
           type: integer
-        sessionId:
-          type: string
+        userId:
+          type: integer
         reviewPeriod:
           type: string
         goingWell:
@@ -1473,14 +1511,14 @@ components:
           format: date-time
       required:
         - id
-        - sessionId
+        - userId
         - reviewPeriod
 
     UpsertProbationManagerReviewBody:
       type: object
       properties:
-        sessionId:
-          type: string
+        userId:
+          type: integer
         reviewPeriod:
           type: string
         goingWell:
@@ -1496,7 +1534,18 @@ components:
           type: string
           nullable: true
       required:
-        - sessionId
+        - userId
+        - reviewPeriod
+
+    PublishProbationReviewInput:
+      type: object
+      properties:
+        userId:
+          type: integer
+        reviewPeriod:
+          type: string
+      required:
+        - userId
         - reviewPeriod
 
     User:
@@ -1514,8 +1563,6 @@ components:
             type: string
         managerId:
           type: ["integer", "null"]
-        sessionId:
-          type: ["string", "null"]
         department:
           type: ["string", "null"]
         jobTitle:
@@ -1524,6 +1571,8 @@ components:
           type: ["string", "null"]
         probationStatus:
           type: ["string", "null"]
+        targetRoleId:
+          type: ["integer", "null"]
         isActive:
           type: string
         createdAt:
@@ -1553,8 +1602,6 @@ components:
             type: string
         managerId:
           type: integer
-        sessionId:
-          type: string
         department:
           type: string
         jobTitle:
@@ -1563,6 +1610,8 @@ components:
           type: string
         probationStatus:
           type: string
+        targetRoleId:
+          type: integer
         isActive:
           type: string
       required:
@@ -1581,8 +1630,6 @@ components:
             type: string
         managerId:
           type: ["integer", "null"]
-        sessionId:
-          type: string
         department:
           type: string
         jobTitle:
@@ -1591,6 +1638,8 @@ components:
           type: string
         probationStatus:
           type: string
+        targetRoleId:
+          type: ["integer", "null"]
         isActive:
           type: string
 
@@ -1610,8 +1659,6 @@ components:
         startDate:
           type: ["string", "null"]
         probationStatus:
-          type: ["string", "null"]
-        sessionId:
           type: ["string", "null"]
         isActive:
           type: string
@@ -1647,14 +1694,3 @@ components:
         - pendingReviews
         - publishedReviews
         - needingAttention
-
-    PublishProbationReviewInput:
-      type: object
-      properties:
-        sessionId:
-          type: string
-        reviewPeriod:
-          type: string
-      required:
-        - sessionId
-        - reviewPeriod

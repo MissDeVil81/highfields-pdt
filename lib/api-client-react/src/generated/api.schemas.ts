@@ -74,11 +74,12 @@ export const AssessmentRating = {
 
 export interface Assessment {
   id: number;
-  sessionId: string;
+  userId: number;
   competencyId: number;
   roleId: number;
   rating: AssessmentRating;
-  notes?: string;
+  /** @nullable */
+  notes?: string | null;
   updatedAt: string;
 }
 
@@ -92,7 +93,7 @@ export const UpsertAssessmentBodyRating = {
 } as const;
 
 export interface UpsertAssessmentBody {
-  sessionId: string;
+  userId: number;
   competencyId: number;
   roleId: number;
   rating: UpsertAssessmentBodyRating;
@@ -110,7 +111,7 @@ export const EvidenceRating = {
 
 export interface Evidence {
   id: number;
-  sessionId: string;
+  userId: number;
   competencyId: number;
   roleId: number;
   title: string;
@@ -130,7 +131,7 @@ export const CreateEvidenceBodyRating = {
 } as const;
 
 export interface CreateEvidenceBody {
-  sessionId: string;
+  userId: number;
   competencyId: number;
   roleId: number;
   title: string;
@@ -165,7 +166,7 @@ export interface FinancialTarget {
 
 export interface FinancialProgress {
   id: number;
-  sessionId: string;
+  userId: number;
   targetId: number;
   roleId: number;
   currentAmount: number;
@@ -173,7 +174,7 @@ export interface FinancialProgress {
 }
 
 export interface UpsertFinancialProgressBody {
-  sessionId: string;
+  userId: number;
   targetId: number;
   roleId: number;
   currentAmount: number;
@@ -237,7 +238,7 @@ export interface ProbationItem {
 
 export interface ProbationAssessment {
   id: number;
-  sessionId: string;
+  userId: number;
   itemId: number;
   reviewPeriod: string;
   rating?: string | null;
@@ -250,7 +251,7 @@ export interface ProbationAssessment {
 }
 
 export interface UpsertProbationAssessmentBody {
-  sessionId: string;
+  userId: number;
   itemId: number;
   reviewPeriod?: string;
   rating?: string | null;
@@ -261,7 +262,7 @@ export interface UpsertProbationAssessmentBody {
 
 export interface ProbationReflection {
   id: number;
-  sessionId: string;
+  userId: number;
   reviewPeriod: string;
   wentWell?: string | null;
   learned?: string | null;
@@ -280,7 +281,7 @@ export interface ProbationReflection {
 }
 
 export interface UpsertProbationReflectionBody {
-  sessionId: string;
+  userId: number;
   reviewPeriod: string;
   wentWell?: string | null;
   learned?: string | null;
@@ -295,7 +296,7 @@ export interface UpsertProbationReflectionBody {
 
 export interface ProbationAction {
   id: number;
-  sessionId: string;
+  userId: number;
   reviewPeriod: string;
   actionText: string;
   status: string;
@@ -305,7 +306,7 @@ export interface ProbationAction {
 }
 
 export interface CreateProbationActionBody {
-  sessionId: string;
+  userId: number;
   reviewPeriod: string;
   actionText: string;
 }
@@ -326,7 +327,7 @@ export interface UpdateProbationActionBody {
 
 export interface ProbationManagerReview {
   id: number;
-  sessionId: string;
+  userId: number;
   reviewPeriod: string;
   goingWell?: string | null;
   developmentAreas?: string | null;
@@ -339,12 +340,17 @@ export interface ProbationManagerReview {
 }
 
 export interface UpsertProbationManagerReviewBody {
-  sessionId: string;
+  userId: number;
   reviewPeriod: string;
   goingWell?: string | null;
   developmentAreas?: string | null;
   reviewStatus?: string | null;
   reviewDate?: string | null;
+}
+
+export interface PublishProbationReviewInput {
+  userId: number;
+  reviewPeriod: string;
 }
 
 export interface User {
@@ -356,8 +362,6 @@ export interface User {
   /** @nullable */
   managerId?: number | null;
   /** @nullable */
-  sessionId?: string | null;
-  /** @nullable */
   department?: string | null;
   /** @nullable */
   jobTitle?: string | null;
@@ -365,6 +369,8 @@ export interface User {
   startDate?: string | null;
   /** @nullable */
   probationStatus?: string | null;
+  /** @nullable */
+  targetRoleId?: number | null;
   isActive: string;
   createdAt: string;
   updatedAt: string;
@@ -375,11 +381,11 @@ export interface UserInput {
   email?: string;
   roles?: string[];
   managerId?: number;
-  sessionId?: string;
   department?: string;
   jobTitle?: string;
   startDate?: string;
   probationStatus?: string;
+  targetRoleId?: number;
   isActive?: string;
 }
 
@@ -389,11 +395,12 @@ export interface UserUpdate {
   roles?: string[];
   /** @nullable */
   managerId?: number | null;
-  sessionId?: string;
   department?: string;
   jobTitle?: string;
   startDate?: string;
   probationStatus?: string;
+  /** @nullable */
+  targetRoleId?: number | null;
   isActive?: string;
 }
 
@@ -410,8 +417,6 @@ export interface ManagerTeamMember {
   startDate?: string | null;
   /** @nullable */
   probationStatus?: string | null;
-  /** @nullable */
-  sessionId?: string | null;
   isActive: string;
   /** @nullable */
   latestReviewPeriod?: string | null;
@@ -428,10 +433,9 @@ export interface ManagerDashboardStats {
   needingAttention: number;
 }
 
-export interface PublishProbationReviewInput {
-  sessionId: string;
-  reviewPeriod: string;
-}
+export type IdentifyUserParams = {
+  email: string;
+};
 
 export type ListRolesParams = {
   careerPathId?: number;
@@ -442,12 +446,12 @@ export type ListCompetenciesParams = {
 };
 
 export type ListAssessmentsParams = {
-  sessionId: string;
+  userId: number;
   roleId?: number;
 };
 
 export type ListEvidenceParams = {
-  sessionId: string;
+  userId: number;
   roleId?: number;
   competencyId?: number;
 };
@@ -457,22 +461,22 @@ export type ListFinancialTargetsParams = {
 };
 
 export type ListFinancialProgressParams = {
-  sessionId: string;
+  userId: number;
   roleId: number;
 };
 
 export type ListProbationAssessmentsParams = {
-  sessionId: string;
+  userId: number;
   reviewPeriod?: string;
 };
 
 export type ListProbationReflectionsParams = {
-  sessionId: string;
+  userId: number;
   reviewPeriod?: string;
 };
 
 export type ListProbationActionsParams = {
-  sessionId: string;
+  userId: number;
   reviewPeriod?: string;
 };
 
@@ -481,19 +485,19 @@ export type DeleteProbationAction200 = {
 };
 
 export type ListProbationManagerReviewsParams = {
-  sessionId: string;
+  userId: number;
   reviewPeriod?: string;
 };
 
 export type GetReadinessSummaryParams = {
-  sessionId: string;
+  userId: number;
   currentRoleId?: number;
   targetRoleId?: number;
 };
 
 export type ListUsersParams = {
   managerId?: number;
-  sessionId?: string;
+  role?: string;
 };
 
 export type GetManagerTeamParams = {

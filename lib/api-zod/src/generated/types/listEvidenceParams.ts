@@ -7,7 +7,7 @@
  */
 
 export type ListEvidenceParams = {
-  sessionId: string;
+  userId: number;
   roleId?: number;
   competencyId?: number;
 };

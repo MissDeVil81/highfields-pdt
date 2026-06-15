@@ -8,7 +8,7 @@
 
 export interface FinancialProgress {
   id: number;
-  sessionId: string;
+  userId: number;
   targetId: number;
   roleId: number;
   currentAmount: number;

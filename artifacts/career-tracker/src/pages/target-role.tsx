@@ -14,6 +14,9 @@ import {
   getListAssessmentsQueryKey,
   getListEvidenceQueryKey,
   getListFinancialProgressQueryKey,
+  getGetRoleQueryKey,
+  getListRolesQueryKey,
+  getListFinancialTargetsQueryKey,
 } from "@workspace/api-client-react";
 import { useSessionStore } from "@/lib/session";
 import { useLocation } from "wouter";
@@ -35,14 +38,14 @@ const CAREER_PATH_PDFS: Record<number, string> = {
 };
 
 interface EvidenceFormProps {
-  sessionId: string;
+  userId: number;
   competencyId: number;
   roleId: number;
   onClose: () => void;
   existing?: { id: number; title: string; description: string; rating: string };
 }
 
-function EvidenceForm({ sessionId, competencyId, roleId, onClose, existing }: EvidenceFormProps) {
+function EvidenceForm({ userId, competencyId, roleId, onClose, existing }: EvidenceFormProps) {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState(existing?.title ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
@@ -61,7 +64,7 @@ function EvidenceForm({ sessionId, competencyId, roleId, onClose, existing }: Ev
     if (existing) {
       update.mutate({ id: existing.id, data: { title, description, rating } });
     } else {
-      create.mutate({ data: { sessionId, competencyId, roleId, title, description, rating } });
+      create.mutate({ data: { userId, competencyId, roleId, title, description, rating } });
     }
   }
 
@@ -146,19 +149,21 @@ function ReadinessBar({ assessments, total, evidenceCount }: { assessments: Arra
   );
 }
 
-function FinancialTargetsSection({ sessionId, roleId }: { sessionId: string; roleId: number }) {
+function FinancialTargetsSection({ userId, roleId }: { userId: number; roleId: number }) {
   const queryClient = useQueryClient();
   const [inputs, setInputs] = useState<Record<number, string>>({});
   const lastInitRoleRef = useRef<number | null>(null);
 
+  const targetsParams = { roleId };
   const { data: targets = [] } = useListFinancialTargets(
-    { roleId },
-    { query: { enabled: !!roleId } }
+    targetsParams,
+    { query: { queryKey: getListFinancialTargetsQueryKey(targetsParams), enabled: !!roleId } }
   );
 
+  const progressParams = { userId, roleId };
   const { data: progressList = [], isLoading: progressLoading } = useListFinancialProgress(
-    { sessionId, roleId },
-    { query: { enabled: !!roleId } }
+    progressParams,
+    { query: { queryKey: getListFinancialProgressQueryKey(progressParams), enabled: !!roleId } }
   );
 
   const upsert = useUpsertFinancialProgress({
@@ -198,7 +203,7 @@ function FinancialTargetsSection({ sessionId, roleId }: { sessionId: string; rol
     const raw = inputs[targetId] ?? "";
     const amount = parseInt(raw.replace(/[^0-9]/g, ""), 10);
     if (!isNaN(amount) && amount >= 0) {
-      upsert.mutate({ data: { sessionId, targetId, roleId, currentAmount: amount } });
+      upsert.mutate({ data: { userId, targetId, roleId, currentAmount: amount } });
     }
   }
 
@@ -321,7 +326,7 @@ function FinancialTargetsSection({ sessionId, roleId }: { sessionId: string; rol
 export default function TargetRole() {
   const [, navigate] = useLocation();
   const {
-    sessionId, currentRoleId, targetRoleId, targetCareerPathId,
+    userId, currentRoleId, targetRoleId, targetCareerPathId,
     setTargetRoleId, setTargetCareerPathId,
   } = useSessionStore();
   const queryClient = useQueryClient();
@@ -335,23 +340,26 @@ export default function TargetRole() {
 
   const { data: careerPaths, isLoading: pathsLoading } = useListCareerPaths();
 
+  const targetRolesParams = { careerPathId: targetCareerPathId ?? undefined };
   const { data: targetRoles, isLoading: rolesLoading } = useListRoles(
-    { careerPathId: targetCareerPathId ?? undefined },
-    { query: { enabled: !!targetCareerPathId } }
+    targetRolesParams,
+    { query: { queryKey: getListRolesQueryKey(targetRolesParams), enabled: !!targetCareerPathId } }
   );
 
   const { data: role, isLoading: roleLoading } = useGetRole(targetRoleId!, {
-    query: { enabled: !!targetRoleId },
+    query: { queryKey: getGetRoleQueryKey(targetRoleId!), enabled: !!targetRoleId },
   });
 
+  const assessmentsParams = { userId: userId ?? 0, roleId: targetRoleId ?? undefined };
   const { data: assessments = [] } = useListAssessments(
-    { sessionId, roleId: targetRoleId ?? undefined },
-    { query: { enabled: !!targetRoleId } }
+    assessmentsParams,
+    { query: { queryKey: getListAssessmentsQueryKey(assessmentsParams), enabled: !!targetRoleId && !!userId } }
   );
 
+  const evidenceParams = { userId: userId ?? 0, roleId: targetRoleId ?? undefined };
   const { data: evidence = [] } = useListEvidence(
-    { sessionId, roleId: targetRoleId ?? undefined },
-    { query: { enabled: !!targetRoleId } }
+    evidenceParams,
+    { query: { queryKey: getListEvidenceQueryKey(evidenceParams), enabled: !!targetRoleId && !!userId } }
   );
 
   const upsert = useUpsertAssessment({
@@ -416,7 +424,7 @@ export default function TargetRole() {
     });
 
   function handleRate(competencyId: number, rating: Rating) {
-    upsert.mutate({ data: { sessionId, competencyId, roleId: targetRoleId!, rating } });
+    upsert.mutate({ data: { userId: userId!, competencyId, roleId: targetRoleId!, rating } });
   }
 
   return (
@@ -610,7 +618,7 @@ export default function TargetRole() {
           )}
 
           {/* Financial Targets */}
-          <FinancialTargetsSection sessionId={sessionId} roleId={targetRoleId} />
+          <FinancialTargetsSection userId={userId ?? 0} roleId={targetRoleId} />
 
           {/* Readiness bar */}
           <ReadinessBar assessments={assessments} total={(role.competencies ?? []).length} evidenceCount={evidence.length} />
@@ -675,7 +683,7 @@ export default function TargetRole() {
                                   <div key={ev.id}>
                                     {editingEvidence === ev.id ? (
                                       <EvidenceForm
-                                        sessionId={sessionId}
+                                        userId={userId ?? 0}
                                         competencyId={comp.id}
                                         roleId={targetRoleId}
                                         onClose={() => setEditingEvidence(null)}
@@ -714,7 +722,7 @@ export default function TargetRole() {
                             {/* Add evidence */}
                             {isAdding ? (
                               <EvidenceForm
-                                sessionId={sessionId}
+                                userId={userId ?? 0}
                                 competencyId={comp.id}
                                 roleId={targetRoleId}
                                 onClose={() => setAddingEvidence(null)}

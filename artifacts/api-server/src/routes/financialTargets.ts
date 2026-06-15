@@ -14,7 +14,7 @@ router.get("/", async (req, res) => {
     .where(eq(financialTargetsTable.roleId, roleId))
     .orderBy(financialTargetsTable.sortOrder);
 
-  res.json(targets);
+  return res.json(targets);
 });
 
 export default router;

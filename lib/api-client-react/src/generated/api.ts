@@ -33,6 +33,7 @@ import type {
   GetManagerTeamParams,
   GetReadinessSummaryParams,
   HealthStatus,
+  IdentifyUserParams,
   ListAssessmentsParams,
   ListCompetenciesParams,
   ListEvidenceParams,
@@ -143,6 +144,100 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Look up a user by email address (used by employee app on first visit)
+ */
+export const getIdentifyUserUrl = (params: IdentifyUserParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/auth/identify?${stringifiedParams}`
+    : `/api/auth/identify`;
+};
+
+export const identifyUser = async (
+  params: IdentifyUserParams,
+  options?: RequestInit,
+): Promise<User> => {
+  return customFetch<User>(getIdentifyUserUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getIdentifyUserQueryKey = (params?: IdentifyUserParams) => {
+  return [`/api/auth/identify`, ...(params ? [params] : [])] as const;
+};
+
+export const getIdentifyUserQueryOptions = <
+  TData = Awaited<ReturnType<typeof identifyUser>>,
+  TError = ErrorType<void>,
+>(
+  params: IdentifyUserParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof identifyUser>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getIdentifyUserQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof identifyUser>>> = ({
+    signal,
+  }) => identifyUser(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof identifyUser>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type IdentifyUserQueryResult = NonNullable<
+  Awaited<ReturnType<typeof identifyUser>>
+>;
+export type IdentifyUserQueryError = ErrorType<void>;
+
+/**
+ * @summary Look up a user by email address (used by employee app on first visit)
+ */
+
+export function useIdentifyUser<
+  TData = Awaited<ReturnType<typeof identifyUser>>,
+  TError = ErrorType<void>,
+>(
+  params: IdentifyUserParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof identifyUser>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getIdentifyUserQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -840,7 +935,7 @@ export const useCreateCompetency = <
 };
 
 /**
- * @summary List assessments for a user session
+ * @summary List assessments for a user
  */
 export const getListAssessmentsUrl = (params: ListAssessmentsParams) => {
   const normalizedParams = new URLSearchParams();
@@ -907,7 +1002,7 @@ export type ListAssessmentsQueryResult = NonNullable<
 export type ListAssessmentsQueryError = ErrorType<unknown>;
 
 /**
- * @summary List assessments for a user session
+ * @summary List assessments for a user
  */
 
 export function useListAssessments<
@@ -1020,7 +1115,7 @@ export const useUpsertAssessment = <
 };
 
 /**
- * @summary List evidence entries for a user session and role
+ * @summary List evidence entries for a user and role
  */
 export const getListEvidenceUrl = (params: ListEvidenceParams) => {
   const normalizedParams = new URLSearchParams();
@@ -1087,7 +1182,7 @@ export type ListEvidenceQueryResult = NonNullable<
 export type ListEvidenceQueryError = ErrorType<unknown>;
 
 /**
- * @summary List evidence entries for a user session and role
+ * @summary List evidence entries for a user and role
  */
 
 export function useListEvidence<
@@ -1471,7 +1566,7 @@ export function useListFinancialTargets<
 }
 
 /**
- * @summary List financial progress for a session and role
+ * @summary List financial progress for a user and role
  */
 export const getListFinancialProgressUrl = (
   params: ListFinancialProgressParams,
@@ -1544,7 +1639,7 @@ export type ListFinancialProgressQueryResult = NonNullable<
 export type ListFinancialProgressQueryError = ErrorType<unknown>;
 
 /**
- * @summary List financial progress for a session and role
+ * @summary List financial progress for a user and role
  */
 
 export function useListFinancialProgress<
@@ -1733,7 +1828,7 @@ export function useListProbationItems<
 }
 
 /**
- * @summary List probation assessments for a session
+ * @summary List probation assessments for a user
  */
 export const getListProbationAssessmentsUrl = (
   params: ListProbationAssessmentsParams,
@@ -1809,7 +1904,7 @@ export type ListProbationAssessmentsQueryResult = NonNullable<
 export type ListProbationAssessmentsQueryError = ErrorType<unknown>;
 
 /**
- * @summary List probation assessments for a session
+ * @summary List probation assessments for a user
  */
 
 export function useListProbationAssessments<
@@ -1923,7 +2018,7 @@ export const useUpsertProbationAssessment = <
 };
 
 /**
- * @summary List probation reflections for a session
+ * @summary List probation reflections for a user
  */
 export const getListProbationReflectionsUrl = (
   params: ListProbationReflectionsParams,
@@ -1999,7 +2094,7 @@ export type ListProbationReflectionsQueryResult = NonNullable<
 export type ListProbationReflectionsQueryError = ErrorType<unknown>;
 
 /**
- * @summary List probation reflections for a session
+ * @summary List probation reflections for a user
  */
 
 export function useListProbationReflections<
@@ -2113,7 +2208,7 @@ export const useUpsertProbationReflection = <
 };
 
 /**
- * @summary List probation actions for a session and review period
+ * @summary List probation actions for a user and review period
  */
 export const getListProbationActionsUrl = (
   params: ListProbationActionsParams,
@@ -2186,7 +2281,7 @@ export type ListProbationActionsQueryResult = NonNullable<
 export type ListProbationActionsQueryError = ErrorType<unknown>;
 
 /**
- * @summary List probation actions for a session and review period
+ * @summary List probation actions for a user and review period
  */
 
 export function useListProbationActions<
@@ -2475,7 +2570,7 @@ export const useDeleteProbationAction = <
 };
 
 /**
- * @summary List manager review summaries for a session
+ * @summary List manager review summaries for a user
  */
 export const getListProbationManagerReviewsUrl = (
   params: ListProbationManagerReviewsParams,
@@ -2554,7 +2649,7 @@ export type ListProbationManagerReviewsQueryResult = NonNullable<
 export type ListProbationManagerReviewsQueryError = ErrorType<unknown>;
 
 /**
- * @summary List manager review summaries for a session
+ * @summary List manager review summaries for a user
  */
 
 export function useListProbationManagerReviews<
@@ -2674,7 +2769,97 @@ export const useUpsertProbationManagerReview = <
 };
 
 /**
- * @summary Get readiness summary for a session across current and target roles
+ * @summary Publish a manager review (making it visible to the employee)
+ */
+export const getPublishProbationManagerReviewUrl = () => {
+  return `/api/probation/manager-reviews/publish`;
+};
+
+export const publishProbationManagerReview = async (
+  publishProbationReviewInput: PublishProbationReviewInput,
+  options?: RequestInit,
+): Promise<ProbationManagerReview> => {
+  return customFetch<ProbationManagerReview>(
+    getPublishProbationManagerReviewUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(publishProbationReviewInput),
+    },
+  );
+};
+
+export const getPublishProbationManagerReviewMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof publishProbationManagerReview>>,
+    TError,
+    { data: BodyType<PublishProbationReviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof publishProbationManagerReview>>,
+  TError,
+  { data: BodyType<PublishProbationReviewInput> },
+  TContext
+> => {
+  const mutationKey = ["publishProbationManagerReview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof publishProbationManagerReview>>,
+    { data: BodyType<PublishProbationReviewInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return publishProbationManagerReview(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PublishProbationManagerReviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof publishProbationManagerReview>>
+>;
+export type PublishProbationManagerReviewMutationBody =
+  BodyType<PublishProbationReviewInput>;
+export type PublishProbationManagerReviewMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Publish a manager review (making it visible to the employee)
+ */
+export const usePublishProbationManagerReview = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof publishProbationManagerReview>>,
+    TError,
+    { data: BodyType<PublishProbationReviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof publishProbationManagerReview>>,
+  TError,
+  { data: BodyType<PublishProbationReviewInput> },
+  TContext
+> => {
+  return useMutation(getPublishProbationManagerReviewMutationOptions(options));
+};
+
+/**
+ * @summary Get readiness summary for a user across current and target roles
  */
 export const getGetReadinessSummaryUrl = (
   params: GetReadinessSummaryParams,
@@ -2747,7 +2932,7 @@ export type GetReadinessSummaryQueryResult = NonNullable<
 export type GetReadinessSummaryQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get readiness summary for a session across current and target roles
+ * @summary Get readiness summary for a user across current and target roles
  */
 
 export function useGetReadinessSummary<
@@ -3118,6 +3303,90 @@ export const useUpdateUser = <
 };
 
 /**
+ * @summary Delete a user
+ */
+export const getDeleteUserUrl = (id: number) => {
+  return `/api/users/${id}`;
+};
+
+export const deleteUser = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteUserUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteUserMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteUser>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteUser>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteUser"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteUser>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteUser(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteUserMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteUser>>
+>;
+
+export type DeleteUserMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a user
+ */
+export const useDeleteUser = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteUser>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteUser>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteUserMutationOptions(options));
+};
+
+/**
  * @summary Get all team members for a manager
  */
 export const getGetManagerTeamUrl = (params: GetManagerTeamParams) => {
@@ -3313,93 +3582,3 @@ export function useGetManagerDashboardStats<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
-
-/**
- * @summary Publish a manager review (making it visible to the employee)
- */
-export const getPublishProbationManagerReviewUrl = () => {
-  return `/api/probation/manager-reviews/publish`;
-};
-
-export const publishProbationManagerReview = async (
-  publishProbationReviewInput: PublishProbationReviewInput,
-  options?: RequestInit,
-): Promise<ProbationManagerReview> => {
-  return customFetch<ProbationManagerReview>(
-    getPublishProbationManagerReviewUrl(),
-    {
-      ...options,
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...options?.headers },
-      body: JSON.stringify(publishProbationReviewInput),
-    },
-  );
-};
-
-export const getPublishProbationManagerReviewMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof publishProbationManagerReview>>,
-    TError,
-    { data: BodyType<PublishProbationReviewInput> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof publishProbationManagerReview>>,
-  TError,
-  { data: BodyType<PublishProbationReviewInput> },
-  TContext
-> => {
-  const mutationKey = ["publishProbationManagerReview"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof publishProbationManagerReview>>,
-    { data: BodyType<PublishProbationReviewInput> }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return publishProbationManagerReview(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type PublishProbationManagerReviewMutationResult = NonNullable<
-  Awaited<ReturnType<typeof publishProbationManagerReview>>
->;
-export type PublishProbationManagerReviewMutationBody =
-  BodyType<PublishProbationReviewInput>;
-export type PublishProbationManagerReviewMutationError = ErrorType<unknown>;
-
-/**
- * @summary Publish a manager review (making it visible to the employee)
- */
-export const usePublishProbationManagerReview = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof publishProbationManagerReview>>,
-    TError,
-    { data: BodyType<PublishProbationReviewInput> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof publishProbationManagerReview>>,
-  TError,
-  { data: BodyType<PublishProbationReviewInput> },
-  TContext
-> => {
-  return useMutation(getPublishProbationManagerReviewMutationOptions(options));
-};

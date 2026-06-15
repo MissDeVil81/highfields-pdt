@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import authRouter from "./auth";
 import careerPathsRouter from "./careerPaths";
 import rolesRouter from "./roles";
 import competenciesRouter from "./competencies";
@@ -19,6 +20,7 @@ import managerRouter from "./manager";
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use("/auth", authRouter);
 router.use("/career-paths", careerPathsRouter);
 router.use("/roles", rolesRouter);
 router.use("/competencies", competenciesRouter);

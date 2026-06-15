@@ -9,10 +9,11 @@ import type { AssessmentRating } from "./assessmentRating";
 
 export interface Assessment {
   id: number;
-  sessionId: string;
+  userId: number;
   competencyId: number;
   roleId: number;
   rating: AssessmentRating;
-  notes?: string;
+  /** @nullable */
+  notes?: string | null;
   updatedAt: Date;
 }

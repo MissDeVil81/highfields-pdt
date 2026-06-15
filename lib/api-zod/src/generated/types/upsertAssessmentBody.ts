@@ -8,7 +8,7 @@
 import type { UpsertAssessmentBodyRating } from "./upsertAssessmentBodyRating";
 
 export interface UpsertAssessmentBody {
-  sessionId: string;
+  userId: number;
   competencyId: number;
   roleId: number;
   rating: UpsertAssessmentBodyRating;

@@ -7,6 +7,6 @@
  */
 
 export interface PublishProbationReviewInput {
-  sessionId: string;
+  userId: number;
   reviewPeriod: string;
 }

@@ -8,7 +8,7 @@
 
 export interface ProbationAssessment {
   id: number;
-  sessionId: string;
+  userId: number;
   itemId: number;
   reviewPeriod: string;
   rating?: string | null;

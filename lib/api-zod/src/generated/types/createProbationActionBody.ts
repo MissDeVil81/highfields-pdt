@@ -7,7 +7,7 @@
  */
 
 export interface CreateProbationActionBody {
-  sessionId: string;
+  userId: number;
   reviewPeriod: string;
   actionText: string;
 }

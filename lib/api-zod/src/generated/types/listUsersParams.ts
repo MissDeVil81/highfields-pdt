@@ -8,5 +8,5 @@
 
 export type ListUsersParams = {
   managerId?: number;
-  sessionId?: string;
+  role?: string;
 };

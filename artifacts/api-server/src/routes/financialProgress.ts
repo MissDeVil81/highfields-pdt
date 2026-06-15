@@ -6,36 +6,36 @@ import { z } from "zod";
 const router = Router();
 
 const upsertSchema = z.object({
-  sessionId: z.string(),
+  userId: z.number().int(),
   targetId: z.number().int(),
   roleId: z.number().int(),
   currentAmount: z.number().int().min(0),
 });
 
 router.get("/", async (req, res) => {
-  const sessionId = req.query.sessionId as string;
+  const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
   const roleId = req.query.roleId ? parseInt(req.query.roleId as string) : undefined;
-  if (!sessionId) return res.status(400).json({ error: "sessionId is required" });
+  if (!userId) return res.status(400).json({ error: "userId is required" });
   if (!roleId) return res.status(400).json({ error: "roleId is required" });
 
   const rows = await db
     .select()
     .from(financialProgressTable)
-    .where(and(eq(financialProgressTable.sessionId, sessionId), eq(financialProgressTable.roleId, roleId)));
+    .where(and(eq(financialProgressTable.userId, userId), eq(financialProgressTable.roleId, roleId)));
 
-  res.json(rows);
+  return res.json(rows);
 });
 
 router.post("/", async (req, res) => {
   const result = upsertSchema.safeParse(req.body);
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
-  const { sessionId, targetId, roleId, currentAmount } = result.data;
+  const { userId, targetId, roleId, currentAmount } = result.data;
 
   const existing = await db
     .select()
     .from(financialProgressTable)
-    .where(and(eq(financialProgressTable.sessionId, sessionId), eq(financialProgressTable.targetId, targetId)));
+    .where(and(eq(financialProgressTable.userId, userId), eq(financialProgressTable.targetId, targetId)));
 
   if (existing.length > 0) {
     const [updated] = await db
@@ -48,9 +48,9 @@ router.post("/", async (req, res) => {
 
   const [created] = await db
     .insert(financialProgressTable)
-    .values({ sessionId, targetId, roleId, currentAmount })
+    .values({ userId, targetId, roleId, currentAmount })
     .returning();
-  res.json(created);
+  return res.json(created);
 });
 
 export default router;

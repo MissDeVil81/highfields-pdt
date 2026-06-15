@@ -6,7 +6,7 @@ import { z } from "zod";
 const router = Router();
 
 const upsertSchema = z.object({
-  sessionId: z.string(),
+  userId: z.number().int(),
   reviewPeriod: z.string(),
   goingWell: z.string().nullable().optional(),
   developmentAreas: z.string().nullable().optional(),
@@ -15,31 +15,31 @@ const upsertSchema = z.object({
 });
 
 router.get("/", async (req, res) => {
-  const sessionId = req.query.sessionId as string;
+  const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
   const reviewPeriod = req.query.reviewPeriod as string | undefined;
-  if (!sessionId) return res.status(400).json({ error: "sessionId is required" });
+  if (!userId) return res.status(400).json({ error: "userId is required" });
 
-  const conditions = [eq(probationManagerReviewsTable.sessionId, sessionId)];
+  const conditions = [eq(probationManagerReviewsTable.userId, userId)];
   if (reviewPeriod) {
     conditions.push(eq(probationManagerReviewsTable.reviewPeriod, reviewPeriod));
   }
 
   const rows = await db.select().from(probationManagerReviewsTable).where(and(...conditions));
-  res.json(rows);
+  return res.json(rows);
 });
 
 router.post("/", async (req, res) => {
   const result = upsertSchema.safeParse(req.body);
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
-  const { sessionId, reviewPeriod, goingWell, developmentAreas, reviewStatus, reviewDate } = result.data;
+  const { userId, reviewPeriod, goingWell, developmentAreas, reviewStatus, reviewDate } = result.data;
 
   const existing = await db
     .select()
     .from(probationManagerReviewsTable)
     .where(
       and(
-        eq(probationManagerReviewsTable.sessionId, sessionId),
+        eq(probationManagerReviewsTable.userId, userId),
         eq(probationManagerReviewsTable.reviewPeriod, reviewPeriod)
       )
     );
@@ -61,15 +61,22 @@ router.post("/", async (req, res) => {
 
   const [created] = await db
     .insert(probationManagerReviewsTable)
-    .values({ sessionId, reviewPeriod, goingWell: goingWell ?? null, developmentAreas: developmentAreas ?? null, reviewStatus: reviewStatus ?? null, reviewDate: reviewDate ?? null })
+    .values({
+      userId,
+      reviewPeriod,
+      goingWell: goingWell ?? null,
+      developmentAreas: developmentAreas ?? null,
+      reviewStatus: reviewStatus ?? null,
+      reviewDate: reviewDate ?? null,
+    })
     .returning();
-  res.json(created);
+  return res.json(created);
 });
 
 router.post("/publish", async (req, res) => {
-  const { sessionId, reviewPeriod } = req.body as { sessionId?: string; reviewPeriod?: string };
-  if (!sessionId || !reviewPeriod) {
-    return res.status(400).json({ error: "sessionId and reviewPeriod are required" });
+  const { userId, reviewPeriod } = req.body as { userId?: number; reviewPeriod?: string };
+  if (!userId || !reviewPeriod) {
+    return res.status(400).json({ error: "userId and reviewPeriod are required" });
   }
 
   const [existing] = await db
@@ -77,7 +84,7 @@ router.post("/publish", async (req, res) => {
     .from(probationManagerReviewsTable)
     .where(
       and(
-        eq(probationManagerReviewsTable.sessionId, sessionId),
+        eq(probationManagerReviewsTable.userId, userId),
         eq(probationManagerReviewsTable.reviewPeriod, reviewPeriod)
       )
     );
@@ -90,7 +97,7 @@ router.post("/publish", async (req, res) => {
     .where(eq(probationManagerReviewsTable.id, existing.id))
     .returning();
 
-  res.json(published);
+  return res.json(published);
 });
 
 export default router;

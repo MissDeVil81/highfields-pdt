@@ -7,6 +7,6 @@
  */
 
 export type ListProbationReflectionsParams = {
-  sessionId: string;
+  userId: number;
   reviewPeriod?: string;
 };

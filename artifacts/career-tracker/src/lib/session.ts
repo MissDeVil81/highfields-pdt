@@ -1,14 +1,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { v4 as uuidv4 } from 'uuid';
 
 interface SessionState {
-  sessionId: string;
+  userId: number | null;
+  userName: string | null;
+  userEmail: string | null;
   currentRoleId: number | null;
   targetRoleId: number | null;
   careerPathId: number | null;
   targetCareerPathId: number | null;
-  setSessionId: (id: string) => void;
+  setUser: (id: number, name: string, email: string) => void;
+  clearUser: () => void;
   setCurrentRoleId: (id: number | null) => void;
   setTargetRoleId: (id: number | null) => void;
   setCareerPathId: (id: number | null) => void;
@@ -19,12 +21,15 @@ interface SessionState {
 export const useSessionStore = create<SessionState>()(
   persist(
     (set) => ({
-      sessionId: uuidv4(),
+      userId: null,
+      userName: null,
+      userEmail: null,
       currentRoleId: null,
       targetRoleId: null,
       careerPathId: null,
       targetCareerPathId: null,
-      setSessionId: (id) => set({ sessionId: id }),
+      setUser: (id, name, email) => set({ userId: id, userName: name, userEmail: email }),
+      clearUser: () => set({ userId: null, userName: null, userEmail: null, currentRoleId: null, targetRoleId: null, careerPathId: null, targetCareerPathId: null }),
       setCurrentRoleId: (id) => set({ currentRoleId: id }),
       setTargetRoleId: (id) => set({ targetRoleId: id }),
       setCareerPathId: (id) => set({ careerPathId: id }),

@@ -7,7 +7,7 @@
  */
 
 export interface UpsertProbationManagerReviewBody {
-  sessionId: string;
+  userId: number;
   reviewPeriod: string;
   goingWell?: string | null;
   developmentAreas?: string | null;

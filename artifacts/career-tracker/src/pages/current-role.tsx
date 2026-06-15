@@ -1,4 +1,4 @@
-import { useGetRole, useListAssessments, useUpsertAssessment, getListAssessmentsQueryKey } from "@workspace/api-client-react";
+import { useGetRole, useListAssessments, useUpsertAssessment, getListAssessmentsQueryKey, getGetRoleQueryKey } from "@workspace/api-client-react";
 import { useSessionStore } from "@/lib/session";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -40,18 +40,19 @@ function ReadinessBar({ assessments, total }: { assessments: Array<{ rating: str
 
 export default function CurrentRole() {
   const [, navigate] = useLocation();
-  const { sessionId, currentRoleId } = useSessionStore();
+  const { userId, currentRoleId } = useSessionStore();
   const queryClient = useQueryClient();
   const [jobSpecOpen, setJobSpecOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
 
   const { data: role, isLoading: roleLoading } = useGetRole(currentRoleId!, {
-    query: { enabled: !!currentRoleId },
+    query: { queryKey: getGetRoleQueryKey(currentRoleId!), enabled: !!currentRoleId },
   });
 
+  const assessmentsParams = { userId: userId ?? 0, roleId: currentRoleId ?? undefined };
   const { data: assessments = [] } = useListAssessments(
-    { sessionId, roleId: currentRoleId ?? undefined },
-    { query: { enabled: !!currentRoleId } }
+    assessmentsParams,
+    { query: { queryKey: getListAssessmentsQueryKey(assessmentsParams), enabled: !!currentRoleId && !!userId } }
   );
 
   const upsert = useUpsertAssessment({
@@ -94,7 +95,7 @@ export default function CurrentRole() {
     });
 
   function handleRate(competencyId: number, rating: Rating) {
-    upsert.mutate({ data: { sessionId, competencyId, roleId: currentRoleId!, rating } });
+    upsert.mutate({ data: { userId: userId!, competencyId, roleId: currentRoleId!, rating } });
   }
 
   function toggleCategory(key: string) {

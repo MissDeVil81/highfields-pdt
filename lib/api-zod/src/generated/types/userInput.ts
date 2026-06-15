@@ -11,10 +11,10 @@ export interface UserInput {
   email?: string;
   roles?: string[];
   managerId?: number;
-  sessionId?: string;
   department?: string;
   jobTitle?: string;
   startDate?: string;
   probationStatus?: string;
+  targetRoleId?: number;
   isActive?: string;
 }

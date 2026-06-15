@@ -8,7 +8,7 @@
 import type { CreateEvidenceBodyRating } from "./createEvidenceBodyRating";
 
 export interface CreateEvidenceBody {
-  sessionId: string;
+  userId: number;
   competencyId: number;
   roleId: number;
   title: string;

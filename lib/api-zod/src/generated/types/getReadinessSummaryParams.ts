@@ -7,7 +7,7 @@
  */
 
 export type GetReadinessSummaryParams = {
-  sessionId: string;
+  userId: number;
   currentRoleId?: number;
   targetRoleId?: number;
 };

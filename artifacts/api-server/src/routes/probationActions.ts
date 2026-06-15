@@ -6,7 +6,7 @@ import { z } from "zod";
 const router = Router();
 
 const createSchema = z.object({
-  sessionId: z.string(),
+  userId: z.number().int(),
   reviewPeriod: z.string(),
   actionText: z.string().min(1),
 });
@@ -17,17 +17,17 @@ const updateSchema = z.object({
 });
 
 router.get("/", async (req, res) => {
-  const sessionId = req.query.sessionId as string;
+  const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
   const reviewPeriod = req.query.reviewPeriod as string | undefined;
-  if (!sessionId) return res.status(400).json({ error: "sessionId is required" });
+  if (!userId) return res.status(400).json({ error: "userId is required" });
 
-  const conditions = [eq(probationActionsTable.sessionId, sessionId)];
+  const conditions = [eq(probationActionsTable.userId, userId)];
   if (reviewPeriod) {
     conditions.push(eq(probationActionsTable.reviewPeriod, reviewPeriod));
   }
 
   const rows = await db.select().from(probationActionsTable).where(and(...conditions));
-  res.json(rows);
+  return res.json(rows);
 });
 
 router.post("/", async (req, res) => {
@@ -38,7 +38,7 @@ router.post("/", async (req, res) => {
     .insert(probationActionsTable)
     .values(result.data)
     .returning();
-  res.json(created);
+  return res.json(created);
 });
 
 router.put("/:id", async (req, res) => {
@@ -55,7 +55,7 @@ router.put("/:id", async (req, res) => {
     .returning();
 
   if (!updated) return res.status(404).json({ error: "Not found" });
-  res.json(updated);
+  return res.json(updated);
 });
 
 router.delete("/:id", async (req, res) => {
@@ -63,7 +63,7 @@ router.delete("/:id", async (req, res) => {
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
   await db.delete(probationActionsTable).where(eq(probationActionsTable.id, id));
-  res.json({ ok: true });
+  return res.json({ ok: true });
 });
 
 export default router;
