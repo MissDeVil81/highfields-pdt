@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 const REVIEW_PERIODS = [
   { value: "1_month", label: "1 Month" },
   { value: "3_month", label: "3 Months" },
+  { value: "5_month", label: "5 Months" },
   { value: "6_month", label: "6 Months" },
 ];
 
@@ -267,7 +268,7 @@ export default function EmployeeProbation() {
           </TabsList>
 
           {REVIEW_PERIODS.map((period) => (
-            <TabsContent key={period.value} value={period.value} className="space-y-6">
+            <TabsContent key={period.value} value={period.value} className="space-y-6 pb-24">
               {/* Published status + Date */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -403,6 +404,38 @@ export default function EmployeeProbation() {
             </TabsContent>
           ))}
         </Tabs>
+      </div>
+
+      {/* Bottom action bar */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-6 py-3 z-10">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+          <p className="text-xs text-muted-foreground">
+            {isPublished
+              ? `Published ${new Date(currentReview!.publishedAt!).toLocaleDateString("en-GB")} — employee can see this review`
+              : "Save as draft or publish to share with the employee."}
+          </p>
+          <div className="flex gap-2 shrink-0">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleSave}
+              disabled={isSaving || !userId}
+              className="gap-1.5"
+            >
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Save Draft
+            </Button>
+            <Button
+              size="sm"
+              onClick={handlePublish}
+              disabled={isPublishing || !userId}
+              className="gap-1.5"
+            >
+              {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              {isPublished ? "Re-publish" : "Publish"}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

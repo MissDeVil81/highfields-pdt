@@ -642,20 +642,6 @@ function ReflectionSection({ userId, reviewPeriod, isMonth6 }: {
             ))}
           </div>
         </div>
-        {isMonth6 && (
-          <div className="pt-6 mt-2 border-t border-border">
-            <h4 className="text-base font-semibold text-foreground mb-1">Preparing for Probation Review</h4>
-            <p className="text-sm text-muted-foreground mb-4">
-              Use these questions to prepare for your manager-led probation discussion.
-            </p>
-            <div className="space-y-4">
-              {field("biggestAchievements", "What are your biggest achievements during probation?")}
-              {field("mostProudOf", "What are you most proud of?")}
-              {field("stillDevelop", "What areas do you still want to develop?")}
-              {field("readyToPass", "Why do you believe you are ready to pass probation?")}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
