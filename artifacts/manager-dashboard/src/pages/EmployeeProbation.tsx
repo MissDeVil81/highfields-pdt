@@ -30,18 +30,27 @@ const REVIEW_PERIODS = [
   { value: "month6", label: "6 Months" },
 ];
 
-const RATING_OPTIONS = ["red", "amber", "green"];
+const MANAGER_RATING_OPTIONS = [
+  { value: "yes", label: "Yes", activeClass: "bg-green-500 text-white border-green-500" },
+  { value: "in_progress", label: "In Progress", activeClass: "bg-amber-500 text-white border-amber-500" },
+  { value: "not_yet", label: "Not Yet", activeClass: "bg-red-400 text-white border-red-400" },
+];
 
 function RatingBadge({ rating }: { rating?: string | null }) {
   if (!rating) return <span className="text-xs text-muted-foreground">—</span>;
-  const colors: Record<string, string> = {
-    red: "bg-red-100 text-red-800 border-red-200",
-    amber: "bg-amber-100 text-amber-800 border-amber-200",
-    green: "bg-green-100 text-green-800 border-green-200",
+  const config: Record<string, { color: string; label: string }> = {
+    yes: { color: "bg-green-100 text-green-800 border-green-200", label: "Yes" },
+    in_progress: { color: "bg-amber-100 text-amber-800 border-amber-200", label: "In Progress" },
+    not_yet: { color: "bg-red-100 text-red-800 border-red-200", label: "Not Yet" },
+    no: { color: "bg-red-100 text-red-800 border-red-200", label: "Not Yet" },
+    most: { color: "bg-green-100 text-green-800 border-green-200", label: "Most of the time" },
+    some: { color: "bg-amber-100 text-amber-800 border-amber-200", label: "Some of the time" },
+    rarely: { color: "bg-red-100 text-red-800 border-red-200", label: "Rarely" },
   };
+  const c = config[rating] ?? { color: "bg-muted text-muted-foreground border-border", label: rating };
   return (
-    <Badge className={`${colors[rating] ?? "bg-muted"} font-normal capitalize border`}>
-      {rating}
+    <Badge className={`${c.color} font-normal border text-xs`}>
+      {c.label}
     </Badge>
   );
 }
@@ -54,22 +63,18 @@ function ManagerRatingSelect({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex gap-1.5">
-      {RATING_OPTIONS.map((r) => (
+    <div className="flex gap-1.5 flex-wrap">
+      {MANAGER_RATING_OPTIONS.map((opt) => (
         <button
-          key={r}
-          onClick={() => onChange(r)}
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
           className={`px-2.5 py-1 rounded text-xs font-medium border transition-all ${
-            value === r
-              ? r === "red"
-                ? "bg-red-500 text-white border-red-500"
-                : r === "amber"
-                ? "bg-amber-500 text-white border-amber-500"
-                : "bg-green-500 text-white border-green-500"
+            value === opt.value
+              ? opt.activeClass
               : "bg-muted text-muted-foreground border-border hover:border-foreground/30"
           }`}
         >
-          {r.charAt(0).toUpperCase() + r.slice(1)}
+          {opt.label}
         </button>
       ))}
     </div>
@@ -231,8 +236,9 @@ export default function EmployeeProbation() {
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-semibold truncate">{employee.name}</h1>
-          <p className="text-xs text-sidebar-foreground/60">{employee.jobTitle ?? "Probation Review"}</p>
+          <p className="text-xs text-sidebar-primary font-semibold tracking-wider uppercase">Probation Review</p>
+          <h1 className="text-lg font-semibold truncate text-sidebar-foreground">{employee.name}</h1>
+          <p className="text-xs text-sidebar-foreground/60">{employee.jobTitle}</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -269,7 +275,6 @@ export default function EmployeeProbation() {
 
           {REVIEW_PERIODS.map((period) => (
             <TabsContent key={period.value} value={period.value} className="space-y-6 pb-24">
-              {/* Published status + Date */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {isPublished ? (
@@ -294,18 +299,14 @@ export default function EmployeeProbation() {
                 </div>
               </div>
 
-              {/* Assessments table */}
               {!userId ? (
                 <Card>
                   <CardContent className="py-8 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      No employee data available.
-                    </p>
+                    <p className="text-sm text-muted-foreground">No employee data available.</p>
                   </CardContent>
                 </Card>
               ) : (
                 <>
-                  {/* Side-by-side items */}
                   {sections.map((section) => {
                     const sectionItems = items.filter((i) => i.section === section);
                     return (
@@ -316,12 +317,8 @@ export default function EmployeeProbation() {
                         <CardContent className="p-0">
                           <div className="grid grid-cols-[1fr_1fr_1fr] text-xs font-medium text-muted-foreground border-b border-border bg-muted/30">
                             <div className="px-4 py-2">Objective</div>
-                            <div className="px-4 py-2 border-l border-border">
-                              Employee
-                            </div>
-                            <div className="px-4 py-2 border-l border-border">
-                              Manager
-                            </div>
+                            <div className="px-4 py-2 border-l border-border">Employee</div>
+                            <div className="px-4 py-2 border-l border-border">Manager</div>
                           </div>
                           {sectionItems.map((item) => {
                             const assessment = assessmentMap.get(item.id);
@@ -367,7 +364,6 @@ export default function EmployeeProbation() {
                     );
                   })}
 
-                  {/* Manager summary */}
                   <Card>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-sm font-semibold">Manager Summary</CardTitle>
@@ -406,7 +402,6 @@ export default function EmployeeProbation() {
         </Tabs>
       </div>
 
-      {/* Bottom action bar */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-6 py-3 z-10">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
@@ -415,22 +410,11 @@ export default function EmployeeProbation() {
               : "Save as draft or publish to share with the employee."}
           </p>
           <div className="flex gap-2 shrink-0">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handleSave}
-              disabled={isSaving || !userId}
-              className="gap-1.5"
-            >
+            <Button size="sm" variant="secondary" onClick={handleSave} disabled={isSaving || !userId} className="gap-1.5">
               {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Save Draft
             </Button>
-            <Button
-              size="sm"
-              onClick={handlePublish}
-              disabled={isPublishing || !userId}
-              className="gap-1.5"
-            >
+            <Button size="sm" onClick={handlePublish} disabled={isPublishing || !userId} className="gap-1.5">
               {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
               {isPublished ? "Re-publish" : "Publish"}
             </Button>

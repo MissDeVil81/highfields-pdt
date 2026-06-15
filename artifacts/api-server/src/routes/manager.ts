@@ -52,7 +52,7 @@ router.get("/dashboard-stats", async (req, res) => {
   let needingAttention = 0;
 
   for (const member of members) {
-    if (member.probationStatus === "in_probation") inProbation++;
+    if (member.probationStatus === "in_progress") inProbation++;
 
     const reviews = await db
       .select()
@@ -64,7 +64,7 @@ router.get("/dashboard-stats", async (req, res) => {
 
     if (hasPublished) publishedReviews++;
     if (hasDraft && !hasPublished) pendingReviews++;
-    if (!reviews.length && member.probationStatus === "in_probation") needingAttention++;
+    if (!reviews.length && member.probationStatus === "in_progress") needingAttention++;
   }
 
   return res.json({
