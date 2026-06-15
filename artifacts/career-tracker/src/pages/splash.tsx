@@ -1,9 +1,16 @@
 import { useLocation } from "wouter";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, RefreshCw } from "lucide-react";
 import hpsLogo from "@assets/HPS_logo_1776427719304.png";
+import { useSessionStore } from "@/lib/session";
 
 export default function Splash() {
   const [, navigate] = useLocation();
+  const { userId, userName, clearUser } = useSessionStore();
+
+  function handleSwitch() {
+    clearUser();
+    navigate("/setup");
+  }
 
   return (
     <div className="min-h-screen bg-sidebar flex flex-col items-center justify-center px-8 relative overflow-hidden">
@@ -57,9 +64,19 @@ export default function Splash() {
           className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-base transition-all duration-200 hover:scale-105 active:scale-100 shadow-lg"
           style={{ backgroundColor: "#F5C346", color: "#1c1c2e" }}
         >
-          Get Started
+          {userId ? `Continue as ${userName}` : "Get Started"}
           <ArrowRight className="h-5 w-5" />
         </button>
+
+        {userId && (
+          <button
+            onClick={handleSwitch}
+            className="mt-4 inline-flex items-center gap-2 text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground/80 transition-colors"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Switch user
+          </button>
+        )}
       </div>
     </div>
   );
