@@ -13,6 +13,8 @@ import probationAssessmentsRouter from "./probationAssessments";
 import probationReflectionsRouter from "./probationReflections";
 import probationActionsRouter from "./probationActions";
 import probationManagerReviewsRouter from "./probationManagerReviews";
+import usersRouter from "./users";
+import managerRouter from "./manager";
 
 const router: IRouter = Router();
 
@@ -30,5 +32,7 @@ router.use("/probation/assessments", probationAssessmentsRouter);
 router.use("/probation/reflections", probationReflectionsRouter);
 router.use("/probation/actions", probationActionsRouter);
 router.use("/probation/manager-reviews", probationManagerReviewsRouter);
+router.use("/users", usersRouter);
+router.use("/manager", managerRouter);
 
 export default router;

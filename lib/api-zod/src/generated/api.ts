@@ -519,6 +519,7 @@ export const ListProbationManagerReviewsResponseItem = zod.object({
   developmentAreas: zod.string().nullish(),
   reviewStatus: zod.string().nullish(),
   reviewDate: zod.string().nullish(),
+  publishedAt: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date().optional(),
   updatedAt: zod.coerce.date().optional(),
 });
@@ -546,6 +547,7 @@ export const UpsertProbationManagerReviewResponse = zod.object({
   developmentAreas: zod.string().nullish(),
   reviewStatus: zod.string().nullish(),
   reviewDate: zod.string().nullish(),
+  publishedAt: zod.coerce.date().nullish(),
   createdAt: zod.coerce.date().optional(),
   updatedAt: zod.coerce.date().optional(),
 });
@@ -588,4 +590,163 @@ export const GetReadinessSummaryResponse = zod.object({
         .nullish(),
     })
     .nullable(),
+});
+
+/**
+ * @summary List all users
+ */
+export const ListUsersQueryParams = zod.object({
+  managerId: zod.coerce.number().optional(),
+  sessionId: zod.coerce.string().optional(),
+});
+
+export const ListUsersResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string().nullish(),
+  roles: zod.array(zod.string()),
+  managerId: zod.number().nullish(),
+  sessionId: zod.string().nullish(),
+  department: zod.string().nullish(),
+  jobTitle: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  probationStatus: zod.string().nullish(),
+  isActive: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListUsersResponse = zod.array(ListUsersResponseItem);
+
+/**
+ * @summary Create a new user
+ */
+export const CreateUserBody = zod.object({
+  name: zod.string(),
+  email: zod.string().optional(),
+  roles: zod.array(zod.string()).optional(),
+  managerId: zod.number().optional(),
+  sessionId: zod.string().optional(),
+  department: zod.string().optional(),
+  jobTitle: zod.string().optional(),
+  startDate: zod.string().optional(),
+  probationStatus: zod.string().optional(),
+  isActive: zod.string().optional(),
+});
+
+/**
+ * @summary Get a user by ID
+ */
+export const GetUserParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetUserResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string().nullish(),
+  roles: zod.array(zod.string()),
+  managerId: zod.number().nullish(),
+  sessionId: zod.string().nullish(),
+  department: zod.string().nullish(),
+  jobTitle: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  probationStatus: zod.string().nullish(),
+  isActive: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update a user
+ */
+export const UpdateUserParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateUserBody = zod.object({
+  name: zod.string().optional(),
+  email: zod.string().optional(),
+  roles: zod.array(zod.string()).optional(),
+  managerId: zod.number().nullish(),
+  sessionId: zod.string().optional(),
+  department: zod.string().optional(),
+  jobTitle: zod.string().optional(),
+  startDate: zod.string().optional(),
+  probationStatus: zod.string().optional(),
+  isActive: zod.string().optional(),
+});
+
+export const UpdateUserResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string().nullish(),
+  roles: zod.array(zod.string()),
+  managerId: zod.number().nullish(),
+  sessionId: zod.string().nullish(),
+  department: zod.string().nullish(),
+  jobTitle: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  probationStatus: zod.string().nullish(),
+  isActive: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Get all team members for a manager
+ */
+export const GetManagerTeamQueryParams = zod.object({
+  managerId: zod.coerce.number(),
+});
+
+export const GetManagerTeamResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string().nullish(),
+  jobTitle: zod.string().nullish(),
+  department: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  probationStatus: zod.string().nullish(),
+  sessionId: zod.string().nullish(),
+  isActive: zod.string(),
+  latestReviewPeriod: zod.string().nullish(),
+  latestReviewPublishedAt: zod.coerce.date().nullish(),
+  reviewCount: zod.number(),
+});
+export const GetManagerTeamResponse = zod.array(GetManagerTeamResponseItem);
+
+/**
+ * @summary Get probation dashboard stats for a manager
+ */
+export const GetManagerDashboardStatsQueryParams = zod.object({
+  managerId: zod.coerce.number(),
+});
+
+export const GetManagerDashboardStatsResponse = zod.object({
+  totalTeam: zod.number(),
+  inProbation: zod.number(),
+  pendingReviews: zod.number(),
+  publishedReviews: zod.number(),
+  needingAttention: zod.number(),
+});
+
+/**
+ * @summary Publish a manager review (making it visible to the employee)
+ */
+export const PublishProbationManagerReviewBody = zod.object({
+  sessionId: zod.string(),
+  reviewPeriod: zod.string(),
+});
+
+export const PublishProbationManagerReviewResponse = zod.object({
+  id: zod.number(),
+  sessionId: zod.string(),
+  reviewPeriod: zod.string(),
+  goingWell: zod.string().nullish(),
+  developmentAreas: zod.string().nullish(),
+  reviewStatus: zod.string().nullish(),
+  reviewDate: zod.string().nullish(),
+  publishedAt: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date().optional(),
+  updatedAt: zod.coerce.date().optional(),
 });

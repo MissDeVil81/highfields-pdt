@@ -25,6 +25,10 @@ tags:
     description: Financial promotion targets per role
   - name: financialProgress
     description: User financial progress against targets
+  - name: users
+    description: User management operations
+  - name: manager
+    description: Manager view operations
 
 paths:
   /healthz:
@@ -645,6 +649,152 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReadinessSummary"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users
+      parameters:
+        - name: managerId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: sessionId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: Created user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+    put:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /manager/team:
+    get:
+      operationId: getManagerTeam
+      tags: [manager]
+      summary: Get all team members for a manager
+      parameters:
+        - name: managerId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Team members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ManagerTeamMember"
+
+  /manager/dashboard-stats:
+    get:
+      operationId: getManagerDashboardStats
+      tags: [manager]
+      summary: Get probation dashboard stats for a manager
+      parameters:
+        - name: managerId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagerDashboardStats"
+
+  /probation/manager-reviews/publish:
+    post:
+      operationId: publishProbationManagerReview
+      tags: [probation]
+      summary: Publish a manager review (making it visible to the employee)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishProbationReviewInput"
+      responses:
+        "200":
+          description: Published review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProbationManagerReview"
 
 components:
   schemas:
@@ -1312,6 +1462,9 @@ components:
         reviewDate:
           type: string
           nullable: true
+        publishedAt:
+          type: ["string", "null"]
+          format: date-time
         createdAt:
           type: string
           format: date-time
@@ -1342,6 +1495,166 @@ components:
         reviewDate:
           type: string
           nullable: true
+      required:
+        - sessionId
+        - reviewPeriod
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: ["string", "null"]
+        roles:
+          type: array
+          items:
+            type: string
+        managerId:
+          type: ["integer", "null"]
+        sessionId:
+          type: ["string", "null"]
+        department:
+          type: ["string", "null"]
+        jobTitle:
+          type: ["string", "null"]
+        startDate:
+          type: ["string", "null"]
+        probationStatus:
+          type: ["string", "null"]
+        isActive:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - roles
+        - isActive
+        - createdAt
+        - updatedAt
+
+    UserInput:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        managerId:
+          type: integer
+        sessionId:
+          type: string
+        department:
+          type: string
+        jobTitle:
+          type: string
+        startDate:
+          type: string
+        probationStatus:
+          type: string
+        isActive:
+          type: string
+      required:
+        - name
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        managerId:
+          type: ["integer", "null"]
+        sessionId:
+          type: string
+        department:
+          type: string
+        jobTitle:
+          type: string
+        startDate:
+          type: string
+        probationStatus:
+          type: string
+        isActive:
+          type: string
+
+    ManagerTeamMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: ["string", "null"]
+        jobTitle:
+          type: ["string", "null"]
+        department:
+          type: ["string", "null"]
+        startDate:
+          type: ["string", "null"]
+        probationStatus:
+          type: ["string", "null"]
+        sessionId:
+          type: ["string", "null"]
+        isActive:
+          type: string
+        latestReviewPeriod:
+          type: ["string", "null"]
+        latestReviewPublishedAt:
+          type: ["string", "null"]
+          format: date-time
+        reviewCount:
+          type: integer
+      required:
+        - id
+        - name
+        - isActive
+        - reviewCount
+
+    ManagerDashboardStats:
+      type: object
+      properties:
+        totalTeam:
+          type: integer
+        inProbation:
+          type: integer
+        pendingReviews:
+          type: integer
+        publishedReviews:
+          type: integer
+        needingAttention:
+          type: integer
+      required:
+        - totalTeam
+        - inProbation
+        - pendingReviews
+        - publishedReviews
+        - needingAttention
+
+    PublishProbationReviewInput:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        reviewPeriod:
+          type: string
       required:
         - sessionId
         - reviewPeriod

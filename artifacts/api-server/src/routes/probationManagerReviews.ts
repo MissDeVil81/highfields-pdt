@@ -66,4 +66,31 @@ router.post("/", async (req, res) => {
   res.json(created);
 });
 
+router.post("/publish", async (req, res) => {
+  const { sessionId, reviewPeriod } = req.body as { sessionId?: string; reviewPeriod?: string };
+  if (!sessionId || !reviewPeriod) {
+    return res.status(400).json({ error: "sessionId and reviewPeriod are required" });
+  }
+
+  const [existing] = await db
+    .select()
+    .from(probationManagerReviewsTable)
+    .where(
+      and(
+        eq(probationManagerReviewsTable.sessionId, sessionId),
+        eq(probationManagerReviewsTable.reviewPeriod, reviewPeriod)
+      )
+    );
+
+  if (!existing) return res.status(404).json({ error: "Review not found" });
+
+  const [published] = await db
+    .update(probationManagerReviewsTable)
+    .set({ publishedAt: new Date(), updatedAt: new Date() })
+    .where(eq(probationManagerReviewsTable.id, existing.id))
+    .returning();
+
+  res.json(published);
+});
+
 export default router;

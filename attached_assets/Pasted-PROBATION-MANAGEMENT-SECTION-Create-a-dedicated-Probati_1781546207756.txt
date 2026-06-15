@@ -1,0 +1,143 @@
+PROBATION MANAGEMENT SECTION
+
+Create a dedicated Probation Dashboard within the Manager Dashboard.
+
+Purpose:
+Allow managers to easily identify, support and track all employees currently in probation.
+
+Display:
+
+• Employee Name
+• Role
+• Start Date
+• Current Probation Month
+• Next Check-In Due Date
+• Overall Probation Score
+• Probation Status:
+
+* On Track
+* Needs Support
+* At Risk
+* Passed
+* Failed
+
+Manager Actions:
+
+• Schedule Check-In
+• Complete Check-In
+• Record Notes
+• Assign Actions
+• Publish Feedback
+
+Probation Check-In Form
+
+For each probation review managers can score:
+
+Skills
+Knowledge
+Behaviour
+Results
+
+Score each area:
+
+1 = Below Expectations
+2 = Partially Meeting Expectations
+3 = Meeting Expectations
+4 = Exceeding Expectations
+
+Manager records:
+
+• Strengths
+• Development Areas
+• Support Required
+• Agreed Actions
+• Review Outcome
+
+The system should automatically maintain a history of all probation reviews and display progress over time.
+
+Managers should be able to quickly see:
+
+• Who is due a probation review
+• Who is overdue a probation review
+• Who is at risk
+• Who is ready to pass probation
+
+PROMOTION OBJECTIVES SECTION
+
+Create a dedicated Promotion Dashboard for employees working towards their next role.
+
+Purpose:
+Allow managers to coach, monitor and document progress against promotion objectives.
+
+Display:
+
+• Employee Name
+• Current Role
+• Target Role
+• Promotion Readiness %
+• Number of Objectives Complete
+• Number of Objectives Outstanding
+• Next Promotion Check-In Date
+
+Manager Actions:
+
+• Complete Promotion Check-In
+• Update Progress
+• Add Evidence
+• Assign New Actions
+• Publish Feedback
+
+Promotion Check-In Form
+
+For each objective display:
+
+• Objective Description
+• Success Criteria
+• Target Date
+• Employee Progress Update
+• Manager Feedback
+• Evidence Attached
+• Status:
+
+* Not Started
+* In Progress
+* Completed
+* Exceeded
+
+Managers should be able to record:
+
+• Check-In Date
+• Notes
+• Strengths Demonstrated
+• Development Areas
+• Actions Agreed
+• Overall Promotion Recommendation
+
+Promotion Recommendation Options:
+
+• Not Yet Ready
+• Progressing Well
+• Nearly Ready
+• Ready for Promotion
+
+AUDIT TRAIL
+
+Maintain a full history of all:
+
+• Probation Reviews
+• Promotion Check-Ins
+• Feedback Published
+• Actions Assigned
+• Actions Completed
+
+Managers and Admins must be able to view historical records at any time.
+
+MANAGER HOME PAGE
+
+Create three manager action panels at the top of the dashboard:
+
+1. Employees Requiring Probation Reviews
+2. Employees Working Towards Promotion
+3. Employees Requiring Development Support
+
+Show counts and quick links so managers immediately know who needs attention when they log in.

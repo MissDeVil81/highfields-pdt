@@ -1,0 +1,445 @@
+Build the Manager View and Admin View for the Career Development, Probation and Promotion platform.
+
+The platform already has an individual employee development tool. The Manager View and Admin View must connect to the same employee records. Do not create separate disconnected forms or duplicate data.
+
+SINGLE SOURCE OF TRUTH
+
+The employee development record is the master record.
+
+The Manager View should be a manager-facing view of the same records the employee uses.
+
+When the employee updates their self-assessment, the manager should see it in the Manager View.
+
+When the manager publishes feedback, scores or review comments, the employee should see them in their own app.
+
+There should only ever be one development record per employee.
+
+FLEXIBLE USER PERMISSIONS
+
+Build an Admin View where admins can assign users and control which views each person can access.
+
+A user may have one or more views at the same time:
+
+• Employee View
+• Manager View
+• Admin View
+• Senior Leadership View
+
+Examples:
+
+• An employee may only have Employee View.
+• A manager may have Employee View for their own development and Manager View for their team.
+• A senior leader may have Employee View, Manager View and Senior Leadership View.
+• An admin may have Employee View and Admin View.
+
+Do not assume one user has only one role.
+
+ADMIN VIEW REQUIREMENTS
+
+Create an Admin Dashboard where admins can:
+
+• Add new users
+• Edit users
+• Deactivate users
+• Assign job role
+• Assign department/team
+• Assign line manager
+• Assign start date
+• Assign probation status
+• Assign target role
+• Assign promotion status
+• Assign one or more dashboard views
+• Upload users in bulk by spreadsheet
+• Export user and review data
+
+Admins must be able to assign visibility rules:
+
+• Which manager can see which employees
+• Which senior leader can see which teams
+• Which users can access Admin View
+• Which users can access Manager View
+• Which users can access Employee View
+• Which users can access Senior Leadership View
+
+Admin Dashboard should show:
+
+• Total users
+• Active users
+• Inactive users
+• Users in probation
+• Users working towards promotion
+• Managers with direct reports
+• Users without assigned managers
+• Reviews overdue
+• Probation reviews overdue
+• Promotion check-ins overdue
+
+TEAM AND ROLE MANAGEMENT
+
+Admins must be able to:
+
+• Create teams
+• Edit teams
+• Assign users to teams
+• Assign managers to teams
+• Allow one manager to view multiple teams
+• Allow one employee to have one primary manager
+• Allow optional secondary manager visibility
+• Create job roles
+• Edit job roles
+• Assign competency frameworks to job roles
+• Create probation templates
+• Create promotion objective templates
+• Assign templates to users or roles
+
+VIEW ACCESS RULES
+
+Employee View:
+• Can see their own development plan
+• Can complete self-assessments
+• Can see only published manager feedback
+• Cannot edit manager comments, manager scores or manager status fields
+
+Manager View:
+• Can see assigned direct reports only
+• Can review employee self-assessments
+• Can complete manager scores and comments
+• Can save drafts
+• Can publish feedback to the employee
+• Can complete probation reviews
+• Can complete promotion check-ins
+• Can see probation and promotion dashboards for their assigned team only
+
+Admin View:
+• Can see all users
+• Can edit users
+• Can assign managers
+• Can assign dashboard views
+• Can assign permissions
+• Can assign roles
+• Can assign templates
+• Can override access where needed
+• Can view all development, probation and promotion records
+
+Senior Leadership View:
+• Can see summary dashboards across selected teams
+• Can view team readiness data
+• Can view probation and promotion status
+• Cannot edit individual reviews unless also assigned Manager View or Admin View
+
+MANAGER VIEW REQUIREMENTS
+
+Create a Manager Dashboard that gives managers a clear workspace to manage their team’s development, probation, promotion objectives and check-ins.
+
+Manager Home Page should show:
+
+• Total Team Members
+• Employees in Probation
+• Employees Working Towards Promotion
+• Reviews Due
+• Reviews Overdue
+• Employees Requiring Support
+• Average Current Role Readiness %
+• Average Target Role Readiness %
+
+Add quick action panels for:
+
+• Employees Requiring Probation Reviews
+• Employees Working Towards Promotion
+• Employees Requiring Development Support
+
+Each panel should show counts and clickable employee names.
+
+TEAM OVERVIEW TABLE
+
+Display all direct reports in a table showing:
+
+• Employee Name
+• Current Role
+• Current Role Readiness %
+• Target Role
+• Target Role Readiness %
+• Financial Target Progress %
+• Probation Status
+• Promotion Status
+• Last Review Date
+• Next Review Due Date
+
+Allow filtering and sorting by:
+
+• Role
+• Manager
+• Probation Status
+• Promotion Status
+• Readiness %
+• Financial Target %
+• Next Review Date
+
+MATCHING ASSESSMENT STRUCTURE
+
+Managers must assess employees against exactly the same framework that the employee sees.
+
+Do not create a different manager scoring framework.
+
+For every competency, objective, behaviour, skill, knowledge area, result area, financial target or readiness measure available to the employee, the manager must be able to score and comment against the same item.
+
+Display side by side:
+
+• Employee Score
+• Employee Comments
+• Manager Score
+• Manager Comments
+
+This applies to:
+
+• Current role competencies
+• Target role competencies
+• Skills
+• Knowledge
+• Behaviour
+• Results
+• Financial targets
+• Promotion objectives
+• Role readiness criteria
+• Any other development framework fields already built into the individual employee view
+
+MANAGER SAVE AND PUBLISH WORKFLOW
+
+Managers must have two save options:
+
+• Save Draft
+• Publish to Employee
+
+Save Draft:
+• Visible only to the manager
+• Employee cannot see draft manager feedback
+
+Publish to Employee:
+• Makes manager feedback visible to the employee
+• Updates the employee app
+• Creates an audit trail with publication date and time
+
+PROBATION MANAGEMENT SECTION
+
+Create a dedicated Probation section within the Manager View.
+
+Purpose:
+Allow managers to review, score, comment and publish probation check-ins for employees currently in probation.
+
+The employee should complete their probation self-assessment before the review meeting.
+
+The manager should then:
+
+• Review what the employee has submitted
+• Add manager scores and comments
+• Add official manager probation feedback
+• Set the final overall status
+• Publish the review to the employee
+• Email the review summary after the meeting
+
+PROBATION ASSESSMENT STRUCTURE
+
+The employee and manager must score exactly the same probation framework.
+
+For every probation assessment area display side by side:
+
+• Employee Score
+• Employee Comments
+• Manager Score
+• Manager Comments
+
+The only difference is that the manager has additional official probation review fields.
+
+MANAGER-ONLY PROBATION FIELDS
+
+Managers should have these extra fields for each probation review:
+
+• What’s Going Well
+• Areas to Focus On
+• Overall Status
+
+These fields are manager-only and form the official HR probation review record.
+
+The employee must not be able to edit these fields.
+
+Once published, the employee should be able to view them in their own app.
+
+OVERALL STATUS OPTIONS
+
+Managers should be able to select:
+
+• Exceeding Expectations
+• Meeting Expectations
+• Partially Meeting Expectations
+• Below Expectations
+• At Risk
+• Passed Probation
+• Probation Extension Required
+• Failed Probation
+
+PROBATION REVIEW WORKFLOW
+
+Step 1:
+Employee completes their self-assessment before the review meeting.
+
+Step 2:
+Manager receives notification that the review is ready.
+
+Step 3:
+Manager reviews the employee’s scores and comments.
+
+Step 4:
+Manager completes their own scores and comments against the same framework.
+
+Step 5:
+Manager completes the official probation fields:
+
+• What’s Going Well
+• Areas to Focus On
+• Overall Status
+
+Step 6:
+During the review meeting, both employee and manager responses are shown side by side.
+
+Step 7:
+Manager updates final comments if needed.
+
+Step 8:
+Manager publishes the review to the employee.
+
+Step 9:
+Manager can send a probation review summary email.
+
+PROBATION SUMMARY EMAIL
+
+After a probation review is published, the manager should have the option to email a summary.
+
+The email should automatically include:
+
+• Review Date
+• Employee Name
+• Manager Name
+• Employee Scores
+• Employee Comments
+• Manager Scores
+• Manager Comments
+• What’s Going Well
+• Areas to Focus On
+• Overall Status
+• Agreed Actions, if included
+• Next Review Date, if included
+
+The email should be sent to:
+
+• Employee
+• Manager
+
+The summary email should also be saved in the system as part of the permanent audit trail.
+
+PROMOTION OBJECTIVES SECTION
+
+Create a dedicated Promotion Objectives section for employees working towards their next role.
+
+Purpose:
+Allow managers to coach, monitor and document progress against promotion objectives.
+
+Display:
+
+• Employee Name
+• Current Role
+• Target Role
+• Promotion Readiness %
+• Number of Objectives Complete
+• Number of Objectives Outstanding
+• Next Promotion Check-In Date
+
+Manager Actions:
+
+• Complete Promotion Check-In
+• Update Progress
+• Add Evidence
+• Assign New Actions
+• Publish Feedback
+
+Promotion Check-In Form:
+
+For each objective display:
+
+• Objective Description
+• Success Criteria
+• Target Date
+• Employee Progress Update
+• Manager Feedback
+• Evidence Attached
+• Status:
+
+* Not Started
+* In Progress
+* Completed
+* Exceeded
+
+Managers should be able to record:
+
+• Check-In Date
+• Notes
+• Strengths Demonstrated
+• Development Areas
+• Actions Agreed
+• Overall Promotion Recommendation
+
+Promotion Recommendation Options:
+
+• Not Yet Ready
+• Progressing Well
+• Nearly Ready
+• Ready for Promotion
+
+AUDIT TRAIL
+
+The system must record a full audit trail for:
+
+• Development reviews
+• Probation reviews
+• Promotion check-ins
+• Employee scores submitted
+• Manager scores submitted
+• Employee comments submitted
+• Manager comments submitted
+• Feedback published
+• Summary emails sent
+• Actions assigned
+• Actions completed
+• User created
+• User edited
+• Permissions changed
+• Manager changed
+• Role changed
+• Template assigned
+• User deactivated
+
+Each audit record should include:
+
+• Date and time
+• User affected
+• Admin or manager who made the change
+• What changed
+• Previous value, where relevant
+• New value, where relevant
+
+IMPORTANT BUILD NOTES
+
+The Manager View and Admin View should feel connected but have separate navigation.
+
+Managers should only see people they have permission to manage.
+
+Admins should be able to see and manage everything.
+
+A user can have multiple views at once.
+
+The Manager View must not create a second assessment system.
+
+The Admin View must control who sees what.
+
+The employee record is the source of truth.
+
+The system should be clean, modern and easy to use for managers who may have 10-30 direct reports.

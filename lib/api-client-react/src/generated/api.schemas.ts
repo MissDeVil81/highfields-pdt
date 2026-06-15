@@ -332,6 +332,8 @@ export interface ProbationManagerReview {
   developmentAreas?: string | null;
   reviewStatus?: string | null;
   reviewDate?: string | null;
+  /** @nullable */
+  publishedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -343,6 +345,92 @@ export interface UpsertProbationManagerReviewBody {
   developmentAreas?: string | null;
   reviewStatus?: string | null;
   reviewDate?: string | null;
+}
+
+export interface User {
+  id: number;
+  name: string;
+  /** @nullable */
+  email?: string | null;
+  roles: string[];
+  /** @nullable */
+  managerId?: number | null;
+  /** @nullable */
+  sessionId?: string | null;
+  /** @nullable */
+  department?: string | null;
+  /** @nullable */
+  jobTitle?: string | null;
+  /** @nullable */
+  startDate?: string | null;
+  /** @nullable */
+  probationStatus?: string | null;
+  isActive: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserInput {
+  name: string;
+  email?: string;
+  roles?: string[];
+  managerId?: number;
+  sessionId?: string;
+  department?: string;
+  jobTitle?: string;
+  startDate?: string;
+  probationStatus?: string;
+  isActive?: string;
+}
+
+export interface UserUpdate {
+  name?: string;
+  email?: string;
+  roles?: string[];
+  /** @nullable */
+  managerId?: number | null;
+  sessionId?: string;
+  department?: string;
+  jobTitle?: string;
+  startDate?: string;
+  probationStatus?: string;
+  isActive?: string;
+}
+
+export interface ManagerTeamMember {
+  id: number;
+  name: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  jobTitle?: string | null;
+  /** @nullable */
+  department?: string | null;
+  /** @nullable */
+  startDate?: string | null;
+  /** @nullable */
+  probationStatus?: string | null;
+  /** @nullable */
+  sessionId?: string | null;
+  isActive: string;
+  /** @nullable */
+  latestReviewPeriod?: string | null;
+  /** @nullable */
+  latestReviewPublishedAt?: string | null;
+  reviewCount: number;
+}
+
+export interface ManagerDashboardStats {
+  totalTeam: number;
+  inProbation: number;
+  pendingReviews: number;
+  publishedReviews: number;
+  needingAttention: number;
+}
+
+export interface PublishProbationReviewInput {
+  sessionId: string;
+  reviewPeriod: string;
 }
 
 export type ListRolesParams = {
@@ -401,4 +489,17 @@ export type GetReadinessSummaryParams = {
   sessionId: string;
   currentRoleId?: number;
   targetRoleId?: number;
+};
+
+export type ListUsersParams = {
+  managerId?: number;
+  sessionId?: string;
+};
+
+export type GetManagerTeamParams = {
+  managerId: number;
+};
+
+export type GetManagerDashboardStatsParams = {
+  managerId: number;
 };

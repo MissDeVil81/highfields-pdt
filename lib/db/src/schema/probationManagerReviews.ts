@@ -8,6 +8,7 @@ export const probationManagerReviewsTable = pgTable("probation_manager_reviews",
   developmentAreas: text("development_areas"),
   reviewStatus: text("review_status"),
   reviewDate: text("review_date"),
+  publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

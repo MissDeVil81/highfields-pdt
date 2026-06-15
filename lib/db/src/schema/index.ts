@@ -10,3 +10,4 @@ export * from "./probationAssessments";
 export * from "./probationReflections";
 export * from "./probationActions";
 export * from "./probationManagerReviews";
+export * from "./users";

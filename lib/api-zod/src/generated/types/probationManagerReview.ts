@@ -14,6 +14,8 @@ export interface ProbationManagerReview {
   developmentAreas?: string | null;
   reviewStatus?: string | null;
   reviewDate?: string | null;
+  /** @nullable */
+  publishedAt?: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
