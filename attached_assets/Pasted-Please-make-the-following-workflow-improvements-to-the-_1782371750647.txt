@@ -1,0 +1,188 @@
+Please make the following workflow improvements to the Probation Review process.
+
+Build on the current version of the application exactly as it exists. Do not undo or replace any functionality that has already been implemented unless specifically requested below.
+
+Do not redesign the application, refactor unrelated code, change the database schema unless absolutely necessary, alter scoring logic, dashboard functionality or any unrelated working features.
+
+⸻
+
+1. Review Date
+
+The Review Date should only be editable by the manager.
+
+* Remove the ability for the individual to edit the Review Date.
+* Keep the Review Date visible on the individual’s page as read-only.
+* Managers should continue to set and edit the Review Date from the Manager Portal.
+
+⸻
+
+2. Manager-Owned Actions
+
+The manager should own all probation actions.
+
+Manager Portal
+
+For every probation review (Month 1, Month 3, Month 5 and Month 6), the manager should be able to:
+
+* Add actions.
+* Edit actions.
+* Delete actions.
+* View all actions.
+
+Individual Portal
+
+The individual should no longer be able to manage actions.
+
+Remove the ability for the individual to:
+
+* Add new actions.
+* Edit action titles or descriptions.
+* Delete actions.
+
+Instead, the individual should only be able to:
+
+* View the actions created by their manager.
+* Update the status of each action:
+    * Not Started
+    * In Progress
+    * Complete
+* Add evidence against each action.
+* View all previously added evidence.
+
+Only the manager should be able to create, edit or delete actions.
+
+Apply this behaviour across every probation review.
+
+⸻
+
+3. Review Buttons
+
+At the bottom of each probation review in the Manager Portal there are currently two buttons:
+
+* Save Draft
+* Publish
+
+Please:
+
+* Keep Save Draft.
+* Rename Publish to Finalise & Submit.
+
+⸻
+
+4. Manager Guidance
+
+Above the buttons, display the following guidance.
+
+Finalising a Review
+
+Use Save Draft while you’re preparing this review or before you’ve held the probation review meeting.
+
+Only select Finalise & Submit once you’ve completed the probation review meeting with the individual and you’re happy the review is complete. This will create the employee’s official probation record, make it available within their HR record and lock the review for further editing.
+
+⸻
+
+5. Finalise & Submit Behaviour
+
+When the manager selects Finalise & Submit:
+
+Lock the Review
+
+The following should become read-only for the individual:
+
+* Review ratings.
+* Manager comments.
+* Individual responses.
+* Review Date.
+* Any other review content for that probation review.
+
+The completed review should become the employee’s official probation record and remain available within their HR record.
+
+Keep Development Actions Active
+
+Development actions should not be locked when the review is finalised.
+
+The individual should continue to be able to:
+
+* Update action status.
+* Add evidence.
+* View all previous evidence.
+
+The individual should not be able to:
+
+* Add actions.
+* Edit action titles or descriptions.
+* Delete actions.
+
+Only the manager should be able to create, edit or delete actions.
+
+⸻
+
+6. Carry Actions Forward
+
+Each probation review should act as a historical snapshot while allowing development to continue.
+
+When the next probation review begins:
+
+* Any incomplete actions from the previous review should automatically be carried forward into the new review.
+* Their current status should be retained.
+* All evidence previously added should remain attached to those actions.
+* The manager should be able to:
+    * Mark actions as complete.
+    * Keep actions open.
+    * Add additional actions.
+    * Remove actions that are no longer relevant.
+
+The previous probation review must remain unchanged so it continues to represent an accurate historical record of that review.
+
+This means:
+
+* Every probation review remains an accurate snapshot in time.
+* Development actions continue seamlessly throughout probation.
+* Managers and employees always have one live set of development actions to work on between reviews.
+
+Apply this behaviour consistently across:
+
+* Month 1
+* Month 3
+* Month 5
+* Month 6
+
+⸻
+
+Important
+
+Please preserve all existing functionality unless specifically listed above.
+
+Do not:
+
+* Change the page layout.
+* Change navigation.
+* Change scoring logic.
+* Change completion calculations.
+* Change dashboard functionality.
+* Change permissions outside this workflow.
+* Change the probation review structure.
+* Change the database schema unless absolutely necessary.
+
+Only implement the workflow described above.
+
+Before making any changes:
+
+1. Identify the minimum number of files required.
+2. Only edit those files.
+3. Reuse the existing data structure wherever possible.
+
+⸻
+
+After completing the work, confirm:
+
+1. Which files were updated.
+2. That the Review Date is now manager-only.
+3. That individuals can no longer add, edit or delete actions.
+4. That managers can add, edit and delete actions.
+5. That individuals can only update action status and add evidence.
+6. That Publish has been renamed to Finalise & Submit.
+7. That Finalise &Submit creates the employee’s official probation record.
+8. That review content is locked after finalisation.
+9. That development actions remain active after the review is finalised.
+10. That incomplete actions automatically carry forward into the next probation review while previous reviews remain unchanged as historical records.

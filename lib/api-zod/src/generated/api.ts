@@ -527,6 +527,38 @@ export const DeleteProbationActionResponse = zod.object({
 });
 
 /**
+ * @summary List evidence entries for a probation action
+ */
+export const ListProbationActionEvidenceQueryParams = zod.object({
+  actionId: zod.coerce.number(),
+});
+
+export const ListProbationActionEvidenceResponseItem = zod.object({
+  id: zod.number(),
+  actionId: zod.number(),
+  evidenceText: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListProbationActionEvidenceResponse = zod.array(
+  ListProbationActionEvidenceResponseItem,
+);
+
+/**
+ * @summary Add evidence against a probation action
+ */
+export const CreateProbationActionEvidenceBody = zod.object({
+  actionId: zod.number(),
+  evidenceText: zod.string(),
+});
+
+export const CreateProbationActionEvidenceResponse = zod.object({
+  id: zod.number(),
+  actionId: zod.number(),
+  evidenceText: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
  * @summary List manager review summaries for a user
  */
 export const ListProbationManagerReviewsQueryParams = zod.object({

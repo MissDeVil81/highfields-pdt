@@ -9,10 +9,15 @@ import {
   useUpsertProbationManagerReview,
   useUpsertProbationAssessment,
   usePublishProbationManagerReview,
+  useListProbationActions,
+  useCreateProbationAction,
+  useUpdateProbationAction,
+  useDeleteProbationAction,
   getListProbationAssessmentsQueryKey,
   getListProbationManagerReviewsQueryKey,
   getGetUserQueryKey,
   getListProbationItemsQueryKey,
+  getListProbationActionsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, Send, Loader2, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Save, Send, Loader2, CheckCircle2, Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const REVIEW_PERIODS = [
@@ -28,6 +33,18 @@ const REVIEW_PERIODS = [
   { value: "month3", label: "3 Months" },
   { value: "month5", label: "5 Months" },
   { value: "month6", label: "6 Months" },
+];
+
+const PREV_PERIOD: Record<string, string | null> = {
+  month1: null, month3: "month1", month5: "month3", month6: "month5",
+};
+const PREV_LABEL: Record<string, string | null> = {
+  month1: null, month3: "1 Month", month5: "3 Months", month6: "5 Months",
+};
+const ACTION_STATUS_OPTS = [
+  { value: "not_started", label: "Not Started", active: "bg-slate-400 text-white border-slate-400", inactive: "border-border text-muted-foreground hover:border-slate-400" },
+  { value: "in_progress", label: "In Progress", active: "bg-amber-500 text-white border-amber-500", inactive: "border-border text-muted-foreground hover:border-amber-400" },
+  { value: "complete", label: "Complete", active: "bg-green-500 text-white border-green-500", inactive: "border-border text-muted-foreground hover:border-green-400" },
 ];
 
 const MANAGER_RATING_OPTIONS = [
@@ -116,13 +133,37 @@ export default function EmployeeProbation() {
   const upsertAssessment = useUpsertProbationAssessment();
   const publishReview = usePublishProbationManagerReview();
 
+  // Actions for current period
+  const actionsParams = { userId, reviewPeriod: activeTab };
+  const { data: currentActions = [] } = useListProbationActions(
+    actionsParams,
+    { query: { queryKey: getListProbationActionsQueryKey(actionsParams), enabled: !!userId } }
+  );
+  // Actions from previous period (for carry-forward)
+  const prevPeriodId = PREV_PERIOD[activeTab];
+  const prevActionsParams = { userId, reviewPeriod: prevPeriodId ?? "month1" };
+  const { data: prevActionsAll = [] } = useListProbationActions(
+    prevActionsParams,
+    { query: { queryKey: getListProbationActionsQueryKey(prevActionsParams), enabled: !!userId && !!prevPeriodId } }
+  );
+  const carriedActions = prevActionsAll.filter(a => a.status !== "complete");
+
+  const invalidateActions = () => queryClient.invalidateQueries({ queryKey: getListProbationActionsQueryKey() });
+  const createAction = useCreateProbationAction({ mutation: { onSuccess: invalidateActions } });
+  const updateAction = useUpdateProbationAction({ mutation: { onSuccess: invalidateActions } });
+  const deleteAction = useDeleteProbationAction({ mutation: { onSuccess: invalidateActions } });
+
   const currentReview = managerReviews[0];
+  const isPublished = !!currentReview?.publishedAt;
 
   const [goingWell, setGoingWell] = useState("");
   const [developmentAreas, setDevelopmentAreas] = useState("");
   const [reviewDate, setReviewDate] = useState("");
   const [localManagerRatings, setLocalManagerRatings] = useState<Record<number, string>>({});
   const [localManagerComments, setLocalManagerComments] = useState<Record<number, string>>({});
+  const [newActionText, setNewActionText] = useState("");
+  const [editingActionId, setEditingActionId] = useState<number | null>(null);
+  const [editActionText, setEditActionText] = useState("");
 
   useEffect(() => {
     if (currentReview) {
@@ -136,6 +177,8 @@ export default function EmployeeProbation() {
     }
     setLocalManagerRatings({});
     setLocalManagerComments({});
+    setNewActionText("");
+    setEditingActionId(null);
   }, [currentReview?.id, activeTab]);
 
   const assessmentMap = new Map(assessments.map((a) => [a.itemId, a]));
@@ -201,10 +244,9 @@ export default function EmployeeProbation() {
     await queryClient.invalidateQueries({
       queryKey: getListProbationManagerReviewsQueryKey({ userId }),
     });
-    toast({ title: "Review published", description: "The employee can now see this review." });
+    toast({ title: "Review finalised & submitted", description: "The employee can now see this review." });
   };
 
-  const isPublished = !!currentReview?.publishedAt;
   const isSaving = upsertManagerReview.isPending || upsertAssessment.isPending;
   const isPublishing = publishReview.isPending;
 
@@ -258,7 +300,7 @@ export default function EmployeeProbation() {
             className="gap-1.5"
           >
             {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-            {isPublished ? "Re-publish" : "Publish"}
+            {isPublished ? "Re-finalise & Submit" : "Finalise & Submit"}
           </Button>
         </div>
       </header>
@@ -290,12 +332,18 @@ export default function EmployeeProbation() {
                 </div>
                 <div className="flex items-center gap-2">
                   <label className="text-xs text-muted-foreground">Date of Review:</label>
-                  <input
-                    type="date"
-                    value={reviewDate}
-                    onChange={(e) => setReviewDate(e.target.value)}
-                    className="text-xs border border-border rounded px-2 py-1 bg-background text-foreground"
-                  />
+                  {isPublished ? (
+                    <span className="text-xs border border-border/50 rounded px-2 py-1 bg-muted/30 text-foreground">
+                      {reviewDate || "—"}
+                    </span>
+                  ) : (
+                    <input
+                      type="date"
+                      value={reviewDate}
+                      onChange={(e) => setReviewDate(e.target.value)}
+                      className="text-xs border border-border rounded px-2 py-1 bg-background text-foreground"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -337,24 +385,35 @@ export default function EmployeeProbation() {
                                   )}
                                 </div>
                                 <div className="px-4 py-3 border-l border-border space-y-2">
-                                  <ManagerRatingSelect
-                                    value={getManagerRating(item.id)}
-                                    onChange={(v) =>
-                                      setLocalManagerRatings((prev) => ({ ...prev, [item.id]: v }))
-                                    }
-                                  />
-                                  <Textarea
-                                    placeholder="Add comment…"
-                                    value={getManagerComment(item.id)}
-                                    onChange={(e) =>
-                                      setLocalManagerComments((prev) => ({
-                                        ...prev,
-                                        [item.id]: e.target.value,
-                                      }))
-                                    }
-                                    rows={2}
-                                    className="text-xs resize-none"
-                                  />
+                                  {isPublished ? (
+                                    <>
+                                      <RatingBadge rating={getManagerRating(item.id) ?? undefined} />
+                                      {getManagerComment(item.id) && (
+                                        <p className="text-xs text-muted-foreground">{getManagerComment(item.id)}</p>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ManagerRatingSelect
+                                        value={getManagerRating(item.id)}
+                                        onChange={(v) =>
+                                          setLocalManagerRatings((prev) => ({ ...prev, [item.id]: v }))
+                                        }
+                                      />
+                                      <Textarea
+                                        placeholder="Add comment…"
+                                        value={getManagerComment(item.id)}
+                                        onChange={(e) =>
+                                          setLocalManagerComments((prev) => ({
+                                            ...prev,
+                                            [item.id]: e.target.value,
+                                          }))
+                                        }
+                                        rows={2}
+                                        className="text-xs resize-none"
+                                      />
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -366,32 +425,191 @@ export default function EmployeeProbation() {
 
                   <Card>
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-semibold">Manager Summary</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-sm font-semibold">Manager Summary</CardTitle>
+                        {isPublished && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Locked</span>
+                        )}
+                      </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
                         <label className="text-xs font-medium text-muted-foreground block mb-1.5">
                           What's going well
                         </label>
-                        <Textarea
-                          placeholder="Areas where the employee is performing well…"
-                          value={goingWell}
-                          onChange={(e) => setGoingWell(e.target.value)}
-                          rows={3}
-                          className="text-sm"
-                        />
+                        {isPublished ? (
+                          <p className="text-sm px-3 py-2 rounded-lg border border-border/50 bg-muted/20 min-h-[4rem] leading-relaxed">
+                            {goingWell || <span className="italic text-muted-foreground/50">Not recorded.</span>}
+                          </p>
+                        ) : (
+                          <Textarea
+                            placeholder="Areas where the employee is performing well…"
+                            value={goingWell}
+                            onChange={(e) => setGoingWell(e.target.value)}
+                            rows={3}
+                            className="text-sm"
+                          />
+                        )}
                       </div>
                       <div>
                         <label className="text-xs font-medium text-muted-foreground block mb-1.5">
                           Development areas
                         </label>
-                        <Textarea
-                          placeholder="Areas for improvement or focus…"
-                          value={developmentAreas}
-                          onChange={(e) => setDevelopmentAreas(e.target.value)}
-                          rows={3}
-                          className="text-sm"
-                        />
+                        {isPublished ? (
+                          <p className="text-sm px-3 py-2 rounded-lg border border-border/50 bg-muted/20 min-h-[4rem] leading-relaxed">
+                            {developmentAreas || <span className="italic text-muted-foreground/50">Not recorded.</span>}
+                          </p>
+                        ) : (
+                          <Textarea
+                            placeholder="Areas for improvement or focus…"
+                            value={developmentAreas}
+                            onChange={(e) => setDevelopmentAreas(e.target.value)}
+                            rows={3}
+                            className="text-sm"
+                          />
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Actions Management Card */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-semibold">Actions</CardTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Set and track development actions for this review period.
+                      </p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Carried-forward from previous period */}
+                      {prevPeriodId && carriedActions.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-amber-600 flex items-center gap-1.5">
+                            <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
+                            Carried forward from {PREV_LABEL[period.value]} review ({carriedActions.length} incomplete)
+                          </p>
+                          <div className="space-y-2 pl-3 border-l-2 border-amber-200">
+                            {carriedActions.map((action) => (
+                              <div key={action.id} className="flex items-start gap-2">
+                                <p className="text-xs text-muted-foreground flex-1 py-1">{action.actionText}</p>
+                                <div className="flex gap-1 shrink-0 flex-wrap">
+                                  {ACTION_STATUS_OPTS.map((opt) => (
+                                    <button
+                                      key={opt.value}
+                                      onClick={() => updateAction.mutate({ id: action.id, data: { status: opt.value as "not_started" | "in_progress" | "complete" } })}
+                                      className={`px-2 py-0.5 rounded text-xs border transition-all ${action.status === opt.value ? opt.active : opt.inactive}`}
+                                    >
+                                      {opt.label}
+                                    </button>
+                                  ))}
+                                </div>
+                                <button
+                                  onClick={() => deleteAction.mutate({ id: action.id })}
+                                  className="p-1 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Current period actions */}
+                      <div className="space-y-2">
+                        {currentActions.length > 0 && (
+                          <div className="space-y-2">
+                            {currentActions.map((action) => (
+                              <div key={action.id} className="flex items-start gap-2 group">
+                                {editingActionId === action.id ? (
+                                  <>
+                                    <input
+                                      autoFocus
+                                      value={editActionText}
+                                      onChange={(e) => setEditActionText(e.target.value)}
+                                      className="flex-1 text-xs border border-ring rounded px-2 py-1.5 bg-background text-foreground focus:outline-none"
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        if (editActionText.trim()) {
+                                          updateAction.mutate({ id: action.id, data: { actionText: editActionText.trim() } });
+                                        }
+                                        setEditingActionId(null);
+                                      }}
+                                      className="p-1 text-green-600 hover:text-green-700 shrink-0"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingActionId(null)}
+                                      className="p-1 text-muted-foreground hover:text-foreground shrink-0"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <p className="text-xs text-foreground flex-1 py-1">{action.actionText}</p>
+                                    <div className="flex gap-1 shrink-0 flex-wrap">
+                                      {ACTION_STATUS_OPTS.map((opt) => (
+                                        <button
+                                          key={opt.value}
+                                          onClick={() => updateAction.mutate({ id: action.id, data: { status: opt.value as "not_started" | "in_progress" | "complete" } })}
+                                          className={`px-2 py-0.5 rounded text-xs border transition-all ${action.status === opt.value ? opt.active : opt.inactive}`}
+                                        >
+                                          {opt.label}
+                                        </button>
+                                      ))}
+                                    </div>
+                                    <button
+                                      onClick={() => { setEditingActionId(action.id); setEditActionText(action.actionText); }}
+                                      className="p-1 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                    >
+                                      <Pencil className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      onClick={() => deleteAction.mutate({ id: action.id })}
+                                      className="p-1 text-muted-foreground hover:text-destructive shrink-0"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Add new action */}
+                        <div className="flex gap-2 mt-2">
+                          <input
+                            value={newActionText}
+                            onChange={(e) => setNewActionText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && newActionText.trim()) {
+                                createAction.mutate({ data: { userId, reviewPeriod: activeTab, actionText: newActionText.trim() } });
+                                setNewActionText("");
+                              }
+                            }}
+                            placeholder="Add an action… (press Enter to save)"
+                            className="flex-1 text-xs border border-border rounded px-3 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!newActionText.trim() || createAction.isPending}
+                            onClick={() => {
+                              if (newActionText.trim()) {
+                                createAction.mutate({ data: { userId, reviewPeriod: activeTab, actionText: newActionText.trim() } });
+                                setNewActionText("");
+                              }
+                            }}
+                            className="gap-1.5 shrink-0"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            Add
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -403,20 +621,31 @@ export default function EmployeeProbation() {
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-6 py-3 z-10">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground">
-            {isPublished
-              ? `Published ${new Date(currentReview!.publishedAt!).toLocaleDateString("en-GB")} — employee can see this review`
-              : "Save as draft or publish to share with the employee."}
-          </p>
+        <div className="max-w-6xl mx-auto flex items-center gap-4">
+          <div className="flex-1 min-w-0">
+            {isPublished ? (
+              <p className="text-xs text-green-700 font-medium flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                Finalised {new Date(currentReview!.publishedAt!).toLocaleDateString("en-GB")} — the employee can see this review.
+                Ratings and summary are locked. Actions remain editable.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                <strong className="text-foreground">Save Draft</strong> to keep editing, or{" "}
+                <strong className="text-foreground">Finalise & Submit</strong> to share with the employee and lock ratings.
+              </p>
+            )}
+          </div>
           <div className="flex gap-2 shrink-0">
-            <Button size="sm" variant="secondary" onClick={handleSave} disabled={isSaving || !userId} className="gap-1.5">
-              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              Save Draft
-            </Button>
+            {!isPublished && (
+              <Button size="sm" variant="secondary" onClick={handleSave} disabled={isSaving || !userId} className="gap-1.5">
+                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                Save Draft
+              </Button>
+            )}
             <Button size="sm" onClick={handlePublish} disabled={isPublishing || !userId} className="gap-1.5">
               {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              {isPublished ? "Re-publish" : "Publish"}
+              {isPublished ? "Re-finalise & Submit" : "Finalise & Submit"}
             </Button>
           </div>
         </div>

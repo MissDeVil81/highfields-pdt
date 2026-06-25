@@ -603,6 +603,44 @@ paths:
                 required:
                   - ok
 
+  /probation/action-evidence:
+    get:
+      operationId: listProbationActionEvidence
+      tags: [probation]
+      summary: List evidence entries for a probation action
+      parameters:
+        - name: actionId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of evidence entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProbationActionEvidence"
+    post:
+      operationId: createProbationActionEvidence
+      tags: [probation]
+      summary: Add evidence against a probation action
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProbationActionEvidenceBody"
+      responses:
+        "200":
+          description: Created evidence entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProbationActionEvidence"
+
   /probation/manager-reviews:
     get:
       operationId: listProbationManagerReviews
@@ -1478,6 +1516,35 @@ components:
         status:
           type: string
           enum: [not_started, in_progress, complete]
+
+    ProbationActionEvidence:
+      type: object
+      properties:
+        id:
+          type: integer
+        actionId:
+          type: integer
+        evidenceText:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - actionId
+        - evidenceText
+        - createdAt
+
+    CreateProbationActionEvidenceBody:
+      type: object
+      properties:
+        actionId:
+          type: integer
+        evidenceText:
+          type: string
+      required:
+        - actionId
+        - evidenceText
 
     ProbationManagerReview:
       type: object

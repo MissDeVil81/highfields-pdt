@@ -325,6 +325,18 @@ export interface UpdateProbationActionBody {
   status?: UpdateProbationActionBodyStatus;
 }
 
+export interface ProbationActionEvidence {
+  id: number;
+  actionId: number;
+  evidenceText: string;
+  createdAt: string;
+}
+
+export interface CreateProbationActionEvidenceBody {
+  actionId: number;
+  evidenceText: string;
+}
+
 export interface ProbationManagerReview {
   id: number;
   userId: number;
@@ -482,6 +494,10 @@ export type ListProbationActionsParams = {
 
 export type DeleteProbationAction200 = {
   ok: boolean;
+};
+
+export type ListProbationActionEvidenceParams = {
+  actionId: number;
 };
 
 export type ListProbationManagerReviewsParams = {

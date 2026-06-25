@@ -14,8 +14,10 @@ import {
   useUpdateProbationAction,
   useDeleteProbationAction,
   getListProbationActionsQueryKey,
+  useListProbationActionEvidence,
+  useCreateProbationActionEvidence,
+  getListProbationActionEvidenceQueryKey,
   useListProbationManagerReviews,
-  useUpsertProbationManagerReview,
   getListProbationManagerReviewsQueryKey,
 } from "@workspace/api-client-react";
 import type { ProbationItem, ProbationAssessment, ProbationAction } from "@workspace/api-client-react";
@@ -28,10 +30,9 @@ import {
   ChevronDown,
   ChevronUp,
   FileText,
-  Plus,
-  Trash2,
   MessageSquare,
   CalendarDays,
+  Lock,
 } from "lucide-react";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
@@ -148,43 +149,21 @@ function calcStats(items: ProbationItem[], stateMap: Record<number, ItemState>) 
 // ─── ReviewDateField ──────────────────────────────────────────────────────────
 
 function ReviewDateField({ userId, reviewPeriod }: { userId: number; reviewPeriod: ReviewPeriod }) {
-  const [date, setDate] = useState("");
-  const [initialized, setInitialized] = useState(false);
-
   const params = { userId, reviewPeriod };
-  const { data: reviews = [], isLoading } = useListProbationManagerReviews(
+  const { data: reviews = [] } = useListProbationManagerReviews(
     params,
     { query: { queryKey: getListProbationManagerReviewsQueryKey(params), enabled: !!userId } }
   );
-
-  const upsert = useUpsertProbationManagerReview();
-
-  useEffect(() => {
-    if (!isLoading && !initialized) {
-      const r = reviews[0];
-      if (r) setDate(r.reviewDate ?? "");
-      setInitialized(true);
-    }
-  }, [reviews, isLoading, initialized]);
-
-  function save() {
-    upsert.mutate({ data: { userId, reviewPeriod, reviewDate: date || null } });
-  }
+  const rawDate = reviews[0]?.reviewDate;
+  const displayDate = rawDate
+    ? new Date(rawDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+    : "Not yet set by your manager";
 
   return (
     <div className="flex items-center gap-2.5 mb-6 p-3 rounded-xl border border-border bg-muted/20">
       <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
-      <label htmlFor={`review-date-${reviewPeriod}`} className="text-sm font-medium text-foreground shrink-0">
-        Date of Review
-      </label>
-      <input
-        id={`review-date-${reviewPeriod}`}
-        type="date"
-        value={date}
-        onChange={e => setDate(e.target.value)}
-        onBlur={save}
-        className="text-sm px-2.5 py-1 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-      />
+      <span className="text-sm font-medium text-foreground shrink-0">Date of Review</span>
+      <span className="text-sm text-muted-foreground">{displayDate}</span>
     </div>
   );
 }
@@ -198,6 +177,7 @@ function ProbationItemRow({
   onRate,
   onNote,
   onBlur,
+  isLocked,
 }: {
   item: ProbationItem;
   state: ItemState;
@@ -205,6 +185,7 @@ function ProbationItemRow({
   onRate: (rating: AnyRating) => void;
   onNote: (note: string) => void;
   onBlur: () => void;
+  isLocked?: boolean;
 }) {
   const [showNote, setShowNote] = useState(false);
   const [showMgrComment, setShowMgrComment] = useState(false);
@@ -215,23 +196,23 @@ function ProbationItemRow({
   const hasMgrComment = !!managerState.comment;
 
   return (
-    <div className="border border-border rounded-xl p-4 bg-card">
-      {/* Item text */}
+    <div className={cn("border rounded-xl p-4 bg-card", isLocked ? "border-border/50 bg-muted/10" : "border-border")}>
       <p className="text-sm text-foreground leading-snug mb-3">{item.itemText}</p>
 
-      {/* Assessment rows — same sizing for both */}
       <div className="space-y-2">
-        {/* Employee row — editable */}
+        {/* Employee row */}
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-xs text-muted-foreground shrink-0 w-36">My Assessment</span>
           <div className="flex gap-1.5 flex-wrap">
             {options.map(opt => (
               <button
                 key={opt.value}
-                onClick={() => onRate(opt.value as AnyRating)}
+                onClick={() => !isLocked && onRate(opt.value as AnyRating)}
+                disabled={isLocked}
                 className={cn(
                   "flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 whitespace-nowrap",
-                  rating === opt.value ? opt.activeClass : opt.inactiveClass
+                  rating === opt.value ? opt.activeClass : opt.inactiveClass,
+                  isLocked && "cursor-default opacity-70"
                 )}
               >
                 {"icon" in opt ? opt.icon : <span>{"★".repeat(opt.stars)}</span>}
@@ -239,9 +220,10 @@ function ProbationItemRow({
               </button>
             ))}
           </div>
+          {isLocked && <Lock className="h-3 w-3 text-muted-foreground/50 shrink-0" />}
         </div>
 
-        {/* Manager row — read-only display, same size */}
+        {/* Manager row — always read-only */}
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-xs font-medium text-foreground shrink-0 w-36">Manager Rating</span>
           <div className="flex gap-1.5 flex-wrap">
@@ -265,16 +247,27 @@ function ProbationItemRow({
         </div>
       </div>
 
-      {/* Toggles */}
       <div className="mt-3 flex gap-5 flex-wrap">
-        <button
-          onClick={() => setShowNote(s => !s)}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <FileText className="h-3 w-3" />
-          {state.note ? "Edit my note" : "Add my note"}
-          {showNote ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-        </button>
+        {!isLocked && (
+          <button
+            onClick={() => setShowNote(s => !s)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <FileText className="h-3 w-3" />
+            {state.note ? "Edit my note" : "Add my note"}
+            {showNote ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
+        )}
+        {isLocked && state.note && (
+          <button
+            onClick={() => setShowNote(s => !s)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <FileText className="h-3 w-3" />
+            View my note
+            {showNote ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
+        )}
         <button
           onClick={() => setShowMgrComment(s => !s)}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -286,14 +279,20 @@ function ProbationItemRow({
       </div>
 
       {showNote && (
-        <textarea
-          value={state.note}
-          onChange={e => onNote(e.target.value)}
-          onBlur={onBlur}
-          placeholder="Add a note or example to support this rating…"
-          rows={2}
-          className="mt-2 w-full text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-        />
+        isLocked ? (
+          <p className="mt-2 text-sm px-3 py-2 rounded-lg border border-border/50 bg-muted/20 text-foreground leading-relaxed">
+            {state.note || "No note added."}
+          </p>
+        ) : (
+          <textarea
+            value={state.note}
+            onChange={e => onNote(e.target.value)}
+            onBlur={onBlur}
+            placeholder="Add a note or example to support this rating…"
+            rows={2}
+            className="mt-2 w-full text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        )
       )}
 
       {showMgrComment && (
@@ -321,6 +320,7 @@ function SectionBlock({
   onRate,
   onNote,
   onBlur,
+  isLocked,
 }: {
   section: string;
   items: ProbationItem[];
@@ -329,6 +329,7 @@ function SectionBlock({
   onRate: (itemId: number, rating: AnyRating) => void;
   onNote: (itemId: number, note: string) => void;
   onBlur: (itemId: number) => void;
+  isLocked?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const yesCount = items.filter(i => { const r = stateMap[i.id]?.rating; return r === "yes" || r === "most"; }).length;
@@ -375,6 +376,7 @@ function SectionBlock({
               onRate={r => onRate(item.id, r)}
               onNote={n => onNote(item.id, n)}
               onBlur={() => onBlur(item.id)}
+              isLocked={isLocked}
             />
           ))}
         </div>
@@ -419,23 +421,39 @@ function ProgressSummary({ items, stateMap }: { items: ProbationItem[]; stateMap
 
 // ─── Action item ──────────────────────────────────────────────────────────────
 
-function ActionItem({ action, showDelete, onDelete, onStatusChange }: {
+function ActionItem({ action, onStatusChange }: {
   action: ProbationAction;
-  showDelete: boolean;
-  onDelete: (id: number) => void;
   onStatusChange: (id: number, status: string) => void;
 }) {
+  const queryClient = useQueryClient();
+  const [evidenceText, setEvidenceText] = useState("");
+  const [showEvidence, setShowEvidence] = useState(false);
+
+  const evidenceParams = { actionId: action.id };
+  const { data: evidence = [] } = useListProbationActionEvidence(
+    evidenceParams,
+    { query: { queryKey: getListProbationActionEvidenceQueryKey(evidenceParams), enabled: !!action.id } }
+  );
+
+  const createEvidence = useCreateProbationActionEvidence({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListProbationActionEvidenceQueryKey(evidenceParams) });
+      },
+    },
+  });
+
+  function handleAddEvidence() {
+    const text = evidenceText.trim();
+    if (!text) return;
+    createEvidence.mutate({ data: { actionId: action.id, evidenceText: text } });
+    setEvidenceText("");
+  }
+
   return (
     <div className="border border-border rounded-xl p-4 bg-card">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <p className="text-sm text-foreground flex-1 leading-snug">{action.actionText}</p>
-        {showDelete && (
-          <button onClick={() => onDelete(action.id)} className="text-muted-foreground hover:text-destructive transition-colors shrink-0 mt-0.5">
-            <Trash2 className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-      <div className="flex gap-1.5 flex-wrap">
+      <p className="text-sm text-foreground mb-3 leading-snug">{action.actionText}</p>
+      <div className="flex gap-1.5 flex-wrap mb-3">
         {ACTION_STATUS.map(opt => (
           <button
             key={opt.value}
@@ -447,6 +465,47 @@ function ActionItem({ action, showDelete, onDelete, onStatusChange }: {
             {opt.label}
           </button>
         ))}
+      </div>
+      <div>
+        <button
+          onClick={() => setShowEvidence(s => !s)}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <FileText className="h-3 w-3" />
+          {evidence.length > 0
+            ? `${evidence.length} evidence entr${evidence.length === 1 ? "y" : "ies"}`
+            : "Add evidence"}
+          {showEvidence ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
+        {showEvidence && (
+          <div className="mt-2 space-y-2">
+            {evidence.map(e => (
+              <div key={e.id} className="px-3 py-2 rounded-lg bg-muted/40 border border-border/50">
+                <p className="text-xs text-foreground">{e.evidenceText}</p>
+                <p className="text-xs text-muted-foreground/60 mt-0.5">
+                  {new Date(e.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                </p>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={evidenceText}
+                onChange={e => setEvidenceText(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleAddEvidence(); }}
+                placeholder="Describe evidence of this action…"
+                className="flex-1 text-xs px-2.5 py-1.5 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                onClick={handleAddEvidence}
+                disabled={!evidenceText.trim() || createEvidence.isPending}
+                className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium disabled:opacity-50 shrink-0"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -462,7 +521,6 @@ function ActionsSection({ userId, reviewPeriod, prevPeriod, prevLabel, nextLabel
   nextLabel?: string;
 }) {
   const queryClient = useQueryClient();
-  const [newActionText, setNewActionText] = useState("");
 
   const currentActionsParams = { userId, reviewPeriod };
   const { data: currentActions = [] } = useListProbationActions(
@@ -471,39 +529,37 @@ function ActionsSection({ userId, reviewPeriod, prevPeriod, prevLabel, nextLabel
   );
 
   const prevActionsParams = { userId, reviewPeriod: prevPeriod ?? "month1" };
-  const { data: prevActions = [] } = useListProbationActions(
+  const { data: prevActionsAll = [] } = useListProbationActions(
     prevActionsParams,
     { query: { queryKey: getListProbationActionsQueryKey(prevActionsParams), enabled: !!userId && !!prevPeriod } }
   );
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: getListProbationActionsQueryKey() });
-  const createAction = useCreateProbationAction({ mutation: { onSuccess: invalidate } });
-  const updateAction = useUpdateProbationAction({ mutation: { onSuccess: invalidate } });
-  const deleteAction = useDeleteProbationAction({ mutation: { onSuccess: invalidate } });
+  // Only carry forward incomplete actions
+  const carriedForward = prevActionsAll.filter(a => a.status !== "complete");
 
-  function handleAdd() {
-    const text = newActionText.trim();
-    if (!text) return;
-    createAction.mutate({ data: { userId, reviewPeriod, actionText: text } });
-    setNewActionText("");
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: getListProbationActionsQueryKey() });
+  const updateAction = useUpdateProbationAction({ mutation: { onSuccess: invalidate } });
+
+  function handleStatus(id: number, status: string) {
+    updateAction.mutate({ id, data: { status: status as "not_started" | "in_progress" | "complete" } });
   }
 
   return (
     <div className="space-y-6">
       {prevPeriod && (
         <div>
-          <h3 className="text-base font-semibold text-foreground mb-1">Actions agreed at {prevLabel}</h3>
-          <p className="text-sm text-muted-foreground mb-3">Update the status of your actions from last review.</p>
-          {prevActions.length === 0 ? (
+          <h3 className="text-base font-semibold text-foreground mb-1">Carried forward from {prevLabel}</h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            Actions from your {prevLabel} review that are still in progress. Update your status and add evidence as you go.
+          </p>
+          {carriedForward.length === 0 ? (
             <p className="text-sm text-muted-foreground py-3 px-4 border border-border rounded-xl bg-muted/20">
-              No actions were recorded at {prevLabel}.
+              No outstanding actions from {prevLabel} — great work!
             </p>
           ) : (
             <div className="space-y-2">
-              {prevActions.map(a => (
-                <ActionItem key={a.id} action={a} showDelete={false} onDelete={() => {}}
-                  onStatusChange={(id, status) => updateAction.mutate({ id, data: { status: status as "not_started" | "in_progress" | "complete" } })}
-                />
+              {carriedForward.map(a => (
+                <ActionItem key={a.id} action={a} onStatusChange={handleStatus} />
               ))}
             </div>
           )}
@@ -512,39 +568,22 @@ function ActionsSection({ userId, reviewPeriod, prevPeriod, prevLabel, nextLabel
 
       <div>
         <h3 className="text-base font-semibold text-foreground mb-1">
-          {nextLabel ? `My actions before ${nextLabel} Review` : "My actions for this review"}
+          {nextLabel ? `Actions before ${nextLabel} Review` : "Actions for this review"}
         </h3>
         <p className="text-sm text-muted-foreground mb-3">
-          Add the actions you want to focus on. These will be carried forward into your next review.
+          Actions set by your manager. Update your status and add evidence as you make progress.
         </p>
-        {currentActions.length > 0 && (
-          <div className="space-y-2 mb-3">
+        {currentActions.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-3 px-4 border border-border rounded-xl bg-muted/20">
+            No actions have been set yet. Your manager will add actions during or after your review meeting.
+          </p>
+        ) : (
+          <div className="space-y-2">
             {currentActions.map(a => (
-              <ActionItem key={a.id} action={a} showDelete
-                onDelete={id => deleteAction.mutate({ id })}
-                onStatusChange={(id, status) => updateAction.mutate({ id, data: { status: status as "not_started" | "in_progress" | "complete" } })}
-              />
+              <ActionItem key={a.id} action={a} onStatusChange={handleStatus} />
             ))}
           </div>
         )}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newActionText}
-            onChange={e => setNewActionText(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") handleAdd(); }}
-            placeholder="Type an action and press Enter or click Add…"
-            className="flex-1 text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-          <button
-            onClick={handleAdd}
-            disabled={!newActionText.trim()}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            Add
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -552,10 +591,11 @@ function ActionsSection({ userId, reviewPeriod, prevPeriod, prevLabel, nextLabel
 
 // ─── ReflectionSection ────────────────────────────────────────────────────────
 
-function ReflectionSection({ userId, reviewPeriod, isMonth6 }: {
+function ReflectionSection({ userId, reviewPeriod, isMonth6, isLocked }: {
   userId: number;
   reviewPeriod: ReviewPeriod;
   isMonth6: boolean;
+  isLocked?: boolean;
 }) {
   const queryClient = useQueryClient();
   const [state, setState] = useState<ReflectionState>(emptyReflection);
@@ -602,22 +642,39 @@ function ReflectionSection({ userId, reviewPeriod, isMonth6 }: {
     return (
       <div key={key}>
         <label className="text-sm font-medium text-foreground mb-1.5 block">{label}</label>
-        <textarea
-          value={state[key]}
-          onChange={e => setState(prev => ({ ...prev, [key]: e.target.value }))}
-          onBlur={() => save()}
-          placeholder={placeholder}
-          rows={3}
-          className="w-full text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-        />
+        {isLocked ? (
+          <p className="text-sm px-3 py-2 rounded-lg border border-border/50 bg-muted/20 text-foreground leading-relaxed min-h-[2.5rem]">
+            {state[key] || <span className="italic text-muted-foreground/50">No response recorded.</span>}
+          </p>
+        ) : (
+          <textarea
+            value={state[key]}
+            onChange={e => setState(prev => ({ ...prev, [key]: e.target.value }))}
+            onBlur={() => save()}
+            placeholder={placeholder}
+            rows={3}
+            className="w-full text-sm px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        )}
       </div>
     );
   }
 
   return (
     <div>
-      <h3 className="text-lg font-semibold text-foreground mb-1">My Reflection</h3>
-      <p className="text-sm text-muted-foreground mb-5">Take a moment to reflect on your progress since the last review.</p>
+      <div className="flex items-center gap-3 mb-1">
+        <h3 className="text-lg font-semibold text-foreground">My Reflection</h3>
+        {isLocked && (
+          <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+            <Lock className="h-3 w-3" /> Locked
+          </span>
+        )}
+      </div>
+      <p className="text-sm text-muted-foreground mb-5">
+        {isLocked
+          ? "Your reflection has been recorded as part of your official probation record."
+          : "Take a moment to reflect on your progress since the last review."}
+      </p>
       <div className="space-y-4">
         {field("wentWell", "What has gone well?")}
         {field("learned", "What have I learned?")}
@@ -629,13 +686,16 @@ function ReflectionSection({ userId, reviewPeriod, isMonth6 }: {
             {CONFIDENCE_OPTIONS.map(opt => (
               <button
                 key={opt.value}
+                disabled={isLocked}
                 onClick={() => {
+                  if (isLocked) return;
                   const val = state.confidence === opt.value ? "" : opt.value;
                   setState(prev => ({ ...prev, confidence: val }));
                   save({ confidence: val });
                 }}
                 className={cn("px-4 py-2 rounded-lg border text-sm font-medium transition-all",
-                  state.confidence === opt.value ? opt.active : opt.inactive
+                  state.confidence === opt.value ? opt.active : opt.inactive,
+                  isLocked && "cursor-default opacity-70"
                 )}
               >
                 {opt.label}
@@ -752,6 +812,13 @@ function ReviewContent({ reviewPeriod, userId, items }: {
   const [managerStateMap, setManagerStateMap] = useState<Record<number, ManagerItemState>>({});
   const [lastInitKey, setLastInitKey] = useState<string | null>(null);
 
+  const mgrReviewParams = { userId, reviewPeriod };
+  const { data: managerReviews = [] } = useListProbationManagerReviews(
+    mgrReviewParams,
+    { query: { queryKey: getListProbationManagerReviewsQueryKey(mgrReviewParams), enabled: !!userId } }
+  );
+  const isLocked = !!managerReviews[0]?.publishedAt;
+
   const reviewAssessmentsParams = { userId, reviewPeriod };
   const { data: assessments = [], isLoading: assessmentsLoading } = useListProbationAssessments(
     reviewAssessmentsParams,
@@ -817,6 +884,16 @@ function ReviewContent({ reviewPeriod, userId, items }: {
       {/* Date of Review */}
       <ReviewDateField userId={userId} reviewPeriod={reviewPeriod} />
 
+      {isLocked && (
+        <div className="flex items-center gap-2 mb-6 px-4 py-3 rounded-xl border border-primary/25 bg-primary/5 text-sm text-foreground">
+          <Lock className="h-4 w-4 text-primary shrink-0" />
+          <span>
+            This review has been finalised. Your ratings and responses are now part of your official probation record.
+            Your actions remain active — continue updating status and adding evidence.
+          </span>
+        </div>
+      )}
+
       <ProgressSummary items={items} stateMap={stateMap} />
 
       <div className="space-y-4 mt-6">
@@ -832,13 +909,14 @@ function ReviewContent({ reviewPeriod, userId, items }: {
               onRate={handleRate}
               onNote={handleNote}
               onBlur={handleBlur}
+              isLocked={isLocked}
             />
           ))
         }
       </div>
 
       <div className="border-t border-border mt-10 pt-8">
-        <ReflectionSection userId={userId} reviewPeriod={reviewPeriod} isMonth6={reviewPeriod === "month6"} />
+        <ReflectionSection userId={userId} reviewPeriod={reviewPeriod} isMonth6={reviewPeriod === "month6"} isLocked={isLocked} />
       </div>
 
       <div className="border-t border-border mt-8 pt-8">

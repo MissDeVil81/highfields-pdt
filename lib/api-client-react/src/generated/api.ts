@@ -24,6 +24,7 @@ import type {
   CreateCompetencyBody,
   CreateEvidenceBody,
   CreateProbationActionBody,
+  CreateProbationActionEvidenceBody,
   CreateRoleBody,
   DeleteProbationAction200,
   Evidence,
@@ -39,6 +40,7 @@ import type {
   ListEvidenceParams,
   ListFinancialProgressParams,
   ListFinancialTargetsParams,
+  ListProbationActionEvidenceParams,
   ListProbationActionsParams,
   ListProbationAssessmentsParams,
   ListProbationManagerReviewsParams,
@@ -48,6 +50,7 @@ import type {
   ManagerDashboardStats,
   ManagerTeamMember,
   ProbationAction,
+  ProbationActionEvidence,
   ProbationAssessment,
   ProbationItem,
   ProbationManagerReview,
@@ -2567,6 +2570,205 @@ export const useDeleteProbationAction = <
   TContext
 > => {
   return useMutation(getDeleteProbationActionMutationOptions(options));
+};
+
+/**
+ * @summary List evidence entries for a probation action
+ */
+export const getListProbationActionEvidenceUrl = (
+  params: ListProbationActionEvidenceParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/probation/action-evidence?${stringifiedParams}`
+    : `/api/probation/action-evidence`;
+};
+
+export const listProbationActionEvidence = async (
+  params: ListProbationActionEvidenceParams,
+  options?: RequestInit,
+): Promise<ProbationActionEvidence[]> => {
+  return customFetch<ProbationActionEvidence[]>(
+    getListProbationActionEvidenceUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListProbationActionEvidenceQueryKey = (
+  params?: ListProbationActionEvidenceParams,
+) => {
+  return [
+    `/api/probation/action-evidence`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListProbationActionEvidenceQueryOptions = <
+  TData = Awaited<ReturnType<typeof listProbationActionEvidence>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListProbationActionEvidenceParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProbationActionEvidence>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListProbationActionEvidenceQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listProbationActionEvidence>>
+  > = ({ signal }) =>
+    listProbationActionEvidence(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listProbationActionEvidence>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListProbationActionEvidenceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listProbationActionEvidence>>
+>;
+export type ListProbationActionEvidenceQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List evidence entries for a probation action
+ */
+
+export function useListProbationActionEvidence<
+  TData = Awaited<ReturnType<typeof listProbationActionEvidence>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListProbationActionEvidenceParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listProbationActionEvidence>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListProbationActionEvidenceQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add evidence against a probation action
+ */
+export const getCreateProbationActionEvidenceUrl = () => {
+  return `/api/probation/action-evidence`;
+};
+
+export const createProbationActionEvidence = async (
+  createProbationActionEvidenceBody: CreateProbationActionEvidenceBody,
+  options?: RequestInit,
+): Promise<ProbationActionEvidence> => {
+  return customFetch<ProbationActionEvidence>(
+    getCreateProbationActionEvidenceUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createProbationActionEvidenceBody),
+    },
+  );
+};
+
+export const getCreateProbationActionEvidenceMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProbationActionEvidence>>,
+    TError,
+    { data: BodyType<CreateProbationActionEvidenceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createProbationActionEvidence>>,
+  TError,
+  { data: BodyType<CreateProbationActionEvidenceBody> },
+  TContext
+> => {
+  const mutationKey = ["createProbationActionEvidence"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createProbationActionEvidence>>,
+    { data: BodyType<CreateProbationActionEvidenceBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createProbationActionEvidence(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateProbationActionEvidenceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createProbationActionEvidence>>
+>;
+export type CreateProbationActionEvidenceMutationBody =
+  BodyType<CreateProbationActionEvidenceBody>;
+export type CreateProbationActionEvidenceMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add evidence against a probation action
+ */
+export const useCreateProbationActionEvidence = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createProbationActionEvidence>>,
+    TError,
+    { data: BodyType<CreateProbationActionEvidenceBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createProbationActionEvidence>>,
+  TError,
+  { data: BodyType<CreateProbationActionEvidenceBody> },
+  TContext
+> => {
+  return useMutation(getCreateProbationActionEvidenceMutationOptions(options));
 };
 
 /**
