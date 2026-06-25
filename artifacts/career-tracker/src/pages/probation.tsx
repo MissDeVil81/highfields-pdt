@@ -875,9 +875,42 @@ function ProbationOverview({ items, allAssessments, onSelect }: {
 
   return (
     <div>
-      <p className="text-sm text-muted-foreground mb-6">
-        Your probation journey has four review checkpoints. Work through each review at your own pace — your progress is saved automatically.
-      </p>
+      <div className="mb-8 space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground mb-3">Welcome to Your Journey</h3>
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <p>This section is here to make one thing clear. What success looks like during your probation and how to achieve it.</p>
+            <p>You'll always know what's expected of you, where you're doing well and what to focus on next. Most importantly, you won't be doing it alone. Your manager, Learning & Development and your teammates are all here to support you.</p>
+            <p>What we ask of you is to take ownership of your own development, ask questions, seek feedback and keep your actions up to date. You can update your progress and add evidence at any time, and everything saves automatically as you go. The more you put into your development, the more you'll get out of it.</p>
+            <p>Probation is just the start of your journey with us. You should also take a look at your Current Role and start building your competencies. Then explore your Target Role. It's never too early to start working towards your next promotion.</p>
+          </div>
+        </div>
+
+        <div className="border-t border-border pt-6">
+          <h3 className="text-lg font-semibold text-foreground mb-3">Your Probation Journey</h3>
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <p>Our probation period is 6 months, although exceptional people have completed it earlier by consistently demonstrating they're ready.</p>
+            <p>You'll have regular check-ins with your manager throughout your probation. Between these meetings, continue updating your progress, completing your actions and adding evidence so your development reflects your journey as it happens.</p>
+          </div>
+          <div className="mt-4 space-y-3">
+            {[
+              { label: "Month 1", text: "Complete your Month 1 check-in with your manager to review your first few weeks, agree your development priorities and set the actions that will help you succeed." },
+              { label: "Month 3", text: "Complete your Month 3 check-in and deliver a short presentation covering what you've learnt, your achievements, the areas you're still developing and your future career aspirations. Together you'll review your progress and agree your next actions." },
+              { label: "Month 5", text: "Complete your Month 5 check-in with your manager to review your progress, make sure you're on track and focus on anything that still needs attention before your final review." },
+              { label: "Month 6", text: "Complete your final probation check-in and presentation, reflecting on your first six months, your achievements and your development before your probation outcome." },
+            ].map(({ label, text }) => (
+              <div key={label} className="flex gap-3">
+                <span className="shrink-0 mt-0.5 text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full h-fit">{label}</span>
+                <p className="text-sm text-muted-foreground">{text}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-sm text-muted-foreground italic">
+            There should never be any surprises. Regular check-ins and continuous feedback mean you'll always know what's expected and what you need to do to succeed.
+          </p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {PERIODS.map(period => {
           const periodAssessments = allAssessments.filter(a => a.reviewPeriod === period.id);

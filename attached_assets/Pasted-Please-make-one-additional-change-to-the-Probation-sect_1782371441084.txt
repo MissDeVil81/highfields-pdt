@@ -1,0 +1,83 @@
+Please make one additional change to the Probation section.
+
+Build on the changes you have just completed. Do not undo, replace or redesign any of the new left-hand navigation that has already been implemented.
+
+The new left-hand Probation navigation should remain exactly as it is:
+
+* Welcome
+* Month 1
+* Month 3
+* Month 5
+* Month 6
+
+Keep all existing navigation functionality exactly as it currently works.
+
+Update the Welcome page content only
+
+Replace the current content on the Welcome page with the text below.
+
+Do not change:
+
+* The new left-hand navigation.
+* The page layout.
+* The four probation review cards underneath the welcome text.
+* Their completion percentages.
+* Any check-in functionality.
+* Any permissions.
+* Any database logic.
+* Any routes.
+
+Only replace the text on the Welcome page.
+
+⸻
+
+Welcome to Your Journey
+
+This section is here to make one thing clear. What success looks like during your probation and how to achieve it.
+
+You’ll always know what’s expected of you, where you’re doing well and what to focus on next. Most importantly, you won’t be doing it alone. Your manager, Learning & Development and your teammates are all here to support you.
+
+What we ask of you is to take ownership of your own development, ask questions, seek feedback and keep your actions up to date. You can update your progress and add evidence at any time, and everything saves automatically as you go. The more you put into your development, the more you’ll get out of it.
+
+Probation is just the start of your journey with us. You should also take a look at your Current Role and start building your competencies. Then explore your Target Role. It’s never too early to start working towards your next promotion.
+
+Your Probation Journey
+
+Our probation period is 6 months, although exceptional people have completed it earlier by consistently demonstrating they’re ready.
+
+You’ll have regular check-ins with your manager throughout your probation. Between these meetings, continue updating your progress, completing your actions and adding evidence so your development reflects your journey as it happens.
+
+Month 1
+
+Complete your Month 1 check-in with your manager to review your first few weeks, agree your development priorities and set the actions that will help you succeed.
+
+Month 3
+
+Complete your Month 3 check-in and deliver a short presentation covering what you’ve learnt, your achievements, the areas you’re still developing and your future career aspirations. Together you’ll review your progress and agree your next actions.
+
+Month 5
+
+Complete your Month 5 check-in with your manager to review your progress, make sure you’re on track and focus on anything that still needs attention before your final review.
+
+Month 6
+
+Complete your final probation check-in and presentation, reflecting on your first six months, your achievements and your development before your probation outcome.
+
+There should never be any surprises. Regular check-ins and continuous feedback mean you’ll always know what’s expected and what you need to do to succeed.
+
+⸻
+
+Important
+
+This is a content update only.
+
+Do not modify or undo any of the navigation changes you have already made.
+
+Only edit the Welcome page text.
+
+After completing the work, confirm:
+
+1. Which files were edited.
+2. That the left-hand navigation remains unchanged.
+3. That only the Welcome page content was updated.
+4. That the four probation review cards and all existing functionality remain unchanged.
