@@ -29,9 +29,9 @@ function ReadinessBar({ assessments, total }: { assessments: Array<{ rating: str
         {unrated > 0 && <div className="bg-muted rounded-full transition-all" style={{ flex: unrated }} />}
       </div>
       <div className="flex gap-4 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500 inline-block" />{green} ready</span>
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500 inline-block" />{amber} in progress</span>
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500 inline-block" />{red} not ready</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500 inline-block" />{green} Consistent</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500 inline-block" />{amber} Progressing</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500 inline-block" />{red} Developing</span>
         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-muted-foreground/40 inline-block" />{unrated} unrated</span>
       </div>
     </div>
@@ -135,7 +135,7 @@ export default function CurrentRole() {
       {/* Competencies */}
       <div className="mb-4">
         <h3 className="text-sm font-semibold text-foreground mb-1">Self-Assessment</h3>
-        <p className="text-xs text-muted-foreground">Rate each competency to reflect your current level. Red = not yet there, Amber = working on it, Green = confident. Click a section to expand it.</p>
+        <p className="text-xs text-muted-foreground">Assess each competency based on how consistently and effectively you demonstrate it. Be honest with yourself. Think about your typical performance, not your best day.</p>
       </div>
 
       <div className="space-y-2">

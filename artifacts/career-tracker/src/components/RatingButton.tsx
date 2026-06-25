@@ -9,19 +9,22 @@ interface RatingButtonProps {
   label?: string;
 }
 
-const config: Record<Rating, { label: string; selectedClasses: string; idleClasses: string }> = {
+const config: Record<Rating, { label: string; description: string; selectedClasses: string; idleClasses: string }> = {
   red: {
-    label: "Not Ready",
+    label: "Developing",
+    description: "I am still building this competency.",
     selectedClasses: "bg-red-500 text-white border-red-500 shadow-sm",
     idleClasses: "bg-red-50 text-red-600 border-red-200 hover:bg-red-100",
   },
   amber: {
-    label: "In Progress",
+    label: "Progressing",
+    description: "I demonstrate this competency sometimes, but not consistently.",
     selectedClasses: "bg-amber-500 text-white border-amber-500 shadow-sm",
     idleClasses: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100",
   },
   green: {
-    label: "Ready",
+    label: "Consistent",
+    description: "I demonstrate this competency consistently and effectively.",
     selectedClasses: "bg-green-500 text-white border-green-500 shadow-sm",
     idleClasses: "bg-green-50 text-green-700 border-green-200 hover:bg-green-100",
   },
@@ -32,6 +35,7 @@ export function RatingButton({ value, selected, onClick, label }: RatingButtonPr
   return (
     <button
       onClick={onClick}
+      title={cfg.description}
       className={cn(
         "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 cursor-pointer select-none",
         selected ? cfg.selectedClasses : cfg.idleClasses

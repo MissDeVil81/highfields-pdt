@@ -1,0 +1,51 @@
+Please make the following small changes only. Do not redesign the application, refactor unrelated code, change the database schema, change permissions, alter existing scoring logic, or modify any other working functionality.
+
+1. Update the assessment wording on both pages
+
+Apply these changes to both the Current Role Assessment page and the Target Role Assessment page.
+
+Replace the assessment guidance with:
+
+Assess each competency based on how consistently and effectively you demonstrate it. Be honest with yourself. Think about your typical performance, not your best day.
+
+Update the visible rating labels on both pages:
+
+* Red → Developing
+* Amber → Progressing
+* Green → Consistent
+
+Use the following descriptions:
+
+* Developing. I am still building this competency.
+* Progressing. I demonstrate this competency sometimes, but not consistently.
+* Consistent. I demonstrate this competency consistently and effectively.
+
+2. Target Role Assessment. Evidence ordering
+
+On the Target Role Assessment page, users can add multiple pieces of evidence against a competency.
+
+Please change the display order so that:
+
+* The newest piece of evidence always appears at the top of the list immediately after it is added.
+* Older evidence appears underneath in chronological order.
+* Do not delete, overwrite, or modify any existing evidence.
+* This is a display-order change only. Do not change how evidence is stored unless absolutely necessary.
+
+Important
+
+* Keep the existing red/amber/green scoring logic exactly the same.
+* Keep all percentage calculations exactly the same.
+* Do not change promotion calculations.
+* Do not change manager review functionality.
+* Do not change permissions.
+* Do not change the dashboard.
+* Do not change the database schema unless there is no other way to achieve the evidence ordering.
+* Only edit the minimum number of files required.
+
+Before making any changes, identify which files need to be updated and only edit those.
+
+After completing the work, briefly confirm:
+
+1. Which files were changed.
+2. That no scoring, database, permissions, dashboard, or promotion logic was altered.
+3. That newly added evidence now appears at the top of the list on the Target Role Assessment page.

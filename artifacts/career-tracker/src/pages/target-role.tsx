@@ -140,9 +140,9 @@ function ReadinessBar({ assessments, total, evidenceCount }: { assessments: Arra
         {unrated > 0 && <div className="bg-muted rounded-full transition-all" style={{ flex: unrated }} />}
       </div>
       <div className="flex gap-4 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500 inline-block" />{green} ready</span>
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500 inline-block" />{amber} in progress</span>
-        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500 inline-block" />{red} not ready</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500 inline-block" />{green} Consistent</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500 inline-block" />{amber} Progressing</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500 inline-block" />{red} Developing</span>
         <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-muted-foreground/40 inline-block" />{unrated} unrated</span>
       </div>
     </div>
@@ -626,7 +626,7 @@ export default function TargetRole() {
           {/* Competencies + Evidence */}
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-foreground mb-1">Competency Assessment & Evidence</h3>
-            <p className="text-xs text-muted-foreground">Rate each competency and add evidence to demonstrate your readiness. Click a section to expand it.</p>
+            <p className="text-xs text-muted-foreground">Assess each competency based on how consistently and effectively you demonstrate it. Be honest with yourself. Think about your typical performance, not your best day. Click a section to expand it.</p>
           </div>
 
           <div className="space-y-2">
@@ -659,7 +659,7 @@ export default function TargetRole() {
                       {comps.map(comp => {
                         const assessment = assessmentMap.get(comp.id);
                         const rating = assessment?.rating as Rating | undefined;
-                        const compEvidence = evidenceByComp.get(comp.id) ?? [];
+                        const compEvidence = [...(evidenceByComp.get(comp.id) ?? [])].reverse();
                         const isAdding = addingEvidence === comp.id;
                         return (
                           <div key={comp.id} className="px-5 py-4 bg-card">
