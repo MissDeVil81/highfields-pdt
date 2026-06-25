@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearch, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListProbationItems,
@@ -925,9 +926,15 @@ function ProbationOverview({ items, allAssessments, onSelect }: {
 
 // ─── Main Probation page ──────────────────────────────────────────────────────
 
+const VALID_TABS: TabId[] = ["overview", "month1", "month3", "month5", "month6"];
+
 export default function Probation() {
   const { userId } = useSessionStore();
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const search = useSearch();
+  const [, navigate] = useLocation();
+
+  const rawTab = new URLSearchParams(search).get("tab") as TabId | null;
+  const activeTab: TabId = rawTab && VALID_TABS.includes(rawTab) ? rawTab : "overview";
 
   const { data: items = [] } = useListProbationItems();
   const allAssessmentsParams = { userId: userId ?? 0 };
@@ -935,11 +942,6 @@ export default function Probation() {
     allAssessmentsParams,
     { query: { queryKey: getListProbationAssessmentsQueryKey(allAssessmentsParams), enabled: !!userId } }
   );
-
-  const TABS: { id: TabId; label: string }[] = [
-    { id: "overview", label: "Overview" },
-    ...PERIODS.map(p => ({ id: p.id as TabId, label: p.shortLabel })),
-  ];
 
   const activePeriod = PERIODS.find(p => p.id === activeTab);
 
@@ -952,28 +954,11 @@ export default function Probation() {
         </p>
       </div>
 
-      <div className="flex gap-0 mb-7 overflow-x-auto border-b border-border">
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors",
-              activeTab === tab.id
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
       {activeTab === "overview" ? (
         <ProbationOverview
           items={items}
           allAssessments={allAssessments}
-          onSelect={period => setActiveTab(period)}
+          onSelect={period => navigate(`/probation?tab=${period}`)}
         />
       ) : (
         <>
@@ -981,7 +966,7 @@ export default function Probation() {
             <div className="flex items-center gap-3 mb-6">
               <h3 className="text-lg font-semibold text-foreground">{activePeriod.label}</h3>
               <button
-                onClick={() => setActiveTab("overview")}
+                onClick={() => navigate("/probation?tab=overview")}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 ← Back to overview
