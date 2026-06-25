@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/lib/session";
 import { ChevronRight, LayoutDashboard, Briefcase, Target, BarChart3, ClipboardCheck } from "lucide-react";
@@ -39,6 +39,52 @@ function NavItem({ href, label, icon, disabled }: NavItemProps) {
   );
 }
 
+const PROBATION_ITEMS = [
+  { tab: "overview", label: "Welcome" },
+  { tab: "month1",   label: "Month 1" },
+  { tab: "month3",   label: "Month 3" },
+  { tab: "month5",   label: "Month 5" },
+  { tab: "month6",   label: "Month 6" },
+];
+
+function ProbationNav() {
+  const [location] = useLocation();
+  const search = useSearch();
+  const isProbation = location === "/probation";
+  const activeTab = isProbation
+    ? (new URLSearchParams(search).get("tab") ?? "overview")
+    : null;
+
+  return (
+    <div>
+      <div className="pt-2 pb-1">
+        <p className="px-3 text-xs font-semibold text-sidebar-foreground/30 uppercase tracking-wider flex items-center gap-2">
+          <ClipboardCheck className="h-3.5 w-3.5" />
+          New Starters
+        </p>
+      </div>
+      <div className="space-y-0.5">
+        {PROBATION_ITEMS.map(item => {
+          const isActive = isProbation && activeTab === item.tab;
+          return (
+            <Link key={item.tab} href={`/probation?tab=${item.tab}`}>
+              <div className={cn(
+                "flex items-center gap-3 pl-6 pr-3 py-2 rounded-lg text-sm cursor-pointer transition-colors duration-150",
+                isActive
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}>
+                <span>{item.label}</span>
+                {isActive && <ChevronRight className="ml-auto h-4 w-4 opacity-60" />}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { currentRoleId } = useSessionStore();
 
@@ -69,14 +115,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             icon={<BarChart3 className="h-4 w-4" />}
             disabled={!currentRoleId}
           />
-          <div className="pt-2 pb-1">
-            <p className="px-3 text-xs font-semibold text-sidebar-foreground/30 uppercase tracking-wider">New Starters</p>
-          </div>
-          <NavItem
-            href="/probation"
-            label="Probation"
-            icon={<ClipboardCheck className="h-4 w-4" />}
-          />
+          <ProbationNav />
         </nav>
         <div className="px-4 py-4 border-t border-sidebar-border">
           <p className="text-xs text-sidebar-foreground/40 leading-relaxed">
