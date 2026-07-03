@@ -5,11 +5,13 @@ function isHeading(line: string): boolean {
   if (!/^[A-Z]/.test(t)) return false;
   if (t.split(/\s+/).length > 8) return false;
   if (/[.,!?]$/.test(t)) return false;
+  // Lines with an en-dash separator are always "Name – description" items, never headings
+  if (t.includes(" \u2013 ")) return false;
   return true;
 }
 
-// Detect "Name – description" lines where the name is short but the full line
-// exceeds the heading word limit (e.g. behaviours, the "What Success Looks Like" heading)
+// Detect "Name – description" lines: bold name, lighter description.
+// Applies to behaviour items, section sub-titles, DNA values in inline format, etc.
 function parseDashItem(line: string): { name: string; description: string } | null {
   const t = line.trim();
   if (!t || /^[•\-*]/.test(t)) return null;
@@ -20,8 +22,6 @@ function parseDashItem(line: string): { name: string; description: string } | nu
   if (!desc) return null;
   const nameWords = name.split(/\s+/).length;
   if (nameWords > 5 || !/^[A-Z]/.test(name)) return null;
-  // Only activate for lines that are too long to be caught by isHeading
-  if (t.split(/\s+/).length <= 8) return null;
   return { name, description: desc };
 }
 
