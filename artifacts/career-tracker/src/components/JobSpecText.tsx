@@ -57,7 +57,7 @@ export function JobSpecText({ text }: { text: string }) {
           return (
             <p key={i} className="text-sm leading-relaxed mt-1">
               <span className="font-semibold text-foreground">{dashItem.name}</span>
-              <span className="text-muted-foreground"> \u2013 {dashItem.description}</span>
+              <span className="text-muted-foreground">{" \u2013 "}{dashItem.description}</span>
             </p>
           );
         }
