@@ -2,6 +2,14 @@
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
+@font-face {
+  font-family: 'Breathing';
+  src: url('./assets/fonts/Breathing.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -242,6 +250,13 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+}
+
+/* Script/handwriting font for display headings — matches Consultant Dashboard */
+.font-script {
+  font-family: 'Breathing', cursive;
+  font-weight: normal;
+  letter-spacing: 0.01em;
 }
 
 @layer utilities {

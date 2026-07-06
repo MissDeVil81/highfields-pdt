@@ -50,7 +50,7 @@ export default function IdentityPicker() {
           <p className="text-xs font-semibold tracking-widest uppercase text-sidebar-primary mb-1.5">
             Highfield Professional Solutions
           </p>
-          <h1 className="text-2xl font-bold text-sidebar-foreground">Manager Dashboard</h1>
+          <h1 className="font-script text-4xl text-sidebar-primary leading-none mb-1">Manager Dashboard</h1>
           <p className="text-sm text-sidebar-foreground/50 mt-1">
             Track your team's probation progress
           </p>

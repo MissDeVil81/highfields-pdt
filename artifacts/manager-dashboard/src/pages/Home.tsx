@@ -168,7 +168,7 @@ export default function Home() {
             <p className="text-xs font-semibold tracking-widest uppercase text-sidebar-primary mb-0.5">
               Highfield Professional Solutions
             </p>
-            <h1 className="text-lg font-bold text-sidebar-foreground">Manager Dashboard</h1>
+            <h1 className="font-script text-2xl text-sidebar-primary leading-tight">Manager Dashboard</h1>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">

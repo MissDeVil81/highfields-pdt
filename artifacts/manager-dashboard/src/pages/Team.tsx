@@ -44,7 +44,7 @@ export default function Team() {
         </button>
         <div>
           <p className="text-xs font-semibold tracking-widest uppercase text-sidebar-primary">Your Team</p>
-          <h1 className="text-lg font-bold text-sidebar-foreground leading-tight">{manager?.name}</h1>
+          <h1 className="font-script text-2xl text-sidebar-primary leading-tight">{manager?.name}</h1>
         </div>
       </header>
 

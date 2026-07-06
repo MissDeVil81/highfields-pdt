@@ -274,7 +274,7 @@ export default function EmployeeProbation() {
         </button>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold tracking-widest uppercase text-sidebar-primary">Probation Review</p>
-          <h1 className="text-lg font-bold truncate text-sidebar-foreground leading-tight">{employee.name}</h1>
+          <h1 className="font-script text-2xl text-sidebar-primary leading-tight truncate">{employee.name}</h1>
           {employee.jobTitle && (
             <p className="text-xs text-sidebar-foreground/60">{employee.jobTitle}</p>
           )}
