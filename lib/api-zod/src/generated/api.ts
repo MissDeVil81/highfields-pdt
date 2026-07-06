@@ -794,6 +794,14 @@ export const GetManagerTeamResponseItem = zod.object({
   latestReviewPeriod: zod.string().nullish(),
   latestReviewPublishedAt: zod.coerce.date().nullish(),
   reviewCount: zod.number(),
+  currentRoleId: zod.number().nullish(),
+  currentRoleTitle: zod.string().nullish(),
+  currentRoleCompletionPct: zod.number().nullish(),
+  targetRoleId: zod.number().nullish(),
+  targetRoleTitle: zod.string().nullish(),
+  targetRoleReadinessPct: zod.number().nullish(),
+  financialTargetStatus: zod.string().nullish(),
+  lastAssessedAt: zod.coerce.date().nullish(),
 });
 export const GetManagerTeamResponse = zod.array(GetManagerTeamResponseItem);
 
@@ -810,4 +818,7 @@ export const GetManagerDashboardStatsResponse = zod.object({
   pendingReviews: zod.number(),
   publishedReviews: zod.number(),
   needingAttention: zod.number(),
+  activeDevelopmentPlans: zod.number(),
+  passiveDevelopmentPlans: zod.number(),
+  missingDevelopmentPlans: zod.number(),
 });

@@ -1736,6 +1736,23 @@ components:
           format: date-time
         reviewCount:
           type: integer
+        currentRoleId:
+          type: ["integer", "null"]
+        currentRoleTitle:
+          type: ["string", "null"]
+        currentRoleCompletionPct:
+          type: ["number", "null"]
+        targetRoleId:
+          type: ["integer", "null"]
+        targetRoleTitle:
+          type: ["string", "null"]
+        targetRoleReadinessPct:
+          type: ["number", "null"]
+        financialTargetStatus:
+          type: ["string", "null"]
+        lastAssessedAt:
+          type: ["string", "null"]
+          format: date-time
       required:
         - id
         - name
@@ -1755,9 +1772,18 @@ components:
           type: integer
         needingAttention:
           type: integer
+        activeDevelopmentPlans:
+          type: integer
+        passiveDevelopmentPlans:
+          type: integer
+        missingDevelopmentPlans:
+          type: integer
       required:
         - totalTeam
         - inProbation
         - pendingReviews
         - publishedReviews
         - needingAttention
+        - activeDevelopmentPlans
+        - passiveDevelopmentPlans
+        - missingDevelopmentPlans

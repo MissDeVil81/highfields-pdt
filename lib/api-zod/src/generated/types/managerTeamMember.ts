@@ -25,4 +25,20 @@ export interface ManagerTeamMember {
   /** @nullable */
   latestReviewPublishedAt?: Date | null;
   reviewCount: number;
+  /** @nullable */
+  currentRoleId?: number | null;
+  /** @nullable */
+  currentRoleTitle?: string | null;
+  /** @nullable */
+  currentRoleCompletionPct?: number | null;
+  /** @nullable */
+  targetRoleId?: number | null;
+  /** @nullable */
+  targetRoleTitle?: string | null;
+  /** @nullable */
+  targetRoleReadinessPct?: number | null;
+  /** @nullable */
+  financialTargetStatus?: string | null;
+  /** @nullable */
+  lastAssessedAt?: Date | null;
 }

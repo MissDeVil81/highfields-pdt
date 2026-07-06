@@ -12,4 +12,7 @@ export interface ManagerDashboardStats {
   pendingReviews: number;
   publishedReviews: number;
   needingAttention: number;
+  activeDevelopmentPlans: number;
+  passiveDevelopmentPlans: number;
+  missingDevelopmentPlans: number;
 }

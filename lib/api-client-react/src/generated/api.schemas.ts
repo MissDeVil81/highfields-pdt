@@ -435,6 +435,22 @@ export interface ManagerTeamMember {
   /** @nullable */
   latestReviewPublishedAt?: string | null;
   reviewCount: number;
+  /** @nullable */
+  currentRoleId?: number | null;
+  /** @nullable */
+  currentRoleTitle?: string | null;
+  /** @nullable */
+  currentRoleCompletionPct?: number | null;
+  /** @nullable */
+  targetRoleId?: number | null;
+  /** @nullable */
+  targetRoleTitle?: string | null;
+  /** @nullable */
+  targetRoleReadinessPct?: number | null;
+  /** @nullable */
+  financialTargetStatus?: string | null;
+  /** @nullable */
+  lastAssessedAt?: string | null;
 }
 
 export interface ManagerDashboardStats {
@@ -443,6 +459,9 @@ export interface ManagerDashboardStats {
   pendingReviews: number;
   publishedReviews: number;
   needingAttention: number;
+  activeDevelopmentPlans: number;
+  passiveDevelopmentPlans: number;
+  missingDevelopmentPlans: number;
 }
 
 export type IdentifyUserParams = {

@@ -1,0 +1,127 @@
+Yes, send this to Replit:
+
+Please update the Manager Dashboard.
+
+Do not change unrelated functionality or redesign the whole system.
+
+Main Dashboard Navigation
+
+Managers need a clear way to navigate between:
+
+1. Probation
+2. Personal Development
+
+Probation should only show people currently on probation.
+
+Personal Development should show every member of the manager’s team.
+
+Summary Section at the Top
+
+At the top of the main Manager Dashboard landing page, please show:
+
+Team Summary
+
+Total people in team
+This already exists, keep it.
+
+Probation Summary
+
+Show the following cards:
+
+People in probation
+Number of people currently on probation. This already exists, keep it.
+
+People pending reviews
+Number of people on probation who are within 7 days of a scheduled review date.
+
+The review dates should be set when a new starter is created in the Admin Dashboard.
+
+People with published reviews
+This should be counted by individual, not by review date.
+
+Logic:
+An individual should count as having a published review if:
+
+* their review date has passed, and
+* they have a published review completed.
+
+They should count as pending review if:
+
+* they are within 7 days of a review date, and
+* the review has not yet been published.
+
+Please do not count each of the 4 probation review dates as separate people. The dashboard should count individuals.
+
+Personal Development Summary
+
+Show the following cards:
+
+Active development plans
+Number of people who:
+
+* have selected their current role, and
+* have started scoring their competencies within the last 3 months.
+
+Passive development plans
+Number of people who:
+
+* have selected their current role, but
+* have not logged in or scored competencies for over 3 months.
+
+Missing development plan
+Number of people who have not logged in and selected their current role.
+
+Tooltip Logic
+
+For every summary card, please add a small “i” or “?” icon.
+
+When the manager hovers over it, show the logic behind that number in plain English.
+
+Team Member Table
+
+Under the summary cards, add a table showing every team member.
+
+Columns:
+
+* Name
+* Current Role
+* Current Role Competencies (%)
+* Target Role
+* Target Role Readiness (%)
+* Financial Target
+
+Logic:
+
+Current Role
+Show the role selected by the individual as their current role.
+
+Current Role Competencies (%)
+Display the percentage of competencies completed for the individual’s current role assessment.
+
+Target Role
+Show the role selected by the individual as their target role.
+
+Target Role Readiness (%)
+Display the individual’s current readiness percentage against their target role competency assessment.
+
+Financial Target
+Show the financial target entered by the individual. If they have not entered one, or the role does not require one, leave this blank.
+
+Use the same colour logic already used in the Individual Dashboard:
+
+* Green = target achieved
+* Orange = near target
+* Red = not near target
+
+Please also add a small “i” or “?” icon beside each column heading so managers can hover over it to understand how each value is calculated.
+
+Testing
+
+Before finishing, please test this using managers with multiple team members, including:
+
+* people on probation
+* people not on probation
+* people with active development plans
+* people with passive development plans
+* people missing development plans
+* people with and without financial targets
