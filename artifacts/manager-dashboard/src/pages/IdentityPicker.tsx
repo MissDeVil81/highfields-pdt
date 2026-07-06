@@ -25,16 +25,29 @@ export default function IdentityPicker() {
   };
 
   return (
-    <div className="min-h-screen bg-sidebar flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen bg-sidebar flex items-center justify-center px-4 relative overflow-hidden">
+
+      {/* Subtle background decoration */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div
+          className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-5"
+          style={{ background: "radial-gradient(circle, #F5C346 0%, transparent 70%)" }}
+        />
+        <div
+          className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full opacity-5"
+          style={{ background: "radial-gradient(circle, #F5C346 0%, transparent 70%)" }}
+        />
+      </div>
+
+      <div className="relative z-10 w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-sidebar-primary/15 mb-4">
+          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-sidebar-primary/15 mb-5">
             <svg className="h-7 w-7 text-sidebar-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </div>
-          <p className="text-xs font-semibold tracking-widest uppercase text-sidebar-primary mb-1">
+          <p className="text-xs font-semibold tracking-widest uppercase text-sidebar-primary mb-1.5">
             Highfield Professional Solutions
           </p>
           <h1 className="text-2xl font-bold text-sidebar-foreground">Manager Dashboard</h1>
@@ -43,7 +56,7 @@ export default function IdentityPicker() {
           </p>
         </div>
 
-        <div className="bg-card border border-sidebar-border rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-card border border-sidebar-border rounded-xl overflow-hidden">
           <div className="px-5 py-4 border-b border-border">
             <h2 className="text-base font-semibold text-foreground">Who are you?</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Select your name to continue</p>
@@ -84,7 +97,7 @@ export default function IdentityPicker() {
           )}
         </div>
 
-        <p className="text-center text-xs text-sidebar-foreground/30 mt-4">
+        <p className="text-center text-xs text-sidebar-foreground/30 mt-5">
           Contact your administrator if you don't see your name.
         </p>
       </div>

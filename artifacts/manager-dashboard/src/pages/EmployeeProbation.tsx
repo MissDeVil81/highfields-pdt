@@ -20,10 +20,7 @@ import {
   getListProbationActionsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Save, Send, Loader2, CheckCircle2, Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -53,22 +50,22 @@ const MANAGER_RATING_OPTIONS = [
   { value: "not_yet", label: "Not Yet", activeClass: "bg-red-400 text-white border-red-400" },
 ];
 
-function RatingBadge({ rating }: { rating?: string | null }) {
+function RatingPill({ rating }: { rating?: string | null }) {
   if (!rating) return <span className="text-xs text-muted-foreground">—</span>;
   const config: Record<string, { color: string; label: string }> = {
-    yes: { color: "bg-green-100 text-green-800 border-green-200", label: "Yes" },
-    in_progress: { color: "bg-amber-100 text-amber-800 border-amber-200", label: "In Progress" },
-    not_yet: { color: "bg-red-100 text-red-800 border-red-200", label: "Not Yet" },
-    no: { color: "bg-red-100 text-red-800 border-red-200", label: "Not Yet" },
-    most: { color: "bg-green-100 text-green-800 border-green-200", label: "Most of the time" },
-    some: { color: "bg-amber-100 text-amber-800 border-amber-200", label: "Some of the time" },
-    rarely: { color: "bg-red-100 text-red-800 border-red-200", label: "Rarely" },
+    yes: { color: "bg-green-100 text-green-700", label: "Yes" },
+    in_progress: { color: "bg-amber-100 text-amber-700", label: "In Progress" },
+    not_yet: { color: "bg-red-100 text-red-600", label: "Not Yet" },
+    no: { color: "bg-red-100 text-red-600", label: "Not Yet" },
+    most: { color: "bg-green-100 text-green-700", label: "Most of the time" },
+    some: { color: "bg-amber-100 text-amber-700", label: "Some of the time" },
+    rarely: { color: "bg-red-100 text-red-600", label: "Rarely" },
   };
-  const c = config[rating] ?? { color: "bg-muted text-muted-foreground border-border", label: rating };
+  const c = config[rating] ?? { color: "bg-muted text-muted-foreground", label: rating };
   return (
-    <Badge className={`${c.color} font-normal border text-xs`}>
+    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${c.color}`}>
       {c.label}
-    </Badge>
+    </span>
   );
 }
 
@@ -85,7 +82,7 @@ function ManagerRatingSelect({
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
-          className={`px-2.5 py-1 rounded text-xs font-medium border transition-all ${
+          className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
             value === opt.value
               ? opt.activeClass
               : "bg-muted text-muted-foreground border-border hover:border-foreground/30"
@@ -133,13 +130,11 @@ export default function EmployeeProbation() {
   const upsertAssessment = useUpsertProbationAssessment();
   const publishReview = usePublishProbationManagerReview();
 
-  // Actions for current period
   const actionsParams = { userId, reviewPeriod: activeTab };
   const { data: currentActions = [] } = useListProbationActions(
     actionsParams,
     { query: { queryKey: getListProbationActionsQueryKey(actionsParams), enabled: !!userId } }
   );
-  // Actions from previous period (for carry-forward)
   const prevPeriodId = PREV_PERIOD[activeTab];
   const prevActionsParams = { userId, reviewPeriod: prevPeriodId ?? "month1" };
   const { data: prevActionsAll = [] } = useListProbationActions(
@@ -270,38 +265,37 @@ export default function EmployeeProbation() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-sidebar text-sidebar-foreground px-6 py-4 flex items-center gap-4">
+      <header className="bg-sidebar text-sidebar-foreground px-6 py-4 border-b border-sidebar-border flex items-center gap-4">
         <button
-          onClick={() => navigate("/team")}
-          className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+          onClick={() => navigate("/home")}
+          className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-sidebar-primary font-semibold tracking-wider uppercase">Probation Review</p>
-          <h1 className="text-lg font-semibold truncate text-sidebar-foreground">{employee.name}</h1>
-          <p className="text-xs text-sidebar-foreground/60">{employee.jobTitle}</p>
+          <p className="text-xs font-semibold tracking-widest uppercase text-sidebar-primary">Probation Review</p>
+          <h1 className="text-lg font-bold truncate text-sidebar-foreground leading-tight">{employee.name}</h1>
+          {employee.jobTitle && (
+            <p className="text-xs text-sidebar-foreground/60">{employee.jobTitle}</p>
+          )}
         </div>
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="secondary"
+        <div className="flex gap-2 shrink-0">
+          <button
             onClick={handleSave}
             disabled={isSaving || !userId}
-            className="gap-1.5"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-sidebar-accent text-sidebar-accent-foreground hover:opacity-80 transition-opacity disabled:opacity-40"
           >
             {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             Save Draft
-          </Button>
-          <Button
-            size="sm"
+          </button>
+          <button
             onClick={handlePublish}
             disabled={isPublishing || !userId}
-            className="gap-1.5"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40"
           >
             {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
             {isPublished ? "Re-finalise & Submit" : "Finalise & Submit"}
-          </Button>
+          </button>
         </div>
       </header>
 
@@ -316,24 +310,24 @@ export default function EmployeeProbation() {
           </TabsList>
 
           {REVIEW_PERIODS.map((period) => (
-            <TabsContent key={period.value} value={period.value} className="space-y-6 pb-24">
+            <TabsContent key={period.value} value={period.value} className="space-y-4 pb-24">
+
+              {/* Status bar */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {isPublished ? (
-                    <div className="flex items-center gap-1.5 text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-1.5">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-100 text-green-700 border border-green-200">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span className="text-xs font-medium">
-                        Published {new Date(currentReview!.publishedAt!).toLocaleDateString("en-GB")}
-                      </span>
+                      Published {new Date(currentReview!.publishedAt!).toLocaleDateString("en-GB")}
                     </div>
                   ) : (
-                    <Badge variant="secondary" className="font-normal">Draft</Badge>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-muted text-muted-foreground">Draft</span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
                   <label className="text-xs text-muted-foreground">Date of Review:</label>
                   {isPublished ? (
-                    <span className="text-xs border border-border/50 rounded px-2 py-1 bg-muted/30 text-foreground">
+                    <span className="text-xs border border-border rounded-lg px-2.5 py-1 bg-muted/40 text-foreground">
                       {reviewDate || "—"}
                     </span>
                   ) : (
@@ -341,104 +335,100 @@ export default function EmployeeProbation() {
                       type="date"
                       value={reviewDate}
                       onChange={(e) => setReviewDate(e.target.value)}
-                      className="text-xs border border-border rounded px-2 py-1 bg-background text-foreground"
+                      className="text-xs border border-border rounded-lg px-2.5 py-1 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   )}
                 </div>
               </div>
 
               {!userId ? (
-                <Card>
-                  <CardContent className="py-8 text-center">
-                    <p className="text-sm text-muted-foreground">No employee data available.</p>
-                  </CardContent>
-                </Card>
+                <div className="bg-card border border-dashed border-border rounded-xl p-8 text-center">
+                  <p className="text-sm text-muted-foreground">No employee data available.</p>
+                </div>
               ) : (
                 <>
+                  {/* Probation item sections */}
                   {sections.map((section) => {
                     const sectionItems = items.filter((i) => i.section === section);
                     return (
-                      <Card key={section}>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-semibold">{section}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                          <div className="grid grid-cols-[1fr_1fr_1fr] text-xs font-medium text-muted-foreground border-b border-border bg-muted/30">
-                            <div className="px-4 py-2">Objective</div>
-                            <div className="px-4 py-2 border-l border-border">Employee</div>
-                            <div className="px-4 py-2 border-l border-border">Manager</div>
-                          </div>
-                          {sectionItems.map((item) => {
-                            const assessment = assessmentMap.get(item.id);
-                            return (
-                              <div
-                                key={item.id}
-                                className="grid grid-cols-[1fr_1fr_1fr] border-b border-border last:border-0"
-                              >
-                                <div className="px-4 py-3">
-                                  <p className="text-sm text-foreground">{item.itemText}</p>
-                                </div>
-                                <div className="px-4 py-3 border-l border-border space-y-1.5">
-                                  <RatingBadge rating={assessment?.rating} />
-                                  {assessment?.note && (
-                                    <p className="text-xs text-muted-foreground">{assessment.note}</p>
-                                  )}
-                                </div>
-                                <div className="px-4 py-3 border-l border-border space-y-2">
-                                  {isPublished ? (
-                                    <>
-                                      <RatingBadge rating={getManagerRating(item.id) ?? undefined} />
-                                      {getManagerComment(item.id) && (
-                                        <p className="text-xs text-muted-foreground">{getManagerComment(item.id)}</p>
-                                      )}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ManagerRatingSelect
-                                        value={getManagerRating(item.id)}
-                                        onChange={(v) =>
-                                          setLocalManagerRatings((prev) => ({ ...prev, [item.id]: v }))
-                                        }
-                                      />
-                                      <Textarea
-                                        placeholder="Add comment…"
-                                        value={getManagerComment(item.id)}
-                                        onChange={(e) =>
-                                          setLocalManagerComments((prev) => ({
-                                            ...prev,
-                                            [item.id]: e.target.value,
-                                          }))
-                                        }
-                                        rows={2}
-                                        className="text-xs resize-none"
-                                      />
-                                    </>
-                                  )}
-                                </div>
+                      <div key={section} className="bg-card border border-border rounded-xl overflow-hidden">
+                        <div className="px-5 py-3.5 border-b border-border bg-muted/50">
+                          <h3 className="text-sm font-semibold text-foreground">{section}</h3>
+                        </div>
+                        <div className="grid grid-cols-[1fr_1fr_1fr] text-xs font-medium text-muted-foreground border-b border-border bg-muted/30">
+                          <div className="px-4 py-2">Objective</div>
+                          <div className="px-4 py-2 border-l border-border">Employee</div>
+                          <div className="px-4 py-2 border-l border-border">Manager</div>
+                        </div>
+                        {sectionItems.map((item) => {
+                          const assessment = assessmentMap.get(item.id);
+                          return (
+                            <div
+                              key={item.id}
+                              className="grid grid-cols-[1fr_1fr_1fr] border-b border-border last:border-0"
+                            >
+                              <div className="px-4 py-3">
+                                <p className="text-sm text-foreground">{item.itemText}</p>
                               </div>
-                            );
-                          })}
-                        </CardContent>
-                      </Card>
+                              <div className="px-4 py-3 border-l border-border space-y-1.5">
+                                <RatingPill rating={assessment?.rating} />
+                                {assessment?.note && (
+                                  <p className="text-xs text-muted-foreground">{assessment.note}</p>
+                                )}
+                              </div>
+                              <div className="px-4 py-3 border-l border-border space-y-2">
+                                {isPublished ? (
+                                  <>
+                                    <RatingPill rating={getManagerRating(item.id) ?? undefined} />
+                                    {getManagerComment(item.id) && (
+                                      <p className="text-xs text-muted-foreground">{getManagerComment(item.id)}</p>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <ManagerRatingSelect
+                                      value={getManagerRating(item.id)}
+                                      onChange={(v) =>
+                                        setLocalManagerRatings((prev) => ({ ...prev, [item.id]: v }))
+                                      }
+                                    />
+                                    <Textarea
+                                      placeholder="Add comment…"
+                                      value={getManagerComment(item.id)}
+                                      onChange={(e) =>
+                                        setLocalManagerComments((prev) => ({
+                                          ...prev,
+                                          [item.id]: e.target.value,
+                                        }))
+                                      }
+                                      rows={2}
+                                      className="text-xs resize-none"
+                                    />
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     );
                   })}
 
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-sm font-semibold">Manager Summary</CardTitle>
-                        {isPublished && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Locked</span>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                  {/* Manager Summary */}
+                  <div className="bg-card border border-border rounded-xl overflow-hidden">
+                    <div className="px-5 py-3.5 border-b border-border bg-muted/50 flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-foreground">Manager Summary</h3>
+                      {isPublished && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Locked</span>
+                      )}
+                    </div>
+                    <div className="p-5 space-y-4">
                       <div>
                         <label className="text-xs font-medium text-muted-foreground block mb-1.5">
                           What's going well
                         </label>
                         {isPublished ? (
-                          <p className="text-sm px-3 py-2 rounded-lg border border-border/50 bg-muted/20 min-h-[4rem] leading-relaxed">
+                          <p className="text-sm px-3 py-2.5 rounded-xl border border-border bg-muted/30 min-h-[4rem] leading-relaxed text-foreground">
                             {goingWell || <span className="italic text-muted-foreground/50">Not recorded.</span>}
                           </p>
                         ) : (
@@ -456,7 +446,7 @@ export default function EmployeeProbation() {
                           Development areas
                         </label>
                         {isPublished ? (
-                          <p className="text-sm px-3 py-2 rounded-lg border border-border/50 bg-muted/20 min-h-[4rem] leading-relaxed">
+                          <p className="text-sm px-3 py-2.5 rounded-xl border border-border bg-muted/30 min-h-[4rem] leading-relaxed text-foreground">
                             {developmentAreas || <span className="italic text-muted-foreground/50">Not recorded.</span>}
                           </p>
                         ) : (
@@ -469,19 +459,20 @@ export default function EmployeeProbation() {
                           />
                         )}
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
 
-                  {/* Actions Management Card */}
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-semibold">Actions</CardTitle>
+                  {/* Actions */}
+                  <div className="bg-card border border-border rounded-xl overflow-hidden">
+                    <div className="px-5 py-3.5 border-b border-border bg-muted/50">
+                      <h3 className="text-sm font-semibold text-foreground">Actions</h3>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         Set and track development actions for this review period.
                       </p>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Carried-forward from previous period */}
+                    </div>
+                    <div className="p-5 space-y-4">
+
+                      {/* Carried-forward actions */}
                       {prevPeriodId && carriedActions.length > 0 && (
                         <div className="space-y-2">
                           <p className="text-xs font-medium text-amber-600 flex items-center gap-1.5">
@@ -497,7 +488,7 @@ export default function EmployeeProbation() {
                                     <button
                                       key={opt.value}
                                       onClick={() => updateAction.mutate({ id: action.id, data: { status: opt.value as "not_started" | "in_progress" | "complete" } })}
-                                      className={`px-2 py-0.5 rounded text-xs border transition-all ${action.status === opt.value ? opt.active : opt.inactive}`}
+                                      className={`px-2 py-0.5 rounded-lg text-xs border transition-all ${action.status === opt.value ? opt.active : opt.inactive}`}
                                     >
                                       {opt.label}
                                     </button>
@@ -527,7 +518,7 @@ export default function EmployeeProbation() {
                                       autoFocus
                                       value={editActionText}
                                       onChange={(e) => setEditActionText(e.target.value)}
-                                      className="flex-1 text-xs border border-ring rounded px-2 py-1.5 bg-background text-foreground focus:outline-none"
+                                      className="flex-1 text-xs border border-ring rounded-lg px-2.5 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                                     />
                                     <button
                                       onClick={() => {
@@ -555,7 +546,7 @@ export default function EmployeeProbation() {
                                         <button
                                           key={opt.value}
                                           onClick={() => updateAction.mutate({ id: action.id, data: { status: opt.value as "not_started" | "in_progress" | "complete" } })}
-                                          className={`px-2 py-0.5 rounded text-xs border transition-all ${action.status === opt.value ? opt.active : opt.inactive}`}
+                                          className={`px-2 py-0.5 rounded-lg text-xs border transition-all ${action.status === opt.value ? opt.active : opt.inactive}`}
                                         >
                                           {opt.label}
                                         </button>
@@ -592,11 +583,9 @@ export default function EmployeeProbation() {
                               }
                             }}
                             placeholder="Add an action… (press Enter to save)"
-                            className="flex-1 text-xs border border-border rounded px-3 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                            className="flex-1 text-xs border border-border rounded-xl px-3 py-2 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                           />
-                          <Button
-                            size="sm"
-                            variant="outline"
+                          <button
                             disabled={!newActionText.trim() || createAction.isPending}
                             onClick={() => {
                               if (newActionText.trim()) {
@@ -604,15 +593,15 @@ export default function EmployeeProbation() {
                                 setNewActionText("");
                               }
                             }}
-                            className="gap-1.5 shrink-0"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border border-border bg-muted text-foreground hover:bg-accent transition-colors disabled:opacity-40 shrink-0"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             Add
-                          </Button>
+                          </button>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </>
               )}
             </TabsContent>
@@ -620,6 +609,7 @@ export default function EmployeeProbation() {
         </Tabs>
       </div>
 
+      {/* Fixed bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-6 py-3 z-10">
         <div className="max-w-6xl mx-auto flex items-center gap-4">
           <div className="flex-1 min-w-0">
@@ -638,15 +628,23 @@ export default function EmployeeProbation() {
           </div>
           <div className="flex gap-2 shrink-0">
             {!isPublished && (
-              <Button size="sm" variant="secondary" onClick={handleSave} disabled={isSaving || !userId} className="gap-1.5">
+              <button
+                onClick={handleSave}
+                disabled={isSaving || !userId}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-secondary text-secondary-foreground hover:opacity-80 transition-opacity disabled:opacity-40"
+              >
                 {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 Save Draft
-              </Button>
+              </button>
             )}
-            <Button size="sm" onClick={handlePublish} disabled={isPublishing || !userId} className="gap-1.5">
+            <button
+              onClick={handlePublish}
+              disabled={isPublishing || !userId}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40"
+            >
               {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
               {isPublished ? "Re-finalise & Submit" : "Finalise & Submit"}
-            </Button>
+            </button>
           </div>
         </div>
       </div>
