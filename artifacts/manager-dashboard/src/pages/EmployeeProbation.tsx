@@ -153,6 +153,13 @@ export default function EmployeeProbation() {
   const currentReview = managerReviews[0];
   const isPublished = !!currentReview?.publishedAt;
 
+  const reflectionsParams = { userId, reviewPeriod: activeTab };
+  const { data: reflections = [] } = useListProbationReflections(
+    reflectionsParams,
+    { query: { queryKey: getListProbationReflectionsQueryKey(reflectionsParams), enabled: !!userId } }
+  );
+  const reflection = reflections[0] ?? null;
+
   const [goingWell, setGoingWell] = useState("");
   const [developmentAreas, setDevelopmentAreas] = useState("");
   const [reviewDate, setReviewDate] = useState("");
@@ -161,6 +168,11 @@ export default function EmployeeProbation() {
   const [newActionText, setNewActionText] = useState("");
   const [editingActionId, setEditingActionId] = useState<number | null>(null);
   const [editActionText, setEditActionText] = useState("");
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
+  function toggleSection(section: string) {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  }
 
   useEffect(() => {
     if (currentReview) {
@@ -176,6 +188,7 @@ export default function EmployeeProbation() {
     setLocalManagerComments({});
     setNewActionText("");
     setEditingActionId(null);
+    setExpandedSections({});
   }, [currentReview?.id, activeTab]);
 
   const assessmentMap = new Map(assessments.map((a) => [a.itemId, a]));
@@ -349,72 +362,141 @@ export default function EmployeeProbation() {
                 </div>
               ) : (
                 <>
-                  {/* Probation item sections */}
+                  {/* Probation item sections — collapsible */}
                   {sections.map((section) => {
                     const sectionItems = items.filter((i) => i.section === section);
+                    const isExpanded = !!expandedSections[section];
                     return (
                       <div key={section} className="bg-card border border-border rounded-xl overflow-hidden">
-                        <div className="px-5 py-3.5 border-b border-border bg-muted/50">
+                        <button
+                          type="button"
+                          onClick={() => toggleSection(section)}
+                          className="w-full flex items-center justify-between px-5 py-3.5 border-b border-border bg-muted/50 hover:bg-muted/70 transition-colors text-left"
+                        >
                           <h3 className="text-sm font-semibold text-foreground">{section}</h3>
-                        </div>
-                        <div className="grid grid-cols-[1fr_1fr_1fr] text-xs font-medium text-muted-foreground border-b border-border bg-muted/30">
-                          <div className="px-4 py-2">Objective</div>
-                          <div className="px-4 py-2 border-l border-border">Employee</div>
-                          <div className="px-4 py-2 border-l border-border">Manager</div>
-                        </div>
-                        {sectionItems.map((item) => {
-                          const assessment = assessmentMap.get(item.id);
-                          return (
-                            <div
-                              key={item.id}
-                              className="grid grid-cols-[1fr_1fr_1fr] border-b border-border last:border-0"
-                            >
-                              <div className="px-4 py-3">
-                                <p className="text-sm text-foreground">{item.itemText}</p>
-                              </div>
-                              <div className="px-4 py-3 border-l border-border space-y-1.5">
-                                <RatingPill rating={assessment?.rating} />
-                                {assessment?.note && (
-                                  <p className="text-xs text-muted-foreground">{assessment.note}</p>
-                                )}
-                              </div>
-                              <div className="px-4 py-3 border-l border-border space-y-2">
-                                {isPublished ? (
-                                  <>
-                                    <RatingPill rating={getManagerRating(item.id) ?? undefined} />
-                                    {getManagerComment(item.id) && (
-                                      <p className="text-xs text-muted-foreground">{getManagerComment(item.id)}</p>
-                                    )}
-                                  </>
-                                ) : (
-                                  <>
-                                    <ManagerRatingSelect
-                                      value={getManagerRating(item.id)}
-                                      onChange={(v) =>
-                                        setLocalManagerRatings((prev) => ({ ...prev, [item.id]: v }))
-                                      }
-                                    />
-                                    <Textarea
-                                      placeholder="Add comment…"
-                                      value={getManagerComment(item.id)}
-                                      onChange={(e) =>
-                                        setLocalManagerComments((prev) => ({
-                                          ...prev,
-                                          [item.id]: e.target.value,
-                                        }))
-                                      }
-                                      rows={2}
-                                      className="text-xs resize-none"
-                                    />
-                                  </>
-                                )}
-                              </div>
+                          {isExpanded
+                            ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+                            : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                          }
+                        </button>
+                        {isExpanded && (
+                          <>
+                            <div className="grid grid-cols-[1fr_1fr_1fr] text-xs font-medium text-muted-foreground border-b border-border bg-muted/30">
+                              <div className="px-4 py-2">Objective</div>
+                              <div className="px-4 py-2 border-l border-border">Employee</div>
+                              <div className="px-4 py-2 border-l border-border">Manager</div>
                             </div>
-                          );
-                        })}
+                            {sectionItems.map((item) => {
+                              const assessment = assessmentMap.get(item.id);
+                              return (
+                                <div
+                                  key={item.id}
+                                  className="grid grid-cols-[1fr_1fr_1fr] border-b border-border last:border-0"
+                                >
+                                  <div className="px-4 py-3">
+                                    <p className="text-sm text-foreground">{item.itemText}</p>
+                                  </div>
+                                  <div className="px-4 py-3 border-l border-border space-y-1.5">
+                                    <RatingPill rating={assessment?.rating} />
+                                    {assessment?.note && (
+                                      <p className="text-xs text-muted-foreground">{assessment.note}</p>
+                                    )}
+                                  </div>
+                                  <div className="px-4 py-3 border-l border-border space-y-2">
+                                    {isPublished ? (
+                                      <>
+                                        <RatingPill rating={getManagerRating(item.id) ?? undefined} />
+                                        {getManagerComment(item.id) && (
+                                          <p className="text-xs text-muted-foreground">{getManagerComment(item.id)}</p>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ManagerRatingSelect
+                                          value={getManagerRating(item.id)}
+                                          onChange={(v) =>
+                                            setLocalManagerRatings((prev) => ({ ...prev, [item.id]: v }))
+                                          }
+                                        />
+                                        <Textarea
+                                          placeholder="Add comment…"
+                                          value={getManagerComment(item.id)}
+                                          onChange={(e) =>
+                                            setLocalManagerComments((prev) => ({
+                                              ...prev,
+                                              [item.id]: e.target.value,
+                                            }))
+                                          }
+                                          rows={2}
+                                          className="text-xs resize-none"
+                                        />
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </>
+                        )}
                       </div>
                     );
                   })}
+
+                  {/* Employee Reflection — read-only for manager */}
+                  <div className="bg-card border border-border rounded-xl overflow-hidden">
+                    <div className="px-5 py-3.5 border-b border-border bg-muted/50 flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-foreground">Employee Reflection</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">The employee's self-reflection for this review period.</p>
+                      </div>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium shrink-0">Read only</span>
+                    </div>
+                    <div className="p-5 space-y-4">
+                      {!reflection ? (
+                        <p className="text-sm text-muted-foreground/70 italic text-center py-4">
+                          The employee hasn't submitted their reflection yet.
+                        </p>
+                      ) : (
+                        <>
+                          {[
+                            { key: "wentWell" as const, label: "What has gone well?" },
+                            { key: "learned" as const, label: "What have I learned?" },
+                            { key: "moreSupport" as const, label: "Where do I need more support?" },
+                            { key: "focusNext" as const, label: "What am I focusing on before my next review?" },
+                          ].map(({ key, label }) => (
+                            <div key={key}>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
+                              <p className="text-sm px-3 py-2 rounded-lg border border-border/50 bg-muted/20 text-foreground leading-relaxed min-h-[2.5rem]">
+                                {reflection[key] || <span className="italic text-muted-foreground/50">No response recorded.</span>}
+                              </p>
+                            </div>
+                          ))}
+                          {reflection.confidence && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1.5">How confident do I feel in my role?</p>
+                              <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium border ${
+                                reflection.confidence === "very_confident"
+                                  ? "bg-green-100 text-green-700 border-green-200"
+                                  : reflection.confidence === "confident"
+                                  ? "bg-green-50 text-green-600 border-green-100"
+                                  : reflection.confidence === "getting_there"
+                                  ? "bg-amber-100 text-amber-700 border-amber-200"
+                                  : reflection.confidence === "need_support"
+                                  ? "bg-red-100 text-red-600 border-red-200"
+                                  : "bg-muted text-muted-foreground border-border"
+                              }`}>
+                                {reflection.confidence === "very_confident" ? "Very Confident"
+                                  : reflection.confidence === "confident" ? "Confident"
+                                  : reflection.confidence === "getting_there" ? "Getting There"
+                                  : reflection.confidence === "need_support" ? "Need More Support"
+                                  : reflection.confidence}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
 
                   {/* Manager Summary */}
                   <div className="bg-card border border-border rounded-xl overflow-hidden">
