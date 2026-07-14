@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedIfEmpty, seedDemoProgressIfMissing } from "./startup-seed";
+import { seedIfEmpty, seedDemoProgressIfMissing, seedDemoProgressV2IfMissing } from "./startup-seed";
 
 const rawPort = process.env["PORT"];
 
@@ -18,6 +18,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 seedIfEmpty()
   .then(() => seedDemoProgressIfMissing())
+  .then(() => seedDemoProgressV2IfMissing())
   .then(() => {
     app.listen(port, (err) => {
       if (err) {
