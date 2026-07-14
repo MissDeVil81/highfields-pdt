@@ -226,13 +226,15 @@ router.get("/dashboard-stats", async (req, res) => {
       .from(probationManagerReviewsTable)
       .where(eq(probationManagerReviewsTable.userId, member.id));
 
-    // Pending: within next 7 days AND not yet published
-    const hasPending = reviews.some((r) => {
+    // Pending: within next 7 days AND not yet published, OR in probation with no reviews at all
+    const hasScheduledPending = reviews.some((r) => {
       if (r.publishedAt !== null) return false;
       if (!r.reviewDate) return false;
       const d = new Date(r.reviewDate);
       return !isNaN(d.getTime()) && d >= now && d <= sevenDaysFromNow;
     });
+    const hasNoProbationReview = !reviews.length && member.probationStatus === "in_progress";
+    const hasPending = hasScheduledPending || hasNoProbationReview;
 
     // Published: review date has passed AND at least one published review exists
     const hasPublished = reviews.some((r) => {
@@ -244,7 +246,7 @@ router.get("/dashboard-stats", async (req, res) => {
 
     if (hasPending) pendingReviews++;
     if (hasPublished) publishedReviews++;
-    if (!reviews.length && member.probationStatus === "in_progress") needingAttention++;
+    if (hasNoProbationReview) needingAttention++;
 
     // Personal development classification
     const dev = devMap.get(member.id);
