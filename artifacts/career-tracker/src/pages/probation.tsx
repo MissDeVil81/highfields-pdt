@@ -223,28 +223,30 @@ function ProbationItemRow({
           {isLocked && <Lock className="h-3 w-3 text-muted-foreground/50 shrink-0" />}
         </div>
 
-        {/* Manager row — always read-only */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xs font-medium text-foreground shrink-0 w-36">Manager Rating</span>
-          <div className="flex gap-1.5 flex-wrap">
-            {mgrRating == null ? (
-              <span className="text-xs text-muted-foreground/60 italic">Not yet rated</span>
-            ) : (
-              options.map(opt => (
-                <span
-                  key={opt.value}
-                  className={cn(
-                    "flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium whitespace-nowrap",
-                    mgrRating === opt.value ? opt.activeClass : "border-border/30 text-muted-foreground/30"
-                  )}
-                >
-                  {"icon" in opt ? opt.icon : <span>{"★".repeat(opt.stars)}</span>}
-                  {opt.label}
-                </span>
-              ))
-            )}
+        {/* Manager row — only shown after manager publishes */}
+        {isLocked && (
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-xs font-medium text-foreground shrink-0 w-36">Manager Rating</span>
+            <div className="flex gap-1.5 flex-wrap">
+              {mgrRating == null ? (
+                <span className="text-xs text-muted-foreground/60 italic">Not yet rated</span>
+              ) : (
+                options.map(opt => (
+                  <span
+                    key={opt.value}
+                    className={cn(
+                      "flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs font-medium whitespace-nowrap",
+                      mgrRating === opt.value ? opt.activeClass : "border-border/30 text-muted-foreground/30"
+                    )}
+                  >
+                    {"icon" in opt ? opt.icon : <span>{"★".repeat(opt.stars)}</span>}
+                    {opt.label}
+                  </span>
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="mt-3 flex gap-5 flex-wrap">
@@ -268,14 +270,16 @@ function ProbationItemRow({
             {showNote ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </button>
         )}
-        <button
-          onClick={() => setShowMgrComment(s => !s)}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <MessageSquare className="h-3 w-3" />
-          {hasMgrComment ? "View manager comment" : "Manager comment"}
-          {showMgrComment ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-        </button>
+        {isLocked && (
+          <button
+            onClick={() => setShowMgrComment(s => !s)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <MessageSquare className="h-3 w-3" />
+            {hasMgrComment ? "View manager comment" : "Manager comment"}
+            {showMgrComment ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
+        )}
       </div>
 
       {showNote && (
@@ -739,6 +743,7 @@ function ManagerReviewSummary({ userId, reviewPeriod }: {
     }
   }, [reviews, isLoading, initialized]);
 
+  const isPublished = !!reviews[0]?.publishedAt;
   const hasAnyContent = state.goingWell || state.developmentAreas || state.reviewStatus;
 
   return (
@@ -753,7 +758,11 @@ function ManagerReviewSummary({ userId, reviewPeriod }: {
         Your manager's assessment will appear here after your review meeting.
       </p>
 
-      {!hasAnyContent ? (
+      {!isPublished ? (
+        <p className="text-sm text-muted-foreground/70 italic text-center py-4">
+          Your manager's review will appear here once they have finalised and shared it with you.
+        </p>
+      ) : !hasAnyContent ? (
         <p className="text-sm text-muted-foreground/70 italic text-center py-4">
           No manager review recorded yet for this period.
         </p>

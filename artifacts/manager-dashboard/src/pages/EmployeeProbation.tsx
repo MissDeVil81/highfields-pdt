@@ -13,16 +13,18 @@ import {
   useCreateProbationAction,
   useUpdateProbationAction,
   useDeleteProbationAction,
+  useListProbationReflections,
   getListProbationAssessmentsQueryKey,
   getListProbationManagerReviewsQueryKey,
   getGetUserQueryKey,
   getListProbationItemsQueryKey,
   getListProbationActionsQueryKey,
+  getListProbationReflectionsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, Send, Loader2, CheckCircle2, Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import { ArrowLeft, Save, Send, Loader2, CheckCircle2, Plus, Trash2, Pencil, Check, X, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const REVIEW_PERIODS = [

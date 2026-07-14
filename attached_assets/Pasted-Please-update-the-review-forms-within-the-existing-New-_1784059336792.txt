@@ -1,0 +1,81 @@
+Please update the review forms within the existing New Starters section so the individual and manager versions display the same review information.
+
+The existing questions, sections and confidence fields are already correct. Do not add any new questions or confidence fields.
+
+The issue is that the individual and manager forms currently display different information.
+
+Please apply the following changes to each review stage:
+
+* Month 1
+* Month 3
+* Month 5
+* Month 6
+
+Manager form
+
+On the manager version of each review, show the individual’s completed review within the matching section.
+
+The manager should be able to see:
+
+* The individual’s existing response
+* The individual’s existing confidence score
+* The manager’s own existing response, score and comments fields
+
+The individual’s answers and confidence scores must be read-only on the manager form.
+
+Do not create duplicate fields or records. Display the information already submitted by the individual from the existing review data.
+
+Individual form
+
+Once the manager has completed and published their review, show the manager’s information within the matching sections on the individual’s form.
+
+The individual should be able to see:
+
+* Their own existing response
+* Their own existing confidence score
+* The manager’s published response, assessment or score
+* The manager’s published comments
+* Any published actions or focus areas already included in the review
+
+The manager’s information must be read-only for the individual.
+
+Draft manager information must remain hidden until the manager selects the existing Save and Publish to Individual option.
+
+Shared structure
+
+The manager and individual forms should display the same sections in the same order.
+
+Within each section, clearly separate:
+
+1. Individual review
+2. Individual confidence
+3. Manager review
+4. Manager comments or assessment
+
+Do not change the wording of the existing questions or the structure of the review. This change is about making the existing information visible on both sides.
+
+Collapsible manager sections
+
+On the manager form only, make each existing review section expandable and collapsible so the page is easier to use.
+
+* Sections should be collapsed by default
+* The section heading should remain visible
+* Clicking the heading or arrow should open the section
+* Each section should open and close independently
+* Any section containing a validation error should automatically open
+* Do not collapse or hide information on the individual form unless that behaviour already exists
+
+Important safeguards
+
+* Do not add new questions or confidence fields
+* Do not remove or rename existing fields
+* Do not change permissions
+* Do not change review stages or dates
+* Do not change calculations
+* Do not overwrite existing review data
+* Do not create duplicate review records
+* Keep the existing Save and Save and Publish behaviour
+* Reuse the current database fields and review records wherever possible
+* Ensure historic and previously completed reviews continue to display correctly
+
+Before making changes, inspect how the individual and manager forms currently retrieve and save review data. Update the display and data mapping so both forms reference the same underlying review record and matching fields.
