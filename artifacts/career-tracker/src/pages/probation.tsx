@@ -331,7 +331,7 @@ function SectionBlock({
   onBlur: (itemId: number) => void;
   isLocked?: boolean;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const yesCount = items.filter(i => { const r = stateMap[i.id]?.rating; return r === "yes" || r === "most"; }).length;
   const allDone = items.every(i => stateMap[i.id]?.rating != null);
   const anyRated = items.some(i => stateMap[i.id]?.rating != null);
