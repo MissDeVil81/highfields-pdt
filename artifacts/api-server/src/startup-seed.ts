@@ -3,8 +3,7 @@ import { logger } from "./lib/logger";
 
 const SEED_SQL = `
 INSERT INTO public.career_paths VALUES (1, '360 Career Path', 'The full 360° recruitment career track. Manage the full recruitment lifecycle from client development through to placement. Click to view the full career path diagram.', '2026-04-16 14:30:07.063937');
-INSERT INTO public.career_paths VALUES (2, '180 Delivery Career Path', 'The 180° delivery recruitment track. Specialist recruiters focused on candidate sourcing, delivery and talent placement. Click to view the full career path diagram.', '2026-04-16 14:30:07.108624');
-INSERT INTO public.career_paths VALUES (3, 'Account Management Career Path', 'The account management track. Build and grow strategic client relationships within key accounts and expand revenue opportunities. Click to view the full career path diagram.', '2026-04-16 14:30:07.114164');
+INSERT INTO public.career_paths VALUES (2, '180 Career Path', 'The 180° delivery recruitment track. Specialist recruiters focused on candidate sourcing, delivery and talent placement. Click to view the full career path diagram.', '2026-04-16 14:30:07.108624');
 INSERT INTO public.roles VALUES (50, 2, 'Team Leader Contract', 10, 'Team Leader – Delivery – Contract
 INSERT INTO public.roles VALUES (45, 2, 'Principal Consultant Perm', 5, 'Principal Delivery Consultant – Permanent
 INSERT INTO public.roles VALUES (58, 1, 'Senior Recruitment Consultant Perm', 4, '

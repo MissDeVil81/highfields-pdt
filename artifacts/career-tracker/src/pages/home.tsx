@@ -8,8 +8,7 @@ const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const CAREER_PATH_PDFS: Record<number, string> = {
   1: `${basePath}/pdfs/360-career-path.pdf`,
-  2: `${basePath}/pdfs/180-delivery-career-path.pdf`,
-  3: `${basePath}/pdfs/account-management-career-path.pdf`,
+  2: `${basePath}/pdfs/180-career-path.pdf`,
 };
 
 export default function Home() {

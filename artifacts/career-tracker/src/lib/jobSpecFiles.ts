@@ -35,16 +35,4 @@ export const JOB_SPEC_FILES: Record<number, string> = {
   53: file("associate-director-180-perm.docx"),
   54: file("associate-director-180-contract.docx"),
 
-  // Account Management Career Path
-  69: file("account-coordinator.docx"),
-  70: file("senior-account-coordinator.docx"),
-  71: file("delivery-consultant.docx"),
-  72: file("senior-delivery-consultant.docx"),
-  73: file("account-partner.docx"),
-  74: file("account-manager.docx"),
-  75: file("senior-account-manager.docx"),
-  76: file("account-partner-manager.docx"),
-  77: file("delivery-manager.docx"),
-  78: file("account-director.docx"),
-  79: file("business-director.docx"),
 };
