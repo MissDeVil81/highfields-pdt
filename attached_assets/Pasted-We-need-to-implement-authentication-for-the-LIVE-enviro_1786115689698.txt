@@ -1,0 +1,415 @@
+We need to implement authentication for the LIVE environment only.
+
+This application has three environments:
+
+- Development
+- Demo
+- Live (Production)
+
+The existing architecture already separates these environments.
+
+The authentication requirements below apply ONLY to the Live environment.
+
+Do not introduce authentication requirements into the Development or Demo environments.
+
+--------------------------------------------------
+OBJECTIVE
+--------------------------------------------------
+
+Implement Microsoft 365 single sign-on (SSO) authentication for the Live environment.
+
+Employees should be able to access the application using their existing Microsoft work account.
+
+We do not want users to create usernames or passwords specifically for this application.
+
+Authentication should be as seamless as possible.
+
+If users are already authenticated with Microsoft 365, the experience should feel almost invisible.
+
+--------------------------------------------------
+LIVE ENVIRONMENT ONLY
+--------------------------------------------------
+
+Live users must authenticate through Microsoft.
+
+Development and Demo users do not need to log in.
+
+Development and Demo are managed directly through Replit by the application owner.
+
+Do not add login screens to Development or Demo.
+
+--------------------------------------------------
+AUTHENTICATION PROVIDER
+--------------------------------------------------
+
+Use Microsoft 365 authentication.
+
+Use Microsoft's current recommended implementation.
+
+Use Microsoft Entra ID (formerly Azure Active Directory).
+
+Inspect the current Replit architecture and select the most appropriate integration approach.
+
+--------------------------------------------------
+AUTHENTICATION FLOW
+--------------------------------------------------
+
+The flow should be:
+
+User opens the application.
+
+↓
+
+Application checks for an active session.
+
+↓
+
+If a session exists:
+    Open the application immediately.
+
+If no session exists:
+    Redirect to Microsoft authentication.
+
+↓
+
+User authenticates.
+
+↓
+
+Application receives user information.
+
+↓
+
+Application validates that the user exists within the Personal Development Tool database.
+
+↓
+
+If validation succeeds:
+    Create a session.
+
+↓
+
+Redirect user to their dashboard.
+
+--------------------------------------------------
+IMPORTANT RULE
+--------------------------------------------------
+
+Authentication and authorisation are separate concerns.
+
+Microsoft proves WHO the user is.
+
+Our application decides WHAT the user can access.
+
+Continue using the existing permissions framework based on:
+
+- Employee
+- Manager
+- Director
+- Admin
+- L&D
+
+Do not replace this hierarchy.
+
+--------------------------------------------------
+USER MATCHING
+--------------------------------------------------
+
+Every user record should contain:
+
+- Name
+- Email
+- Microsoft account email
+- Role
+- Team membership
+- Reports To
+- Permissions
+
+When an employee logs in:
+
+1. Match the Microsoft account email address against the stored Microsoft email field.
+
+2. If a match is found:
+
+    Allow access.
+
+3. If no match is found:
+
+    Display a friendly message such as:
+
+    "Your account hasn't been configured yet. Please contact an administrator."
+
+Do not automatically create users.
+
+All users must first be created by an Admin.
+
+--------------------------------------------------
+MICROSOFT IDENTIFIERS
+--------------------------------------------------
+
+Use the Microsoft email address to identify the account initially.
+
+After the first successful login, store Microsoft's unique identifier alongside the user record.
+
+Continue to use this identifier internally.
+
+This prevents future problems if email addresses change.
+
+--------------------------------------------------
+USER MANAGEMENT
+--------------------------------------------------
+
+Extend the Admin user screen to include:
+
+- Microsoft email address
+- Last login date
+- Account status
+
+Example:
+
+Josie Hughes
+josie.hughes@highfieldps.co.uk
+Role: Admin
+Status: Active
+Last login: 7 August 2026
+
+--------------------------------------------------
+NEW ROLE
+--------------------------------------------------
+
+Add a new role:
+
+L&D
+
+This role is being introduced now because a dedicated learning and development portal will be built later.
+
+For now:
+
+L&D users should behave similarly to their existing permission settings.
+
+The implementation should be designed so additional L&D permissions can be introduced later without rebuilding the role structure.
+
+Ensure the permissions system supports:
+
+- Employee
+- Manager
+- Director
+- Admin
+- L&D
+
+--------------------------------------------------
+SESSION MANAGEMENT
+--------------------------------------------------
+
+Users should remain signed in.
+
+Use secure persistent sessions.
+
+Do not ask employees to sign in every time they visit the application.
+
+Allow Microsoft to control session security, expiration and multi-factor authentication policies where appropriate.
+
+The application should honour Microsoft's security policies.
+
+--------------------------------------------------
+SIGN OUT
+--------------------------------------------------
+
+Provide a "Sign out" button.
+
+Signing out should terminate the application session.
+
+Do not automatically sign the user out of Outlook, Teams or Microsoft 365 entirely.
+
+--------------------------------------------------
+SECURITY REQUIREMENTS
+--------------------------------------------------
+
+Do not rely solely on frontend security.
+
+Protect all routes and endpoints.
+
+Prevent users from:
+
+- Manipulating URLs
+- Changing user IDs
+- Calling APIs directly
+- Accessing data outside their permissions
+
+All checks must occur server-side.
+
+--------------------------------------------------
+LIVE ENVIRONMENT BEHAVIOUR
+--------------------------------------------------
+
+Only authenticated users should gain access.
+
+Anonymous access is prohibited.
+
+Users must satisfy BOTH conditions:
+
+Condition 1:
+Valid Microsoft authentication.
+
+Condition 2:
+Existing active user record within the application.
+
+--------------------------------------------------
+DEVELOPMENT ENVIRONMENT BEHAVIOUR
+--------------------------------------------------
+
+No login required.
+
+Development remains accessible directly through Replit.
+
+Display:
+
+DEVELOPMENT ENVIRONMENT
+
+--------------------------------------------------
+DEMO ENVIRONMENT BEHAVIOUR
+--------------------------------------------------
+
+No login required.
+
+Demo remains accessible directly through Replit.
+
+Display:
+
+DEMO ENVIRONMENT
+
+--------------------------------------------------
+ADMIN FEATURES
+--------------------------------------------------
+
+Admins should be able to:
+
+- Create users.
+- Assign roles.
+- Assign teams.
+- Define reporting structures.
+- Assign Microsoft email addresses.
+- Activate and deactivate users.
+- Review last login dates.
+
+--------------------------------------------------
+IMPLEMENTATION PROCESS
+--------------------------------------------------
+
+Before implementation:
+
+1. Inspect the current architecture.
+
+2. Explain:
+
+   - Existing authentication approach
+   - Existing database structure
+   - Existing user structure
+   - Recommended Microsoft integration approach
+
+3. Identify risks.
+
+4. Then implement.
+
+--------------------------------------------------
+TESTING
+--------------------------------------------------
+
+Test the following scenarios.
+
+TEST 1
+
+Existing employee record exists.
+
+User logs in with Microsoft.
+
+Result:
+
+Access granted.
+
+----------------------------------
+
+TEST 2
+
+Microsoft user exists.
+
+Application user record does not exist.
+
+Result:
+
+Access denied.
+
+----------------------------------
+
+TEST 3
+
+User attempts to manipulate a URL.
+
+Result:
+
+Access denied.
+
+----------------------------------
+
+TEST 4
+
+User signs out.
+
+Result:
+
+Application session terminates successfully.
+
+----------------------------------
+
+TEST 5
+
+User revisits the application later.
+
+Result:
+
+User remains signed in if their Microsoft session remains valid.
+
+----------------------------------
+
+TEST 6
+
+Development environment.
+
+Result:
+
+No login required.
+
+----------------------------------
+
+TEST 7
+
+Demo environment.
+
+Result:
+
+No login required.
+
+----------------------------------
+
+TEST 8
+
+Live environment.
+
+Result:
+
+Authentication required.
+
+--------------------------------------------------
+DELIVERABLE
+--------------------------------------------------
+
+Provide:
+
+- Architecture summary
+- Database changes
+- Authentication flow
+- Environment variable requirements
+- Microsoft setup instructions
+- Required Azure/Entra configuration
+- Security recommendations
+- Test results
