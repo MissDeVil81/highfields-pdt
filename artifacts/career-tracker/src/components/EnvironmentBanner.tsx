@@ -1,22 +1,53 @@
-// Reads APP_ENV baked in at build time via vite.config.ts `define`.
-// Falls back to "development" so the dev workspace always shows the banner.
-const APP_ENV = (import.meta.env.VITE_APP_ENV as string) || "development";
+import { useQuery } from "@tanstack/react-query";
+
+type AppEnv = "development" | "demo" | "production";
+
+async function fetchAppEnv(): Promise<AppEnv | "unknown"> {
+  try {
+    const res = await fetch("/api/env");
+    if (!res.ok) return "unknown";
+    const data = await res.json();
+    const env = data.appEnv;
+    if (env === "development" || env === "demo" || env === "production") return env;
+    return "unknown";
+  } catch {
+    return "unknown";
+  }
+}
 
 export function EnvironmentBanner() {
-  if (APP_ENV === "production") return null;
+  const { data: appEnv } = useQuery({
+    queryKey: ["app-env"],
+    queryFn: fetchAppEnv,
+    staleTime: Infinity,
+    retry: false,
+  });
 
-  if (APP_ENV === "demo") {
+  if (!appEnv || appEnv === "production") return null;
+
+  if (appEnv === "development") {
     return (
-      <div className="w-full bg-amber-400 text-amber-950 text-center py-2 px-4 text-sm font-semibold tracking-wide z-50 shrink-0">
+      <div className="w-full bg-red-600 text-white text-center text-sm font-semibold py-1.5 tracking-wide z-50">
+        ⚠ DEVELOPMENT ENVIRONMENT — Data is for testing only
+      </div>
+    );
+  }
+
+  if (appEnv === "demo") {
+    return (
+      <div className="w-full bg-amber-500 text-white text-center text-sm font-semibold py-1.5 tracking-wide z-50">
         DEMO ENVIRONMENT · Contains demonstration data only
       </div>
     );
   }
 
-  // development
-  return (
-    <div className="w-full bg-red-600 text-white text-center py-2 px-4 text-sm font-bold tracking-widest uppercase z-50 shrink-0">
-      ⚠ DEVELOPMENT ENVIRONMENT
-    </div>
-  );
+  if (appEnv === "unknown") {
+    return (
+      <div className="w-full bg-gray-700 text-white text-center text-sm font-semibold py-1.5 tracking-wide z-50">
+        ⚠ ENVIRONMENT UNKNOWN — Server may be misconfigured
+      </div>
+    );
+  }
+
+  return null;
 }

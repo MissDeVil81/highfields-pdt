@@ -1,25 +1,31 @@
-#!/usr/bin/env node
 /**
  * seed-live-admin.mjs
  *
- * Creates the initial admin user in the LIVE / PRODUCTION database.
- * Run this once after provisioning the live database and applying schema.
+ * Creates the initial admin user record for the Live environment.
+ * Run this once after schema migration on a fresh Live database.
  *
  * Usage:
- *   DATABASE_URL=<production-connection-string> node scripts/seed-live-admin.mjs
- *
- * You will be prompted for the admin's name and email.
- * No personal data is hard-coded here — the admin is created fresh.
+ *   APP_ENV=production PRODUCTION_DATABASE_URL=<url> node scripts/seed-live-admin.mjs
  */
 
 import pg from "pg";
-import readline from "readline";
+import readline from "node:readline";
 
-const { Client } = pg;
+// ── Guard: only runs against production ──────────────────────────────────────
+const APP_ENV = process.env.APP_ENV;
+if (APP_ENV !== "production") {
+  console.error(
+    `ERROR: seed-live-admin must only run against APP_ENV=production. Got: ${JSON.stringify(APP_ENV)}`,
+  );
+  process.exit(1);
+}
 
-const DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) {
-  console.error("❌ DATABASE_URL must be set (use the PRODUCTION_DATABASE_URL value).");
+// ── Strict URL — no DATABASE_URL fallback ─────────────────────────────────────
+const connectionString = process.env.PRODUCTION_DATABASE_URL;
+if (!connectionString) {
+  console.error(
+    "ERROR: PRODUCTION_DATABASE_URL is required when APP_ENV=production. Set this secret before running.",
+  );
   process.exit(1);
 }
 
@@ -27,46 +33,44 @@ const rl = readline.createInterface({ input: process.stdin, output: process.stdo
 const ask = (q) => new Promise((resolve) => rl.question(q, resolve));
 
 async function run() {
-  console.log("\n🔐 Live Admin User Setup\n");
-  console.log("This script creates the initial admin account in the live database.");
-  console.log("No demo data will be inserted.\n");
+  console.log("=== Live Admin User Seed ===");
+  console.log("This will create the initial admin user in the Live database.\n");
 
   const name = (await ask("Admin full name: ")).trim();
   const email = (await ask("Admin email address: ")).trim().toLowerCase();
-  const jobTitle = (await ask("Job title (optional, press Enter to skip): ")).trim() || null;
 
-  rl.close();
-
-  if (!name || !email) {
-    console.error("❌ Name and email are required.");
+  if (!name || !email || !email.includes("@")) {
+    console.error("ERROR: Valid name and email are required.");
+    rl.close();
     process.exit(1);
   }
 
-  const client = new Client({ connectionString: DATABASE_URL });
+  rl.close();
+
+  const client = new pg.Client({ connectionString });
   await client.connect();
+  console.log("\nConnected to production database.");
 
-  // Check it doesn't already exist
-  const existing = await client.query("SELECT id FROM users WHERE email = $1", [email]);
-  if (existing.rows.length > 0) {
-    console.log(`⚠  A user with email ${email} already exists (id=${existing.rows[0].id}). No changes made.`);
+  try {
+    const existing = await client.query("SELECT id FROM users WHERE email = $1", [email]);
+    if (existing.rows.length > 0) {
+      console.log(`\nUser with email ${email} already exists (id=${existing.rows[0].id}). No changes made.`);
+      return;
+    }
+
+    const result = await client.query(
+      `INSERT INTO users (name, email, roles, is_active) VALUES ($1, $2, $3, $4) RETURNING id`,
+      [name, email, JSON.stringify(["admin"]), "active"],
+    );
+
+    console.log(`\n✅ Admin user created: id=${result.rows[0].id}, name="${name}", email="${email}"`);
+    console.log("The admin can now sign in via the Admin Dashboard by selecting their name.");
+  } finally {
     await client.end();
-    return;
   }
-
-  const result = await client.query(
-    `INSERT INTO users (name, email, job_title, roles, is_active)
-     VALUES ($1, $2, $3, ARRAY['admin'], 'active')
-     RETURNING id`,
-    [name, email, jobTitle],
-  );
-
-  console.log(`\n✅ Admin user created: ${name} <${email}> (id=${result.rows[0].id})`);
-  console.log("   They can now log in to the admin dashboard.");
-
-  await client.end();
 }
 
 run().catch((err) => {
-  console.error("❌ Failed:", err.message);
+  console.error("Fatal error:", err.message);
   process.exit(1);
 });

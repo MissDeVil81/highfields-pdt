@@ -25,7 +25,7 @@ import auditLogRouter from "./auditLog";
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use(envRouter);
+router.use("/env", envRouter);
 router.use("/auth", authRouter);
 router.use("/career-paths", careerPathsRouter);
 router.use("/roles", rolesRouter);

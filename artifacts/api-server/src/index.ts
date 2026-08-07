@@ -1,7 +1,11 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import {
+  seedIfEmpty,
+  seedDemoProgressIfMissing,
+  seedDemoProgressV2IfMissing,
+} from "./startup-seed";
 import { RESOLVED_APP_ENV } from "@workspace/db";
-import { seedIfEmpty, seedDemoProgressIfMissing, seedDemoProgressV2IfMissing } from "./startup-seed";
 
 const rawPort = process.env["PORT"];
 
@@ -25,13 +29,14 @@ const seedChain =
         .then(() => seedDemoProgressIfMissing())
         .then(() => seedDemoProgressV2IfMissing());
 
-seedChain.then(() => {
+seedChain
+  .then(() => {
     app.listen(port, (err) => {
       if (err) {
         logger.error({ err }, "Error listening on port");
         process.exit(1);
       }
-      logger.info({ port }, "Server listening");
+      logger.info({ port, appEnv: RESOLVED_APP_ENV }, "Server listening");
     });
   })
   .catch((err) => {

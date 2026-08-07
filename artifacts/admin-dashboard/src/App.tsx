@@ -41,14 +41,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="flex flex-col min-h-screen">
-          <EnvironmentBanner />
-          <AdminProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <AuthenticatedApp />
-            </WouterRouter>
-          </AdminProvider>
-        </div>
+        <EnvironmentBanner />
+        <AdminProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <AuthenticatedApp />
+          </WouterRouter>
+        </AdminProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

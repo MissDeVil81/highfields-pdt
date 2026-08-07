@@ -1,76 +1,43 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema";
+import { APP_ENV } from "./env";
 
 const { Pool } = pg;
 
-const APP_ENV = process.env.APP_ENV as "development" | "demo" | "production" | undefined;
-
 /**
- * Database URL resolution — each repl uses its own isolated database.
+ * Database URL resolution — strict per-environment isolation.
  *
- * Priority (highest to lowest):
- *  1. APP_ENV-specific secret (DEVELOPMENT_DATABASE_URL / DEMO_DATABASE_URL / PRODUCTION_DATABASE_URL)
- *     — use this to point at an external/shared database when needed.
- *  2. DATABASE_URL — Replit auto-injects this for every repl's built-in Postgres database.
- *     In normal multi-repl setups this is all you need; isolation comes from forking, not
- *     from copying connection strings.
+ * Each environment requires its own explicit database URL secret.
+ * No fallback to DATABASE_URL is allowed; a misconfigured repl cannot
+ * accidentally connect to another environment's database.
  *
- * Production is the only environment that refuses to start without a database URL; for
- * dev/demo the fallback to DATABASE_URL is always safe.
+ *   APP_ENV=development → DEVELOPMENT_DATABASE_URL (required)
+ *   APP_ENV=demo        → DEMO_DATABASE_URL        (required)
+ *   APP_ENV=production  → PRODUCTION_DATABASE_URL  (required)
  */
-const SPECIFIC_KEY: Record<string, string> = {
+const DB_URL_KEY = {
   development: "DEVELOPMENT_DATABASE_URL",
   demo: "DEMO_DATABASE_URL",
   production: "PRODUCTION_DATABASE_URL",
-};
+} as const satisfies Record<typeof APP_ENV, string>;
 
-function resolveUrl(): string {
-  const specificKey = APP_ENV ? SPECIFIC_KEY[APP_ENV] : undefined;
-  const specificUrl = specificKey ? process.env[specificKey] : undefined;
+const dbUrlKey = DB_URL_KEY[APP_ENV];
+const connectionString = process.env[dbUrlKey];
 
-  if (specificUrl) {
-    return specificUrl;
-  }
-
-  // Fall back to the Replit-managed DATABASE_URL
-  const fallbackUrl = process.env.DATABASE_URL;
-
-  if (!fallbackUrl) {
-    // For production, refuse to start without an explicit connection string.
-    if (APP_ENV === "production") {
-      console.error(
-        "[DB] Neither PRODUCTION_DATABASE_URL nor DATABASE_URL is set. " +
-          "Provision a database in this repl or set PRODUCTION_DATABASE_URL.",
-      );
-      process.exit(1);
-    }
-    console.error("[DB] No database URL found. Did you forget to add a database to this repl?");
-    process.exit(1);
-  }
-
-  if (APP_ENV && specificKey) {
-    console.warn(
-      `[DB] ${specificKey} not set — falling back to DATABASE_URL (Replit managed). ` +
-        `This is fine for a single-repl setup. Set ${specificKey} only if you need to point at an external database.`,
-    );
-  } else if (!APP_ENV) {
-    console.warn(
-      "[DB] APP_ENV is not set — using DATABASE_URL and defaulting environment to 'development'. " +
-        "Set APP_ENV=development|demo|production for proper environment labelling.",
-    );
-  }
-
-  return fallbackUrl;
+if (!connectionString) {
+  console.error(
+    `[DB] ${dbUrlKey} is required when APP_ENV=${APP_ENV}. ` +
+      "Set this secret in the Replit Secrets panel before starting the server.",
+  );
+  process.exit(1);
 }
 
-const databaseUrl = resolveUrl();
-
-export const pool = new Pool({ connectionString: databaseUrl });
+export const pool = new Pool({ connectionString });
 export const db = drizzle(pool, { schema });
 
-/** The resolved environment name. Falls back to "development" when APP_ENV is unset. */
-export const RESOLVED_APP_ENV: "development" | "demo" | "production" =
-  (APP_ENV as "development" | "demo" | "production" | undefined) ?? "development";
+/** The current environment name. */
+export const RESOLVED_APP_ENV: "development" | "demo" | "production" = APP_ENV;
 
 export * from "./schema";
+export { APP_ENV } from "./env";

@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAdmin } from "./AdminProvider";
 import { UsersIcon, UsersRoundIcon, ShieldAlertIcon, NetworkIcon, LogOutIcon } from "lucide-react";
-import { LiveEnvironmentPill } from "@/components/EnvironmentBanner";
+import { LiveBadge } from "./EnvironmentBanner";
 import { useListUsers } from "@workspace/api-client-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           <h2 className="text-xl font-bold text-sidebar-foreground flex items-center gap-2">
             <ShieldAlertIcon className="h-6 w-6 text-sidebar-primary" />
             Highfield Admin
-            <LiveEnvironmentPill />
+            <LiveBadge />
           </h2>
         </div>
         <nav className="flex-1 p-4 space-y-1">

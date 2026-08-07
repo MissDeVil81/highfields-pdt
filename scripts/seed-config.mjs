@@ -1,109 +1,116 @@
-#!/usr/bin/env node
 /**
  * seed-config.mjs
  *
- * Seeds SYSTEM CONFIGURATION data into the target database.
- * Safe to run against development or production environments.
- * Uses ON CONFLICT DO NOTHING so it is fully idempotent.
- *
- * NEVER seeds user data (users, assessments, evidence, probation records, etc.)
+ * Idempotent seed for system-configuration data (career paths, probation
+ * items, shared teams).  Safe to run against development or production.
+ * Do NOT run against demo — demo has its own curated data set.
  *
  * Usage:
- *   DATABASE_URL=<connection-string> node scripts/seed-config.mjs
- *
- * The script reads DATABASE_URL directly so you control which environment
- * it runs against — set it to DEVELOPMENT_DATABASE_URL, DEMO_DATABASE_URL,
- * or PRODUCTION_DATABASE_URL as appropriate.
+ *   APP_ENV=development DEVELOPMENT_DATABASE_URL=<url> node scripts/seed-config.mjs
+ *   APP_ENV=production  PRODUCTION_DATABASE_URL=<url>  node scripts/seed-config.mjs
  */
 
 import pg from "pg";
 
-const { Client } = pg;
+// ── Guard: refuse to run against demo ────────────────────────────────────────
+const APP_ENV = process.env.APP_ENV;
+if (!APP_ENV || !["development", "production"].includes(APP_ENV)) {
+  if (APP_ENV === "demo") {
+    console.error(
+      "ERROR: Do not run seed-config against the demo environment. " +
+        "Demo has its own curated data set. Use reset-demo.mjs instead.",
+    );
+  } else {
+    console.error(
+      `ERROR: APP_ENV must be "development" or "production". Got: ${JSON.stringify(APP_ENV)}`,
+    );
+  }
+  process.exit(1);
+}
 
-const DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) {
-  console.error("❌ DATABASE_URL must be set before running this script.");
+// ── Strict URL — no DATABASE_URL fallback ─────────────────────────────────────
+const SPECIFIC_KEY = APP_ENV === "production" ? "PRODUCTION_DATABASE_URL" : "DEVELOPMENT_DATABASE_URL";
+const connectionString = process.env[SPECIFIC_KEY];
+
+if (!connectionString) {
   console.error(
-    "   Example: DATABASE_URL=$PRODUCTION_DATABASE_URL node scripts/seed-config.mjs",
+    `ERROR: ${SPECIFIC_KEY} is required when APP_ENV=${APP_ENV}. Set this secret before running.`,
   );
   process.exit(1);
 }
 
-const client = new Client({ connectionString: DATABASE_URL });
+const client = new pg.Client({ connectionString });
 
 async function run() {
   await client.connect();
+  console.log(`Connected to ${APP_ENV} database.`);
 
-  console.log("🌱 Seeding system configuration (career paths, roles, competencies)...");
+  try {
+    await client.query("BEGIN");
 
-  // ── Career paths ──────────────────────────────────────────────────────────
-  await client.query(`
-    INSERT INTO career_paths (id, name, description, created_at) VALUES
-      (1, '360 Career Path', 'The full 360° recruitment career track. Manage the full recruitment lifecycle from client development through to placement. Click to view the full career path diagram.', '2026-04-16 14:30:07.063937'),
-      (2, '180 Delivery Career Path', 'The 180° delivery recruitment track. Specialist recruiters focused on candidate sourcing, delivery and talent placement. Click to view the full career path diagram.', '2026-04-16 14:30:07.108624'),
-      (3, 'Account Management Career Path', 'The account management track. Build and grow strategic client relationships within key accounts and expand revenue opportunities. Click to view the full career path diagram.', '2026-04-16 14:30:07.114164')
-    ON CONFLICT (id) DO NOTHING;
-  `);
-  console.log("  ✓ Career paths");
+    // ── Career Paths (id-based PK conflict is safe) ───────────────────────────
+    await client.query(`
+      INSERT INTO career_paths (id, name, description)
+      VALUES
+        (1, '360 Recruitment', 'Full 360 recruitment consultant career path covering candidate and client management'),
+        (2, '180 Recruitment', 'Candidate-focused 180 recruitment career path')
+      ON CONFLICT (id) DO NOTHING
+    `);
+    console.log("✓ career_paths seeded");
 
-  // ── Roles ─────────────────────────────────────────────────────────────────
-  // Sourced from the startup-seed SEED_SQL — all role rows, idempotent.
-  await client.query(`
-    INSERT INTO roles (id, career_path_id, name, level, description) VALUES
-      (41,2,'Recruitment Consultant Perm',1,NULL),
-      (42,2,'Recruitment Consultant Contract',2,NULL),
-      (43,2,'Senior Recruitment Consultant Perm',3,NULL),
-      (44,2,'Senior Recruitment Consultant Contract',4,NULL),
-      (45,2,'Principal Consultant Perm',5,NULL),
-      (46,2,'Principal Consultant Contract',6,NULL),
-      (47,2,'Sector Lead Perm',7,NULL),
-      (48,2,'Sector Lead Contract',8,NULL),
-      (49,2,'Team Leader Perm',9,NULL),
-      (50,2,'Team Leader Contract',10,NULL),
-      (51,2,'Divisional Manager Perm',11,NULL),
-      (52,2,'Divisional Manager Contract',12,NULL),
-      (53,2,'Associate Director Perm',13,NULL),
-      (54,2,'Associate Director Contract',14,NULL),
-      (55,1,'Recruitment Consultant Contract',1,NULL),
-      (56,1,'Recruitment Consultant Perm',2,NULL),
-      (57,1,'Senior Recruitment Consultant Contract',3,NULL),
-      (58,1,'Senior Recruitment Consultant Perm',4,NULL),
-      (59,1,'Principal Consultant Contract',5,NULL),
-      (60,1,'Principal Consultant Perm',6,NULL),
-      (61,1,'Sector Lead Contract',7,NULL),
-      (62,1,'Sector Lead Perm',8,NULL),
-      (63,1,'Team Leader Contract',9,NULL),
-      (64,1,'Team Leader Perm',10,NULL),
-      (65,1,'Divisional Manager Contract',11,NULL),
-      (66,1,'Divisional Manager Perm',12,NULL),
-      (67,1,'Associate Director Contract',13,NULL),
-      (68,1,'Associate Director Perm',14,NULL),
-      (69,3,'Account Coordinator',1,NULL),
-      (70,3,'Senior Account Coordinator',2,NULL),
-      (71,3,'Delivery Consultant',3,NULL),
-      (72,3,'Senior Delivery Consultant',4,NULL),
-      (73,3,'Account Partner',5,NULL),
-      (74,3,'Account Manager',6,NULL),
-      (75,3,'Senior Account Manager',7,NULL),
-      (76,3,'Account Partner Manager',8,NULL),
-      (77,3,'Delivery Manager',9,NULL),
-      (78,3,'Account Director',10,NULL),
-      (79,3,'Business Director',11,NULL)
-    ON CONFLICT (id) DO NOTHING;
-  `);
-  console.log("  ✓ Roles");
+    // ── Roles note ────────────────────────────────────────────────────────────
+    console.log("ℹ  Roles are managed by scripts/populate-job-specs.mjs — run that next.");
 
-  // ── Competencies — seeded from the same source, abbreviated for clarity ───
-  // The full set is large; this script inserts a representative set idempotently.
-  // If you need the full competency set, run the startup seed or apply the full SQL.
-  console.log("  ℹ Competencies: handled by server startup-seed on first boot.");
+    // ── Probation Items (no unique constraint — use WHERE NOT EXISTS) ──────────
+    const probationItems = [
+      { section: "Objectives & Performance", sectionOrder: 1, itemText: "Meets agreed call/activity targets", itemOrder: 1, ratingType: "yes_no_progress" },
+      { section: "Objectives & Performance", sectionOrder: 1, itemText: "Builds and maintains a strong candidate pipeline", itemOrder: 2, ratingType: "yes_no_progress" },
+      { section: "Objectives & Performance", sectionOrder: 1, itemText: "Achieves first placement within probation period", itemOrder: 3, ratingType: "yes_no_progress" },
+      { section: "Knowledge & Skills", sectionOrder: 2, itemText: "Demonstrates understanding of the recruitment process", itemOrder: 1, ratingType: "yes_no_progress" },
+      { section: "Knowledge & Skills", sectionOrder: 2, itemText: "Completes all mandatory compliance and onboarding training", itemOrder: 2, ratingType: "yes_no_progress" },
+      { section: "Knowledge & Skills", sectionOrder: 2, itemText: "Uses the CRM/ATS system effectively", itemOrder: 3, ratingType: "yes_no_progress" },
+      { section: "Values & Behaviours", sectionOrder: 3, itemText: "Shows initiative and takes ownership of their desk", itemOrder: 1, ratingType: "values_rating" },
+      { section: "Values & Behaviours", sectionOrder: 3, itemText: "Communicates proactively with manager and team", itemOrder: 2, ratingType: "values_rating" },
+      { section: "Values & Behaviours", sectionOrder: 3, itemText: "Embodies company values in day-to-day work", itemOrder: 3, ratingType: "values_rating" },
+    ];
 
-  await client.end();
-  console.log("\n✅ System configuration seeded successfully.");
-  console.log("   User data (users, assessments, progress) was NOT touched.");
+    let probationInserted = 0;
+    for (const item of probationItems) {
+      const res = await client.query(
+        `INSERT INTO probation_items (section, section_order, item_text, item_order, rating_type)
+         SELECT $1, $2, $3, $4, $5
+         WHERE NOT EXISTS (
+           SELECT 1 FROM probation_items WHERE section = $1 AND item_text = $3
+         )`,
+        [item.section, item.sectionOrder, item.itemText, item.itemOrder, item.ratingType],
+      );
+      probationInserted += res.rowCount ?? 0;
+    }
+    console.log(`✓ probation_items seeded (${probationInserted} new rows inserted)`);
+
+    // ── Shared Teams (no unique constraint — use WHERE NOT EXISTS) ────────────
+    const standardTeams = ["Management", "Operations", "Sales"];
+    let teamsInserted = 0;
+    for (const name of standardTeams) {
+      const res = await client.query(
+        `INSERT INTO teams (name, status)
+         SELECT $1, 'active'
+         WHERE NOT EXISTS (SELECT 1 FROM teams WHERE name = $1)`,
+        [name],
+      );
+      teamsInserted += res.rowCount ?? 0;
+    }
+    console.log(`✓ shared teams seeded (${teamsInserted} new rows inserted)`);
+
+    await client.query("COMMIT");
+    console.log("\n✅ seed-config complete.");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("ERROR during seed, rolled back:", err.message);
+    process.exit(1);
+  } finally {
+    await client.end();
+  }
 }
 
-run().catch((err) => {
-  console.error("❌ Seed failed:", err.message);
-  process.exit(1);
-});
+run();
