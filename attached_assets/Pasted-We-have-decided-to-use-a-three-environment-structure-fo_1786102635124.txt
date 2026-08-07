@@ -1,0 +1,494 @@
+We have decided to use a three-environment structure for the Personal Development Tool:
+
+1. DEVELOPMENT
+2. DEMO
+3. LIVE / PRODUCTION
+
+All three environments must use ONE shared codebase but have completely separate deployments and completely separate databases.
+
+The intended workflow is:
+
+DEVELOPMENT
+↓
+DEMO
+↓
+LIVE
+
+Do not create three independently maintained copies of the application.
+
+--------------------------------------------------
+ENVIRONMENT 1: DEVELOPMENT
+--------------------------------------------------
+
+Purpose:
+This is the environment where new functionality is built and tested.
+
+Development can contain:
+- Test users
+- Temporary data
+- Incomplete features
+- Experimental functionality
+
+Development must have its own database.
+
+Suggested environment setting:
+
+APP_ENV=development
+
+Development should display a persistent banner:
+
+“DEVELOPMENT ENVIRONMENT”
+
+It should be visually obvious that this is not Demo or Live.
+
+New features should be built and tested here first.
+
+It must be safe to:
+- Create test users
+- Test permissions
+- Change reporting structures
+- Test database migrations
+- Experiment with features
+
+Development data must never automatically flow into Demo or Live.
+
+--------------------------------------------------
+ENVIRONMENT 2: DEMO
+--------------------------------------------------
+
+The CURRENT working system and its current data should become the DEMO environment.
+
+IMPORTANT:
+Preserve all existing demo data.
+
+Do NOT reset or delete the current database.
+
+Demo is our polished demonstration and training environment.
+
+It should contain:
+- Existing demo users
+- Demo teams
+- Demo reporting hierarchy
+- Competencies
+- Career pathways
+- Demo probation journeys
+- Demo evidence
+- Demo promotion journeys
+- Demo objectives
+- Demo reviews and check-ins
+
+Suggested environment setting:
+
+APP_ENV=demo
+
+Display a persistent banner:
+
+“DEMO ENVIRONMENT”
+“Contains demonstration data only”
+
+Demo should only receive functionality that has already been successfully tested in Development.
+
+Do not use Demo as the primary development environment once this structure is established.
+
+--------------------------------------------------
+ENVIRONMENT 3: LIVE / PRODUCTION
+--------------------------------------------------
+
+Live is for genuine employee use.
+
+Suggested environment setting:
+
+APP_ENV=production
+
+Live must have its own completely separate clean database.
+
+Do not copy demo employees or demo employee-generated data into Live.
+
+Live should initially contain only:
+- Required system configuration
+- Required role/competency structures
+- Required templates
+- Secure initial Admin access
+
+Live employee data must be created separately.
+
+--------------------------------------------------
+SAME CODEBASE
+--------------------------------------------------
+
+All environments must run from the same application codebase.
+
+Do not create separate versions of features for Development, Demo and Live.
+
+Environment differences should be controlled through:
+- Deployment configuration
+- Environment variables
+- Database configuration
+- Environment-specific feature settings where genuinely required
+
+Future workflow should be:
+
+STEP 1
+Build feature in Development.
+
+STEP 2
+Test the feature in Development.
+
+STEP 3
+Deploy the same code to Demo.
+
+STEP 4
+Test the feature in Demo using realistic demo data.
+
+STEP 5
+Once approved, deploy the same code to Live.
+
+Do not manually rebuild the feature in each environment.
+
+--------------------------------------------------
+SEPARATE DATABASES
+--------------------------------------------------
+
+All three environments require separate databases.
+
+Conceptually:
+
+DEVELOPMENT_DATABASE_URL
+DEMO_DATABASE_URL
+PRODUCTION_DATABASE_URL
+
+Use the appropriate implementation for the current technology stack.
+
+There must be no database fallback.
+
+Development can never connect to Demo or Live because its own configuration is missing.
+
+Demo can never connect to Development or Live.
+
+Live can never connect to Development or Demo.
+
+If the correct database configuration is missing, the application must fail safely.
+
+--------------------------------------------------
+DATA MOVEMENT RULES
+--------------------------------------------------
+
+Application code can move:
+
+Development → Demo → Live
+
+Employee data must NOT automatically move between environments.
+
+Never copy:
+- Users
+- Reporting relationships
+- Employee evidence
+- Employee reviews
+- Probation progress
+- Promotion progress
+- Personal objectives
+- Manager comments
+
+between environments.
+
+Some system configuration may need to move between environments.
+
+Examples:
+- Competency frameworks
+- Job roles
+- Career pathways
+- Standard probation templates
+- System settings
+
+Inspect the current database and identify which data is:
+
+A. SYSTEM CONFIGURATION
+B. ENVIRONMENT-SPECIFIC USER DATA
+
+Create a safe method of applying configuration changes across environments.
+
+Prefer database migrations or configuration seed scripts rather than manually recreating data.
+
+--------------------------------------------------
+DATABASE MIGRATIONS
+--------------------------------------------------
+
+Database schema changes should follow the same promotion process.
+
+For example:
+
+1. Create migration in Development
+2. Apply and test migration in Development
+3. Apply same migration to Demo
+4. Verify Demo
+5. Apply same migration to Production
+
+Do not manually change Production database tables.
+
+Migrations must not delete Production data unless a destructive migration has been explicitly reviewed and approved.
+
+--------------------------------------------------
+DEMO DATA RESET
+--------------------------------------------------
+
+Demo should eventually support a safe reset to its standard demonstration state.
+
+This must only work when:
+
+APP_ENV=demo
+
+It must never run in Development or Production by accident.
+
+Any Reset Demo function should:
+- Be Admin only
+- Require confirmation
+- Restore standard Demo users/data
+- Never affect Live
+
+--------------------------------------------------
+DEVELOPMENT DATA RESET
+--------------------------------------------------
+
+It is acceptable to make Development easy to reset.
+
+Development should be safe for experimentation.
+
+If useful, create a Development seed process that creates test users and scenarios.
+
+This must only operate when:
+
+APP_ENV=development
+
+--------------------------------------------------
+ENVIRONMENT IDENTIFICATION
+--------------------------------------------------
+
+Development:
+Clearly display DEVELOPMENT ENVIRONMENT.
+
+Demo:
+Clearly display DEMO ENVIRONMENT.
+
+Production:
+Do not display a large environment warning.
+
+Admin users may see a small “LIVE” indicator within the Admin area.
+
+Never expose database credentials or technical secrets in the UI.
+
+--------------------------------------------------
+DEPLOYMENTS
+--------------------------------------------------
+
+Create or configure separate deployments for:
+
+Development
+Demo
+Live
+
+Each should have its own URL.
+
+For example conceptually:
+
+development.[app]
+demo.[app]
+live.[app]
+
+Use the appropriate Replit deployment approach rather than hard-coding these exact URL formats.
+
+Provide us with three clearly labelled deployment links when complete.
+
+--------------------------------------------------
+AUTHENTICATION
+--------------------------------------------------
+
+Inspect how authentication currently works.
+
+Users and authentication must be appropriately separated between environments.
+
+Creating a user in Development must not create them in Demo or Live.
+
+Creating a Demo user must not create a Live user.
+
+Creating a Live user must not create them anywhere else.
+
+Explain any limitations caused by the existing authentication provider before implementing workarounds.
+
+--------------------------------------------------
+SECRETS / ENVIRONMENT VARIABLES
+--------------------------------------------------
+
+Use Replit Secrets or the appropriate secure environment variable system.
+
+Never store:
+- Database passwords
+- API credentials
+- Authentication secrets
+
+inside application code.
+
+Clearly document which secrets are required for:
+
+Development
+Demo
+Production
+
+--------------------------------------------------
+BACKUPS
+--------------------------------------------------
+
+Production requires a reliable backup and recovery process.
+
+Inspect the current database provider and explain:
+- How Live is backed up
+- How frequently
+- How it can be restored
+- Any gaps or recommendations
+
+Demo backup is useful but less critical.
+
+Development data should not be considered business-critical.
+
+--------------------------------------------------
+SECURITY
+--------------------------------------------------
+
+Production security must remain the highest priority.
+
+Environment separation must be enforced server-side.
+
+Do not rely solely on frontend environment flags.
+
+Prevent:
+- Cross-environment database access
+- Running Demo seed scripts in Production
+- Running Development reset tools in Production
+- Exposing Production secrets in Development or Demo
+
+--------------------------------------------------
+CURRENT SYSTEM
+--------------------------------------------------
+
+Treat the current working system as DEMO.
+
+Before changing anything:
+
+1. Inspect the existing project.
+2. Identify the existing database.
+3. Confirm that existing demo data is preserved.
+4. Identify the authentication approach.
+5. Identify deployment configuration.
+6. Identify current environment variables.
+7. Identify whether database migrations already exist.
+
+Do not make destructive database changes before this review.
+
+--------------------------------------------------
+INITIAL IMPLEMENTATION
+--------------------------------------------------
+
+Set up the architecture so we end with:
+
+DEVELOPMENT
+Own deployment
+Own database
+Development banner
+Safe test data
+
+DEMO
+Current demo deployment/data preserved
+Own database
+Demo banner
+Polished realistic demo data
+
+LIVE
+Own production deployment
+Own clean database
+No demo employee data
+Secure Admin setup
+
+--------------------------------------------------
+TESTING
+--------------------------------------------------
+
+Run these tests:
+
+TEST 1
+Create a Development user.
+Confirm they do not appear in Demo or Live.
+
+TEST 2
+Create a Demo user.
+Confirm they do not appear in Development or Live.
+
+TEST 3
+Create a Live user.
+Confirm they do not appear in Development or Demo.
+
+TEST 4
+Edit employee data in Demo.
+Confirm Live is unchanged.
+
+TEST 5
+Edit employee data in Live.
+Confirm Demo is unchanged.
+
+TEST 6
+Development shows DEVELOPMENT ENVIRONMENT.
+
+TEST 7
+Demo shows DEMO ENVIRONMENT.
+
+TEST 8
+Live does not show either warning.
+
+TEST 9
+Attempt to run Demo data seeding against Live.
+Confirm it is blocked.
+
+TEST 10
+Attempt to run Development reset/seed against Live.
+Confirm it is blocked.
+
+TEST 11
+Test a database migration through:
+Development → Demo → Production.
+
+Confirm the same migration works safely in all three.
+
+TEST 12
+Remove the Development database configuration.
+
+Confirm Development fails safely rather than connecting to another environment.
+
+Repeat for Demo and Live.
+
+--------------------------------------------------
+DELIVERABLE
+--------------------------------------------------
+
+When complete, provide:
+
+1. Development URL
+2. Demo URL
+3. Live URL
+4. Confirmation that each has a separate database
+5. Confirmation that the existing Demo data was preserved
+6. Confirmation that Live is clean of demo employee data
+7. Explanation of how we build a new feature in Development
+8. Explanation of how we promote it to Demo
+9. Explanation of how we promote it from Demo to Live
+10. Database migration process
+11. Environment variables required
+12. Demo reset instructions
+13. Development reset instructions
+14. Live backup/recovery process
+15. Test results
+
+IMPORTANT:
+
+The current database contains valuable Demo data.
+
+Do not wipe, overwrite, reset or destructively migrate it.
+
+If anything about the current architecture makes this three-environment setup unsafe, stop and explain the issue before making destructive changes.
