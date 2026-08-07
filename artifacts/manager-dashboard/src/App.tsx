@@ -7,6 +7,7 @@ import IdentityPicker from "@/pages/IdentityPicker";
 import Home from "@/pages/Home";
 import Team from "@/pages/Team";
 import EmployeeProbation from "@/pages/EmployeeProbation";
+import { EnvironmentBanner } from "@/components/EnvironmentBanner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,9 +31,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
+        <div className="flex flex-col min-h-screen">
+          <EnvironmentBanner />
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+        </div>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

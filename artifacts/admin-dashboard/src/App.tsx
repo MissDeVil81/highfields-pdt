@@ -10,6 +10,7 @@ import HierarchyPage from "@/pages/HierarchyPage";
 import AuditLogPage from "@/pages/AuditLogPage";
 import { AdminProvider, useAdmin } from "@/components/AdminProvider";
 import { AdminLayout, AdminIdentityPicker } from "@/components/AdminLayout";
+import { EnvironmentBanner } from "@/components/EnvironmentBanner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,11 +41,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AdminProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <AuthenticatedApp />
-          </WouterRouter>
-        </AdminProvider>
+        <div className="flex flex-col min-h-screen">
+          <EnvironmentBanner />
+          <AdminProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <AuthenticatedApp />
+            </WouterRouter>
+          </AdminProvider>
+        </div>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

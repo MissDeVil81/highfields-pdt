@@ -28,6 +28,9 @@ if (!basePath) {
 
 export default defineConfig({
   base: basePath,
+  define: {
+    "import.meta.env.VITE_APP_ENV": JSON.stringify(process.env.APP_ENV ?? "development"),
+  },
   plugins: [
     react(),
     tailwindcss(),

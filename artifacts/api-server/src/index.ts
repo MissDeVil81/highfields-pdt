@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { RESOLVED_APP_ENV } from "@workspace/db";
 import { seedIfEmpty, seedDemoProgressIfMissing, seedDemoProgressV2IfMissing } from "./startup-seed";
 
 const rawPort = process.env["PORT"];
@@ -16,10 +17,15 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-seedIfEmpty()
-  .then(() => seedDemoProgressIfMissing())
-  .then(() => seedDemoProgressV2IfMissing())
-  .then(() => {
+// In production, skip demo seeding — live data is created via seed scripts.
+const seedChain =
+  RESOLVED_APP_ENV === "production"
+    ? Promise.resolve()
+    : seedIfEmpty()
+        .then(() => seedDemoProgressIfMissing())
+        .then(() => seedDemoProgressV2IfMissing());
+
+seedChain.then(() => {
     app.listen(port, (err) => {
       if (err) {
         logger.error({ err }, "Error listening on port");

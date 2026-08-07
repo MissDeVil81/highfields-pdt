@@ -28,6 +28,11 @@ if (!basePath) {
 
 export default defineConfig({
   base: basePath,
+  define: {
+    // Bake APP_ENV into the frontend bundle so EnvironmentBanner works without an API call.
+    // Falls back to "development" in the workspace when APP_ENV is not set.
+    "import.meta.env.VITE_APP_ENV": JSON.stringify(process.env.APP_ENV ?? "development"),
+  },
   plugins: [
     react(),
     tailwindcss(),

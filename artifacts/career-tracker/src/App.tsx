@@ -11,6 +11,7 @@ import Summary from "@/pages/summary";
 import Probation from "@/pages/probation";
 import Layout from "@/components/Layout";
 import IdentityGate from "@/components/IdentityGate";
+import { EnvironmentBanner } from "@/components/EnvironmentBanner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,9 +45,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
+        <div className="flex flex-col min-h-screen">
+          <EnvironmentBanner />
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+        </div>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
