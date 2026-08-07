@@ -16,31 +16,34 @@ Each environment runs the **same codebase** from the same GitHub repository. The
 
 ## Environment Variables Required Per Environment
 
+Replit automatically injects `DATABASE_URL` for every repl's built-in Postgres database. In a normal fork-based setup **you only need to set `APP_ENV`** — each forked repl already has its own isolated database.
+
+The env-specific secrets (`DEVELOPMENT_DATABASE_URL`, `DEMO_DATABASE_URL`, `PRODUCTION_DATABASE_URL`) are optional overrides, useful only if you want to point a repl at an external or shared database.
+
 ### Development repl
 ```
-APP_ENV=development
-DEVELOPMENT_DATABASE_URL=<connection string>
-PORT=<auto-set by Replit>
-SESSION_SECRET=<unique random string>
+APP_ENV=development          ← required
+# DATABASE_URL               ← auto-injected by Replit
+SESSION_SECRET=<random>      ← required
 ```
 
 ### Demo repl
 ```
-APP_ENV=demo
-DEMO_DATABASE_URL=<connection string>
-PORT=<auto-set by Replit>
-SESSION_SECRET=<unique random string>
+APP_ENV=demo                 ← required
+# DATABASE_URL               ← auto-injected by Replit (fresh DB in the fork)
+SESSION_SECRET=<random>      ← required
 ```
 
 ### Live repl
 ```
-APP_ENV=production
-PRODUCTION_DATABASE_URL=<connection string>
-PORT=<auto-set by Replit>
-SESSION_SECRET=<unique random string>
+APP_ENV=production           ← required
+# DATABASE_URL               ← auto-injected by Replit (fresh DB in the fork)
+SESSION_SECRET=<random>      ← required
 ```
 
-> **Safety guarantee:** Each repl only holds its own DB URL secret. A misconfigured repl cannot accidentally connect to another environment — the server refuses to start if the expected URL is missing.
+> **Isolation comes from forking, not from copying secrets.** Each Replit repl provisions its own completely separate Postgres database — the `DATABASE_URL` in the Demo repl will never be the same value as the one in the Dev repl. No manual copying of connection strings is needed.
+
+> **How to find your DATABASE_URL value** (needed only if you want to set the override): run `echo $DATABASE_URL` in the repl's Shell tab.
 
 ---
 
