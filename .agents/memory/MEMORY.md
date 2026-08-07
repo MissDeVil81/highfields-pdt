@@ -4,3 +4,4 @@
 - [DB seed approach](db-seed-approach.md) — scripts/ package can't easily import @workspace/db due to drizzle-orm not hoisting; prefer direct psql SQL inserts for seeding data.
 - [Orval v8 query options](orval-v8-query-options.md) — must include `queryKey` in query options when passing `{ query: { enabled, queryKey } }` to generated hooks.
 - [Manager dashboard architecture](manager-dashboard-arch.md) — users table + manager identity in localStorage; publishedAt on probation_manager_reviews gates employee visibility.
+- [Admin permission architecture](admin-permission-arch.md) — hierarchy/teams/permissions system; manager_id IS the reports-to field; circular check; drizzle-kit push requires direct psql for new tables.

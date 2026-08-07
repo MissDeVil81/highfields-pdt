@@ -17,6 +17,9 @@ import probationActionEvidenceRouter from "./probationActionEvidence";
 import probationManagerReviewsRouter from "./probationManagerReviews";
 import usersRouter from "./users";
 import managerRouter from "./manager";
+import teamsRouter from "./teams";
+import hierarchyRouter from "./hierarchy";
+import auditLogRouter from "./auditLog";
 
 const router: IRouter = Router();
 
@@ -38,5 +41,8 @@ router.use("/probation/action-evidence", probationActionEvidenceRouter);
 router.use("/probation/manager-reviews", probationManagerReviewsRouter);
 router.use("/users", usersRouter);
 router.use("/manager", managerRouter);
+router.use("/teams", teamsRouter);
+router.use("/hierarchy", hierarchyRouter);
+router.use("/audit-log", auditLogRouter);
 
 export default router;

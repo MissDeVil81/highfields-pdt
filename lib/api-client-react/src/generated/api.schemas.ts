@@ -384,6 +384,8 @@ export interface User {
   /** @nullable */
   targetRoleId?: number | null;
   isActive: string;
+  teamIds?: number[];
+  teamNames?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -399,6 +401,7 @@ export interface UserInput {
   probationStatus?: string;
   targetRoleId?: number;
   isActive?: string;
+  teamIds?: number[];
 }
 
 export interface UserUpdate {
@@ -414,6 +417,7 @@ export interface UserUpdate {
   /** @nullable */
   targetRoleId?: number | null;
   isActive?: string;
+  teamIds?: number[];
 }
 
 export interface ManagerTeamMember {
@@ -462,6 +466,128 @@ export interface ManagerDashboardStats {
   activeDevelopmentPlans: number;
   passiveDevelopmentPlans: number;
   missingDevelopmentPlans: number;
+}
+
+export interface Team {
+  id: number;
+  name: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeamInput {
+  name: string;
+}
+
+export type TeamUpdateStatus =
+  (typeof TeamUpdateStatus)[keyof typeof TeamUpdateStatus];
+
+export const TeamUpdateStatus = {
+  active: "active",
+  archived: "archived",
+} as const;
+
+export interface TeamUpdate {
+  name?: string;
+  status?: TeamUpdateStatus;
+}
+
+export interface OrgNode {
+  id: number;
+  name: string;
+  roles: string[];
+  /** @nullable */
+  department?: string | null;
+  /** @nullable */
+  jobTitle?: string | null;
+  isActive: string;
+  teamNames: string[];
+  children: OrgNode[];
+}
+
+export type AccessBreakdownItemAccessType =
+  (typeof AccessBreakdownItemAccessType)[keyof typeof AccessBreakdownItemAccessType];
+
+export const AccessBreakdownItemAccessType = {
+  view: "view",
+  edit: "edit",
+} as const;
+
+export interface AccessBreakdownItem {
+  userId: number;
+  name: string;
+  relationship: string;
+  accessType: AccessBreakdownItemAccessType;
+}
+
+export interface AccessSummary {
+  directReports: number;
+  indirectReports: number;
+  additionalUsers: number;
+  additionalTeams: string[];
+  totalCanView: number;
+  totalCanEdit: number;
+  breakdown: AccessBreakdownItem[];
+}
+
+export type AdditionalUserPermissionPermissionType =
+  (typeof AdditionalUserPermissionPermissionType)[keyof typeof AdditionalUserPermissionPermissionType];
+
+export const AdditionalUserPermissionPermissionType = {
+  view: "view",
+  edit: "edit",
+} as const;
+
+export interface AdditionalUserPermission {
+  id: number;
+  ownerUserId: number;
+  targetUserId: number;
+  permissionType: AdditionalUserPermissionPermissionType;
+}
+
+export type AdditionalTeamPermissionPermissionType =
+  (typeof AdditionalTeamPermissionPermissionType)[keyof typeof AdditionalTeamPermissionPermissionType];
+
+export const AdditionalTeamPermissionPermissionType = {
+  view: "view",
+  edit: "edit",
+} as const;
+
+export interface AdditionalTeamPermission {
+  id: number;
+  ownerUserId: number;
+  teamId: number;
+  permissionType: AdditionalTeamPermissionPermissionType;
+}
+
+export interface UserPermissions {
+  userPermissions: AdditionalUserPermission[];
+  teamPermissions: AdditionalTeamPermission[];
+}
+
+export interface SetPermissionsBody {
+  additionalViewUsers?: number[];
+  additionalEditUsers?: number[];
+  additionalViewTeams?: number[];
+  additionalEditTeams?: number[];
+}
+
+export interface AuditLogEntry {
+  id: number;
+  adminUserId: number;
+  /** @nullable */
+  adminName?: string | null;
+  /** @nullable */
+  affectedUserId?: number | null;
+  /** @nullable */
+  affectedUserName?: string | null;
+  action: string;
+  /** @nullable */
+  previousValue?: string | null;
+  /** @nullable */
+  newValue?: string | null;
+  createdAt: string;
 }
 
 export type IdentifyUserParams = {
@@ -533,6 +659,20 @@ export type GetReadinessSummaryParams = {
 export type ListUsersParams = {
   managerId?: number;
   role?: string;
+};
+
+export type ListTeamsParams = {
+  includeArchived?: boolean;
+};
+
+export type AddTeamMemberBody = {
+  userId: number;
+};
+
+export type ListAuditLogParams = {
+  limit?: number;
+  offset?: number;
+  requestingUserId?: number;
 };
 
 export type GetManagerTeamParams = {

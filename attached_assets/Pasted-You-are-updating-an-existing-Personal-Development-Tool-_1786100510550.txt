@@ -1,0 +1,541 @@
+You are updating an existing Personal Development Tool built in Replit.
+
+The tool already has a User Management section with:
+- User list
+- Name
+- Email
+- Role
+- Department
+- Status
+- Edit/delete actions
+- New User button
+
+Do not rebuild the tool from scratch. Extend the existing User Management area and preserve the current design language, styling, navigation and existing functionality unless a change is specifically required below.
+
+OBJECTIVE
+
+Build a flexible user hierarchy and permissions system so access to employee development data is controlled by role, reporting line, team membership and optional additional permissions.
+
+The hierarchy must be scalable. Do not hard-code the logic as simply “Manager = parent” and “Director = grandparent”. Instead, build a recursive reporting structure using a “Reports To” relationship so the system can support any number of management layers in future.
+
+CORE USER ROLES
+
+Create the following user roles:
+
+1. Employee
+- Can only access their own personal development information.
+- Existing rules controlling what employees can and cannot edit in their own profile must remain unchanged.
+
+2. Manager
+- Can access their own information.
+- Automatically gets full view and edit access to all users who report directly or indirectly to them through the reporting hierarchy.
+- Managers may report to another Manager or Director.
+
+3. Director
+- Can access their own information.
+- Automatically gets full view and edit access to all users below them in the reporting hierarchy, including direct reports and all indirect reports at any depth.
+
+4. Admin
+- Full system access.
+- Can create and edit users.
+- Can assign roles.
+- Can create and manage teams.
+- Can change reporting lines.
+- Can grant additional access permissions.
+- Can view the full organisational hierarchy.
+- Can access the audit log.
+- Can use “View as User” functionality.
+
+REPORTING HIERARCHY
+
+Add a “Reports To” relationship for every user.
+
+This must be the primary source of truth for organisational hierarchy and default permissions.
+
+Example:
+
+Andy Davis, Director
+→ Andrew Collins, Manager
+   → Harry Mann, Employee
+   → Chloe Bennett, Employee
+   → Matt Gilham, Employee
+
+In this example:
+- Andrew can fully view and edit Harry, Chloe and Matt.
+- Andy can fully view and edit Andrew, Harry, Chloe and Matt.
+- Harry can only access Harry’s own information.
+
+The hierarchy must work recursively so there is no fixed limit on how many levels exist.
+
+When Admin changes a user’s “Reports To” field:
+- The hierarchy must update automatically.
+- Access permissions based on hierarchy must recalculate automatically.
+- The employee’s historical development data must remain unchanged.
+
+Never delete or reset:
+- Competency evidence
+- Probation history
+- Development history
+- Promotion objectives
+- Reviews
+- Check-ins
+- Completed records
+- Historical notes
+just because a user changes manager, team or reporting line.
+
+USER FORM
+
+Update the Add User and Edit User screens to include:
+
+- Name
+- Email
+- Role
+- Department
+- Team(s)
+- Reports To
+- Additional View Access
+- Additional Full Edit Access
+- Status
+
+ROLE
+Use a dropdown containing:
+- Employee
+- Manager
+- Director
+- Admin
+
+TEAMS
+Allow a user to belong to more than one team.
+
+Use a searchable multi-select.
+
+REPORTS TO
+Use a searchable dropdown showing active users who can be selected as the person’s manager.
+
+Prevent invalid reporting structures, including:
+- A user reporting to themselves
+- Circular reporting loops
+For example, A reports to B while B ultimately reports back to A.
+
+ADDITIONAL ACCESS
+
+Additional access must sit on top of the reporting hierarchy and must not replace it.
+
+Create:
+
+1. Additional View Access
+Admin can grant view-only access to:
+- Individual users
+- Entire teams
+
+2. Additional Full Edit Access
+Admin can grant full view and edit access to:
+- Individual users
+- Entire teams
+
+The UI should clearly distinguish between:
+- Access gained through the reporting hierarchy
+- Additional view access
+- Additional edit access
+
+If a user already has full edit access through their reporting hierarchy, do not create duplicate permissions.
+
+TEAM MANAGEMENT
+
+Create a new Admin section called “Teams”.
+
+Admin should be able to:
+- Create a team
+- Rename a team
+- Deactivate/archive a team
+- View members of a team
+- Add or remove users from teams
+
+Examples of teams might include:
+- Data Centre Recruitment
+- Technology Recruitment
+- Operations
+- Marketing
+
+Important:
+Team membership alone must NOT give someone access to another user’s development data.
+
+Access comes from:
+1. Reporting hierarchy
+2. Additional View Access
+3. Additional Full Edit Access
+
+Do not create a separate Team Owner or Team Manager permission structure. The reporting hierarchy remains the source of truth.
+
+ADMIN NAVIGATION
+
+Update the Admin/User Management section so it contains:
+
+- Users
+- Teams
+- Hierarchy
+- Access / Audit
+
+USERS PAGE
+
+Keep the existing user management table but improve it where helpful.
+
+Include columns such as:
+- Name
+- Email
+- Role
+- Team
+- Reports To
+- Status
+- Actions
+
+If multiple teams exist, display them cleanly without making the table overly cluttered.
+
+Allow filtering/searching by:
+- Name
+- Email
+- Role
+- Team
+- Manager
+- Status
+
+HIERARCHY PAGE
+
+Create a visual organisational hierarchy view.
+
+Display users as an expandable/collapsible tree or org chart.
+
+Example:
+
+Andy Davis
+Director
+▼
+   Andrew Collins
+   Manager
+   ▼
+      Harry Mann
+      Chloe Bennett
+      Matt Gilham
+
+Each person should display:
+- Name
+- Role
+- Primary team if appropriate
+
+Admin should be able to click a person to open their User Management edit panel.
+
+The hierarchy should update automatically when “Reports To” is changed.
+
+If straightforward within the existing architecture, allow Admin to change reporting lines from the hierarchy view. Drag-and-drop would be useful but is not essential for the first version. Do not introduce fragile drag-and-drop behaviour if a simpler edit interaction is safer.
+
+ACCESS SUMMARY
+
+On the Edit User screen, add an Access Summary panel.
+
+Example:
+
+Andrew’s Access
+
+Direct reports: 5
+Indirect reports: 3
+Additional users: 1
+Additional teams: Operations
+
+Total users Andrew can view: 12
+Total users Andrew can edit: 10
+
+Also show a concise breakdown explaining WHY the user has access.
+
+For example:
+- Harry Mann: Direct report, Full Edit
+- Chloe Bennett: Indirect report, Full Edit
+- Laura Smith: Additional View Access
+- Operations Team: Additional Full Edit Access
+
+This should make permissions easy for Admin to understand and troubleshoot.
+
+VIEW AS USER
+
+Add an Admin-only “View as User” feature.
+
+Admin should be able to select an active user and temporarily view the application using that user’s permissions.
+
+The purpose is to confirm exactly what that person can:
+- See
+- Edit
+- Access
+
+Make it extremely clear when Admin is in View as User mode.
+
+Display a persistent banner such as:
+
+“Viewing the system as Andrew Collins”
+
+Include an obvious:
+“Exit View as User”
+button.
+
+This functionality must not permanently alter Admin’s own role or permissions.
+
+AUDIT LOG
+
+Create an Admin audit log for permission and hierarchy changes.
+
+Record important actions such as:
+- User created
+- User role changed
+- Reporting manager changed
+- Team membership changed
+- Additional view access granted/removed
+- Additional edit access granted/removed
+- User activated/deactivated
+
+Each log entry should contain:
+- Date/time
+- Admin user who made the change
+- User affected
+- Action
+- Previous value where relevant
+- New value where relevant
+
+Example:
+
+7 Aug 2026, 10:32
+Josie Hughes changed Harry Mann’s manager
+From: Andrew Collins
+To: Andy Davis
+
+PERMISSION LOGIC
+
+Create a single reusable permission system rather than duplicating checks throughout individual pages.
+
+The system should be able to answer questions such as:
+
+canViewUser(currentUser, targetUser)
+canEditUser(currentUser, targetUser)
+
+Permission precedence should work roughly as follows:
+
+ADMIN
+Full access to all users.
+
+SELF
+Users can access their own information according to the existing self-edit rules already built into the Personal Development Tool.
+
+HIERARCHY
+Managers and Directors receive full view/edit access to all direct and indirect reports beneath them.
+
+ADDITIONAL FULL EDIT ACCESS
+Grants view and edit access.
+
+ADDITIONAL VIEW ACCESS
+Grants view-only access.
+
+NO MATCH
+No access.
+
+Do not weaken any existing permission restrictions relating to which fields an employee may edit on their own profile.
+
+SECURITY REQUIREMENTS
+
+Do not rely only on hiding UI buttons.
+
+Permissions must be enforced at the data/backend/API level as well as in the frontend.
+
+A user must not be able to access another employee’s information by:
+- Editing a URL
+- Changing an ID
+- Calling an endpoint directly
+- Manipulating frontend state
+
+Use the current authentication system and extend it safely.
+
+Prevent privilege escalation.
+
+Only Admin users should be able to:
+- Change roles
+- Change reporting lines
+- Grant additional permissions
+- Manage teams
+- View the audit log
+- Use View as User
+
+DATA MODEL
+
+Adapt the existing database rather than replacing it.
+
+Use a structure equivalent to:
+
+User
+- id
+- name
+- email
+- role
+- department
+- status
+- reportsToUserId
+
+Team
+- id
+- name
+- status
+
+UserTeam
+- userId
+- teamId
+
+AdditionalUserPermission
+- ownerUserId
+- targetUserId
+- permissionType: VIEW or EDIT
+
+AdditionalTeamPermission
+- ownerUserId
+- teamId
+- permissionType: VIEW or EDIT
+
+AuditLog
+- id
+- adminUserId
+- affectedUserId
+- action
+- previousValue
+- newValue
+- timestamp
+
+Adapt naming to match the existing schema and technology stack.
+
+Do not create duplicate data structures if equivalent tables/models already exist.
+
+MIGRATION / EXISTING USERS
+
+This tool already has users.
+
+Do not delete or recreate them.
+
+Create a safe migration path for existing records.
+
+Where possible:
+- Preserve current roles
+- Preserve departments
+- Preserve all existing employee development data
+- Add the new hierarchy/team fields without breaking current users
+
+If an existing user has no manager assigned, leave Reports To blank until Admin configures it.
+
+Do not guess reporting lines.
+
+UX PRINCIPLES
+
+The tool is for normal business users, not technical administrators.
+
+Keep it:
+- Simple
+- Visual
+- Clear
+- Hard to configure incorrectly
+
+Avoid exposing technical permission terminology where plain English can be used.
+
+Use labels such as:
+- Reports To
+- Teams
+- Additional View Access
+- Additional Full Edit Access
+- People you can access
+
+rather than database terminology.
+
+Keep the existing visual styling of the Personal Development Tool.
+
+Do not redesign unrelated screens.
+
+IMPLEMENTATION APPROACH
+
+Before making changes:
+
+1. Inspect the existing project architecture.
+2. Identify:
+   - Current authentication
+   - Current User model
+   - Existing role logic
+   - Existing employee permissions
+   - Existing database schema
+   - Existing User Management components
+3. Explain briefly what you found and how you plan to extend it.
+4. Identify any risks of changing the existing permission model.
+5. Then implement the changes incrementally.
+
+Do not replace working functionality unnecessarily.
+
+TESTING
+
+Create and test at least the following scenarios:
+
+Scenario 1
+Harry = Employee
+Reports to Andrew
+Harry can only access his own record.
+Andrew can access and edit Harry.
+
+Scenario 2
+Andrew = Manager
+Reports to Andy
+Harry reports to Andrew.
+Andy can access and edit both Andrew and Harry.
+
+Scenario 3
+Manager reports to Manager
+Harry → Andrew → Sarah → Andy
+All managers above Harry should inherit access correctly.
+
+Scenario 4
+Additional View Access
+Claire does not manage Harry.
+Claire is explicitly given Additional View Access to Harry.
+Claire can view Harry but cannot edit Harry.
+
+Scenario 5
+Additional Full Edit Access
+Claire does not manage Operations.
+Claire is given Additional Full Edit Access to Operations.
+Claire can view and edit everyone currently in Operations.
+
+Scenario 6
+Employee changes manager
+Harry moves from Andrew to Sarah.
+Andrew loses hierarchy-based access unless another permission gives it.
+Sarah gains hierarchy-based access.
+Harry’s historical development records remain unchanged.
+
+Scenario 7
+Circular hierarchy protection
+Prevent Andrew from being set to report to Harry if Harry already reports directly or indirectly to Andrew.
+
+Scenario 8
+Team membership
+Two employees belong to Marketing.
+They must not automatically be able to see each other’s records.
+
+Scenario 9
+URL security
+An Employee manually tries to access another employee’s record URL.
+Access must be denied server-side.
+
+Scenario 10
+View as User
+Admin views the system as Andrew.
+Admin sees exactly what Andrew would see.
+Exiting the mode restores normal Admin access.
+
+DELIVERABLE
+
+Implement the complete User Management hierarchy and permissions upgrade.
+
+At the end, provide:
+1. A summary of what was changed.
+2. Any database migrations created.
+3. The permission rules implemented.
+4. Any assumptions made.
+5. A checklist of the test scenarios above and whether each passed.
+6. Any recommendations for a future Phase 2, but do not build unrelated Phase 2 functionality without approval.

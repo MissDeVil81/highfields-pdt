@@ -12,3 +12,8 @@ export * from "./probationActions";
 export * from "./probationActionEvidence";
 export * from "./probationManagerReviews";
 export * from "./users";
+export * from "./teams";
+export * from "./userTeams";
+export * from "./additionalUserPermissions";
+export * from "./additionalTeamPermissions";
+export * from "./auditLog";

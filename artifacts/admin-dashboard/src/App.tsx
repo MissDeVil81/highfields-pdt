@@ -5,6 +5,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import UsersPage from "@/pages/UsersPage";
 import UserFormPage from "@/pages/UserFormPage";
+import TeamsPage from "@/pages/TeamsPage";
+import HierarchyPage from "@/pages/HierarchyPage";
+import AuditLogPage from "@/pages/AuditLogPage";
+import { AdminProvider, useAdmin } from "@/components/AdminProvider";
+import { AdminLayout, AdminIdentityPicker } from "@/components/AdminLayout";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -12,14 +17,22 @@ const queryClient = new QueryClient({
   },
 });
 
-function Router() {
+function AuthenticatedApp() {
+  const { adminUserId } = useAdmin();
+  if (!adminUserId) return <AdminIdentityPicker />;
+
   return (
-    <Switch>
-      <Route path="/" component={UsersPage} />
-      <Route path="/users/new" component={UserFormPage} />
-      <Route path="/users/:id/edit" component={UserFormPage} />
-      <Route component={NotFound} />
-    </Switch>
+    <AdminLayout>
+      <Switch>
+        <Route path="/" component={UsersPage} />
+        <Route path="/users/new" component={UserFormPage} />
+        <Route path="/users/:id/edit" component={UserFormPage} />
+        <Route path="/teams" component={TeamsPage} />
+        <Route path="/hierarchy" component={HierarchyPage} />
+        <Route path="/audit" component={AuditLogPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </AdminLayout>
   );
 }
 
@@ -27,9 +40,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
+        <AdminProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <AuthenticatedApp />
+          </WouterRouter>
+        </AdminProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

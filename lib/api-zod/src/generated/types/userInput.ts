@@ -17,4 +17,5 @@ export interface UserInput {
   probationStatus?: string;
   targetRoleId?: number;
   isActive?: string;
+  teamIds?: number[];
 }

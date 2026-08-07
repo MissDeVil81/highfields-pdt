@@ -33,6 +33,8 @@ export const IdentifyUserResponse = zod.object({
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),
   isActive: zod.string(),
+  teamIds: zod.array(zod.number()).optional(),
+  teamNames: zod.array(zod.string()).optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -688,6 +690,8 @@ export const ListUsersResponseItem = zod.object({
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),
   isActive: zod.string(),
+  teamIds: zod.array(zod.number()).optional(),
+  teamNames: zod.array(zod.string()).optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -707,6 +711,7 @@ export const CreateUserBody = zod.object({
   probationStatus: zod.string().optional(),
   targetRoleId: zod.number().optional(),
   isActive: zod.string().optional(),
+  teamIds: zod.array(zod.number()).optional(),
 });
 
 /**
@@ -728,6 +733,8 @@ export const GetUserResponse = zod.object({
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),
   isActive: zod.string(),
+  teamIds: zod.array(zod.number()).optional(),
+  teamNames: zod.array(zod.string()).optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -750,6 +757,7 @@ export const UpdateUserBody = zod.object({
   probationStatus: zod.string().optional(),
   targetRoleId: zod.number().nullish(),
   isActive: zod.string().optional(),
+  teamIds: zod.array(zod.number()).optional(),
 });
 
 export const UpdateUserResponse = zod.object({
@@ -764,6 +772,8 @@ export const UpdateUserResponse = zod.object({
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),
   isActive: zod.string(),
+  teamIds: zod.array(zod.number()).optional(),
+  teamNames: zod.array(zod.string()).optional(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -774,6 +784,217 @@ export const UpdateUserResponse = zod.object({
 export const DeleteUserParams = zod.object({
   id: zod.coerce.number(),
 });
+
+/**
+ * @summary List teams
+ */
+export const ListTeamsQueryParams = zod.object({
+  includeArchived: zod.coerce.boolean().optional(),
+});
+
+export const ListTeamsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  status: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListTeamsResponse = zod.array(ListTeamsResponseItem);
+
+/**
+ * @summary Create a team
+ */
+export const CreateTeamBody = zod.object({
+  name: zod.string(),
+});
+
+/**
+ * @summary Get a team by ID
+ */
+export const GetTeamParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetTeamResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  status: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Update a team
+ */
+export const UpdateTeamParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateTeamBody = zod.object({
+  name: zod.string().optional(),
+  status: zod.enum(["active", "archived"]).optional(),
+});
+
+export const UpdateTeamResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  status: zod.string(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Archive a team
+ */
+export const ArchiveTeamParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List members of a team
+ */
+export const ListTeamMembersParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListTeamMembersResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string().nullish(),
+  roles: zod.array(zod.string()),
+  managerId: zod.number().nullish(),
+  department: zod.string().nullish(),
+  jobTitle: zod.string().nullish(),
+  startDate: zod.string().nullish(),
+  probationStatus: zod.string().nullish(),
+  targetRoleId: zod.number().nullish(),
+  isActive: zod.string(),
+  teamIds: zod.array(zod.number()).optional(),
+  teamNames: zod.array(zod.string()).optional(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListTeamMembersResponse = zod.array(ListTeamMembersResponseItem);
+
+/**
+ * @summary Add a user to a team
+ */
+export const AddTeamMemberParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddTeamMemberBody = zod.object({
+  userId: zod.number(),
+});
+
+/**
+ * @summary Remove a user from a team
+ */
+export const RemoveTeamMemberParams = zod.object({
+  id: zod.coerce.number(),
+  userId: zod.coerce.number(),
+});
+
+/**
+ * @summary Get the full organisational hierarchy as a tree
+ */
+export const GetHierarchyResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  roles: zod.array(zod.string()),
+  department: zod.string().nullish(),
+  jobTitle: zod.string().nullish(),
+  isActive: zod.string(),
+  teamNames: zod.array(zod.string()),
+  children: zod.array(zod.unknown()),
+});
+export const GetHierarchyResponse = zod.array(GetHierarchyResponseItem);
+
+/**
+ * @summary Get additional permissions granted by a user
+ */
+export const GetUserPermissionsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetUserPermissionsResponse = zod.object({
+  userPermissions: zod.array(
+    zod.object({
+      id: zod.number(),
+      ownerUserId: zod.number(),
+      targetUserId: zod.number(),
+      permissionType: zod.enum(["view", "edit"]),
+    }),
+  ),
+  teamPermissions: zod.array(
+    zod.object({
+      id: zod.number(),
+      ownerUserId: zod.number(),
+      teamId: zod.number(),
+      permissionType: zod.enum(["view", "edit"]),
+    }),
+  ),
+});
+
+/**
+ * @summary Set additional permissions for a user
+ */
+export const SetUserPermissionsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SetUserPermissionsBody = zod.object({
+  additionalViewUsers: zod.array(zod.number()).optional(),
+  additionalEditUsers: zod.array(zod.number()).optional(),
+  additionalViewTeams: zod.array(zod.number()).optional(),
+  additionalEditTeams: zod.array(zod.number()).optional(),
+});
+
+/**
+ * @summary Get a summary of who a user can access and why
+ */
+export const GetUserAccessSummaryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetUserAccessSummaryResponse = zod.object({
+  directReports: zod.number(),
+  indirectReports: zod.number(),
+  additionalUsers: zod.number(),
+  additionalTeams: zod.array(zod.string()),
+  totalCanView: zod.number(),
+  totalCanEdit: zod.number(),
+  breakdown: zod.array(
+    zod.object({
+      userId: zod.number(),
+      name: zod.string(),
+      relationship: zod.string(),
+      accessType: zod.enum(["view", "edit"]),
+    }),
+  ),
+});
+
+/**
+ * @summary List audit log entries
+ */
+export const ListAuditLogQueryParams = zod.object({
+  limit: zod.coerce.number().optional(),
+  offset: zod.coerce.number().optional(),
+  requestingUserId: zod.coerce.number().optional(),
+});
+
+export const ListAuditLogResponseItem = zod.object({
+  id: zod.number(),
+  adminUserId: zod.number(),
+  adminName: zod.string().nullish(),
+  affectedUserId: zod.number().nullish(),
+  affectedUserName: zod.string().nullish(),
+  action: zod.string(),
+  previousValue: zod.string().nullish(),
+  newValue: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListAuditLogResponse = zod.array(ListAuditLogResponseItem);
 
 /**
  * @summary Get all team members for a manager

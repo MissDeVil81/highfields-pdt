@@ -33,6 +33,12 @@ tags:
     description: User management operations
   - name: manager
     description: Manager view operations
+  - name: teams
+    description: Team management
+  - name: permissions
+    description: Additional permission management
+  - name: audit
+    description: Audit log
 
 paths:
   /healthz:
@@ -831,6 +837,268 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /teams:
+    get:
+      operationId: listTeams
+      tags: [teams]
+      summary: List teams
+      parameters:
+        - name: includeArchived
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Team"
+    post:
+      operationId: createTeam
+      tags: [teams]
+      summary: Create a team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamInput"
+      responses:
+        "201":
+          description: Created team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+
+  /teams/{id}:
+    get:
+      operationId: getTeam
+      tags: [teams]
+      summary: Get a team by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+        "404":
+          description: Not found
+    put:
+      operationId: updateTeam
+      tags: [teams]
+      summary: Update a team
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamUpdate"
+      responses:
+        "200":
+          description: Updated team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+    delete:
+      operationId: archiveTeam
+      tags: [teams]
+      summary: Archive a team
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Archived
+
+  /teams/{id}/members:
+    get:
+      operationId: listTeamMembers
+      tags: [teams]
+      summary: List members of a team
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Team members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: addTeamMember
+      tags: [teams]
+      summary: Add a user to a team
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: integer
+              required: [userId]
+      responses:
+        "201":
+          description: Added
+
+  /teams/{id}/members/{userId}:
+    delete:
+      operationId: removeTeamMember
+      tags: [teams]
+      summary: Remove a user from a team
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  /hierarchy:
+    get:
+      operationId: getHierarchy
+      tags: [users]
+      summary: Get the full organisational hierarchy as a tree
+      responses:
+        "200":
+          description: Org tree
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrgNode"
+
+  /users/{id}/permissions:
+    get:
+      operationId: getUserPermissions
+      tags: [permissions]
+      summary: Get additional permissions granted by a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPermissions"
+    put:
+      operationId: setUserPermissions
+      tags: [permissions]
+      summary: Set additional permissions for a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetPermissionsBody"
+      responses:
+        "200":
+          description: Updated
+
+  /users/{id}/access-summary:
+    get:
+      operationId: getUserAccessSummary
+      tags: [permissions]
+      summary: Get a summary of who a user can access and why
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Access summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessSummary"
+
+  /audit-log:
+    get:
+      operationId: listAuditLog
+      tags: [audit]
+      summary: List audit log entries
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: requestingUserId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogEntry"
 
   /manager/team:
     get:
@@ -1642,6 +1910,14 @@ components:
           type: ["integer", "null"]
         isActive:
           type: string
+        teamIds:
+          type: array
+          items:
+            type: integer
+        teamNames:
+          type: array
+          items:
+            type: string
         createdAt:
           type: string
           format: date-time
@@ -1681,6 +1957,10 @@ components:
           type: integer
         isActive:
           type: string
+        teamIds:
+          type: array
+          items:
+            type: integer
       required:
         - name
 
@@ -1709,6 +1989,10 @@ components:
           type: ["integer", "null"]
         isActive:
           type: string
+        teamIds:
+          type: array
+          items:
+            type: integer
 
     ManagerTeamMember:
       type: object
@@ -1787,3 +2071,222 @@ components:
         - activeDevelopmentPlans
         - passiveDevelopmentPlans
         - missingDevelopmentPlans
+
+    Team:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - status
+        - createdAt
+        - updatedAt
+
+    TeamInput:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    TeamUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [active, archived]
+
+    OrgNode:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        department:
+          type: ["string", "null"]
+        jobTitle:
+          type: ["string", "null"]
+        isActive:
+          type: string
+        teamNames:
+          type: array
+          items:
+            type: string
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrgNode"
+      required:
+        - id
+        - name
+        - roles
+        - isActive
+        - teamNames
+        - children
+
+    AccessBreakdownItem:
+      type: object
+      properties:
+        userId:
+          type: integer
+        name:
+          type: string
+        relationship:
+          type: string
+        accessType:
+          type: string
+          enum: [view, edit]
+      required:
+        - userId
+        - name
+        - relationship
+        - accessType
+
+    AccessSummary:
+      type: object
+      properties:
+        directReports:
+          type: integer
+        indirectReports:
+          type: integer
+        additionalUsers:
+          type: integer
+        additionalTeams:
+          type: array
+          items:
+            type: string
+        totalCanView:
+          type: integer
+        totalCanEdit:
+          type: integer
+        breakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccessBreakdownItem"
+      required:
+        - directReports
+        - indirectReports
+        - additionalUsers
+        - additionalTeams
+        - totalCanView
+        - totalCanEdit
+        - breakdown
+
+    AdditionalUserPermission:
+      type: object
+      properties:
+        id:
+          type: integer
+        ownerUserId:
+          type: integer
+        targetUserId:
+          type: integer
+        permissionType:
+          type: string
+          enum: [view, edit]
+      required:
+        - id
+        - ownerUserId
+        - targetUserId
+        - permissionType
+
+    AdditionalTeamPermission:
+      type: object
+      properties:
+        id:
+          type: integer
+        ownerUserId:
+          type: integer
+        teamId:
+          type: integer
+        permissionType:
+          type: string
+          enum: [view, edit]
+      required:
+        - id
+        - ownerUserId
+        - teamId
+        - permissionType
+
+    UserPermissions:
+      type: object
+      properties:
+        userPermissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdditionalUserPermission"
+        teamPermissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdditionalTeamPermission"
+      required:
+        - userPermissions
+        - teamPermissions
+
+    SetPermissionsBody:
+      type: object
+      properties:
+        additionalViewUsers:
+          type: array
+          items:
+            type: integer
+        additionalEditUsers:
+          type: array
+          items:
+            type: integer
+        additionalViewTeams:
+          type: array
+          items:
+            type: integer
+        additionalEditTeams:
+          type: array
+          items:
+            type: integer
+
+    AuditLogEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        adminUserId:
+          type: integer
+        adminName:
+          type: ["string", "null"]
+        affectedUserId:
+          type: ["integer", "null"]
+        affectedUserName:
+          type: ["string", "null"]
+        action:
+          type: string
+        previousValue:
+          type: ["string", "null"]
+        newValue:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - adminUserId
+        - action
+        - createdAt

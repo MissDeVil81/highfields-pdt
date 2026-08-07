@@ -19,4 +19,5 @@ export interface UserUpdate {
   /** @nullable */
   targetRoleId?: number | null;
   isActive?: string;
+  teamIds?: number[];
 }
