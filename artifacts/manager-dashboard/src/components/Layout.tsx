@@ -10,7 +10,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { EnvironmentBanner } from "./EnvironmentBanner";
 
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -104,8 +103,6 @@ export function Layout({ children, whatsNewCount }: LayoutProps) {
 
   return (
     <div className="min-h-screen flex bg-background">
-      <EnvironmentBanner />
-
       {/* Sidebar */}
       <aside className="w-60 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col">
         {/* Logo */}
