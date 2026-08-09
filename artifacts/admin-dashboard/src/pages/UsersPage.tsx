@@ -44,6 +44,7 @@ const ROLE_LABELS: Record<string, string> = {
   manager: "Manager",
   director: "Director",
   admin: "Admin",
+  ld: "L&D",
 };
 
 const ROLE_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -51,12 +52,14 @@ const ROLE_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "o
   manager: "default",
   director: "outline",
   admin: "destructive",
+  ld: "secondary",
 };
 
 function primaryRole(roles: string[]): string {
   if (roles.includes("admin")) return "admin";
   if (roles.includes("director")) return "director";
   if (roles.includes("manager")) return "manager";
+  if (roles.includes("ld")) return "ld";
   return roles[0] ?? "employee";
 }
 
@@ -142,6 +145,7 @@ export default function UsersPage() {
             <SelectItem value="manager">Manager</SelectItem>
             <SelectItem value="director">Director</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="ld">L&amp;D</SelectItem>
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>

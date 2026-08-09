@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/ld-dashboard/"
+title = "L&D Dashboard"
+description = "A learning and development dashboard for L&D team members at Highfield Professional Solutions. Allows L&D users to view all employees' training records across the organisation, see what's new since their last login, and browse individual employee learning logs."
+version = "1.0.0"
+id = "artifacts/ld-dashboard"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/ld-dashboard/" ]
+localPort = 20248
+
+[services.development]
+run = "pnpm --filter @workspace/ld-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ld-dashboard", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/ld-dashboard/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20248"
+BASE_PATH = "/ld-dashboard/"

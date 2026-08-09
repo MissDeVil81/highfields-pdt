@@ -5,3 +5,4 @@
 - [Orval v8 query options](orval-v8-query-options.md) — must include `queryKey` in query options when passing `{ query: { enabled, queryKey } }` to generated hooks.
 - [Manager dashboard architecture](manager-dashboard-arch.md) — users table + manager identity in localStorage; publishedAt on probation_manager_reviews gates employee visibility.
 - [Admin permission architecture](admin-permission-arch.md) — hierarchy/teams/permissions system; manager_id IS the reports-to field; circular check; drizzle-kit push requires direct psql for new tables.
+- [lib/db build requirement](lib-db-build.md) — after schema additions, run `pnpm --filter @workspace/db exec tsc -p tsconfig.json`; no "build" script exists, use raw tsc.

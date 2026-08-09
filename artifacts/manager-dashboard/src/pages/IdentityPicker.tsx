@@ -4,8 +4,16 @@ import { useManagerStore } from "@/hooks/useManagerStore";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { useEffect } from "react";
 
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+}
+
+function rolePriority(roles: string[]): "manager" | "director" | null {
+  if (roles?.includes("director")) return "director";
+  if (roles?.includes("manager")) return "manager";
+  return null;
 }
 
 export default function IdentityPicker() {
@@ -17,10 +25,23 @@ export default function IdentityPicker() {
     if (manager) navigate("/home");
   }, [manager]);
 
-  const managers = users.filter((u) => u.roles?.includes("manager"));
+  const eligibleUsers = users.filter((u) => {
+    const r = u.roles ?? [];
+    return r.includes("manager") || r.includes("director");
+  });
 
-  const handleSelect = (id: number, name: string) => {
-    setManager({ id, name });
+  const handleSelect = async (id: number, name: string, role: "manager" | "director") => {
+    // Record login time
+    try {
+      await fetch(`${BASE}/api/manager-ld/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: id }),
+      });
+    } catch {
+      // non-blocking
+    }
+    setManager({ id, name, role });
     navigate("/home");
   };
 
@@ -52,7 +73,7 @@ export default function IdentityPicker() {
           </p>
           <h1 className="font-script text-4xl text-sidebar-primary leading-none mb-1">Manager Dashboard</h1>
           <p className="text-sm text-sidebar-foreground/50 mt-1">
-            Track your team's probation progress
+            Track your team's progress and development
           </p>
         </div>
 
@@ -66,33 +87,37 @@ export default function IdentityPicker() {
             <div className="flex items-center justify-center py-10">
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
-          ) : managers.length === 0 ? (
+          ) : eligibleUsers.length === 0 ? (
             <div className="text-center py-10 px-6">
-              <p className="text-sm text-muted-foreground">No managers found.</p>
+              <p className="text-sm text-muted-foreground">No managers or directors found.</p>
             </div>
           ) : (
             <ul className="divide-y divide-border">
-              {managers.map((user) => (
-                <li key={user.id}>
-                  <button
-                    onClick={() => handleSelect(user.id, user.name)}
-                    className="w-full flex items-center gap-3.5 px-5 py-3.5 hover:bg-muted/50 transition-colors text-left group"
-                  >
-                    <div className="flex-shrink-0 h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-xs font-semibold text-primary">
-                        {getInitials(user.name)}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-                      {user.jobTitle && (
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate">{user.jobTitle}</p>
-                      )}
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
-                  </button>
-                </li>
-              ))}
+              {eligibleUsers.map((user) => {
+                const role = rolePriority(user.roles ?? [])!;
+                return (
+                  <li key={user.id}>
+                    <button
+                      onClick={() => handleSelect(user.id, user.name, role)}
+                      className="w-full flex items-center gap-3.5 px-5 py-3.5 hover:bg-muted/50 transition-colors text-left group"
+                    >
+                      <div className="flex-shrink-0 h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-xs font-semibold text-primary">
+                          {getInitials(user.name)}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 capitalize">
+                          {role === "director" ? "Director" : "Manager"}
+                          {user.jobTitle ? ` · ${user.jobTitle}` : ""}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

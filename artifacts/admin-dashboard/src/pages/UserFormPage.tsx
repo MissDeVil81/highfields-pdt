@@ -55,7 +55,7 @@ import { MultiSelect } from "@/components/ui/multi-select";
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Must be a valid email").optional().or(z.literal("")),
-  role: z.enum(["employee", "manager", "director", "admin"]),
+  role: z.enum(["employee", "manager", "director", "admin", "ld"]),
   department: z.string().optional(),
   managerId: z.number().optional(),
   isActive: z.boolean(),
@@ -68,10 +68,11 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-function primaryRole(roles: string[]): "employee" | "manager" | "director" | "admin" {
+function primaryRole(roles: string[]): "employee" | "manager" | "director" | "admin" | "ld" {
   if (roles.includes("admin")) return "admin";
   if (roles.includes("director")) return "director";
   if (roles.includes("manager")) return "manager";
+  if (roles.includes("ld")) return "ld";
   return "employee";
 }
 
@@ -254,7 +255,7 @@ export default function UserFormPage() {
               <CardDescription>
                 {isEdit
                   ? "Update this user's details, role and team membership."
-                  : "Add a new employee, manager, director or admin."}
+                  : "Add a new employee, manager, director, admin or L&D user."}
               </CardDescription>
             </CardHeader>
 
@@ -285,6 +286,7 @@ export default function UserFormPage() {
                     <SelectItem value="manager">Manager</SelectItem>
                     <SelectItem value="director">Director</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="ld">L&amp;D</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
