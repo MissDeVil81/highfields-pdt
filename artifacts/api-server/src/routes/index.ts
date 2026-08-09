@@ -21,6 +21,7 @@ import managerRouter from "./manager";
 import teamsRouter from "./teams";
 import hierarchyRouter from "./hierarchy";
 import auditLogRouter from "./auditLog";
+import learningLogRouter from "./learningLog";
 
 const router: IRouter = Router();
 
@@ -46,5 +47,6 @@ router.use("/manager", managerRouter);
 router.use("/teams", teamsRouter);
 router.use("/hierarchy", hierarchyRouter);
 router.use("/audit-log", auditLogRouter);
+router.use("/learning-log", learningLogRouter);
 
 export default router;

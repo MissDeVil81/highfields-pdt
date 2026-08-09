@@ -9,6 +9,7 @@ import CurrentRole from "@/pages/current-role";
 import TargetRole from "@/pages/target-role";
 import Summary from "@/pages/summary";
 import Probation from "@/pages/probation";
+import LearningLog from "@/pages/learning-log";
 import Layout from "@/components/Layout";
 import IdentityGate from "@/components/IdentityGate";
 import { EnvironmentBanner } from "@/components/EnvironmentBanner";
@@ -32,6 +33,7 @@ function Router() {
               <Route path="/target-role" component={TargetRole} />
               <Route path="/summary" component={Summary} />
               <Route path="/probation" component={Probation} />
+              <Route path="/learning-log" component={LearningLog} />
               <Route component={NotFound} />
             </Switch>
           </Layout>

@@ -1,7 +1,7 @@
 import { Link, useLocation, useSearch } from "wouter";
 import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/lib/session";
-import { ChevronRight, LayoutDashboard, Briefcase, Target, BarChart3, ClipboardCheck } from "lucide-react";
+import { ChevronRight, LayoutDashboard, Briefcase, Target, BarChart3, ClipboardCheck, BookOpen } from "lucide-react";
 
 interface NavItemProps {
   href: string;
@@ -36,6 +36,48 @@ function NavItem({ href, label, icon, disabled }: NavItemProps) {
         {isActive && <ChevronRight className="ml-auto h-4 w-4 opacity-60" />}
       </div>
     </Link>
+  );
+}
+
+const LEARNING_LOG_ITEMS = [
+  { tab: "company-learning", label: "Company Learning" },
+  { tab: "my-learning",      label: "My Learning" },
+  { tab: "ld-feedback",      label: "L&D Feedback" },
+];
+
+function LearningLogNav() {
+  const [location] = useLocation();
+  const search = useSearch();
+  const isLearning = location === "/learning-log";
+  const activeTab = isLearning ? (new URLSearchParams(search).get("tab") ?? "my-learning") : null;
+
+  return (
+    <div>
+      <div className="pt-2 pb-1">
+        <p className="px-3 text-xs font-semibold text-sidebar-foreground/30 uppercase tracking-wider flex items-center gap-2">
+          <BookOpen className="h-3.5 w-3.5" />
+          My Learning Log
+        </p>
+      </div>
+      <div className="space-y-0.5">
+        {LEARNING_LOG_ITEMS.map(item => {
+          const isActive = isLearning && activeTab === item.tab;
+          return (
+            <Link key={item.tab} href={`/learning-log?tab=${item.tab}`}>
+              <div className={cn(
+                "flex items-center gap-3 pl-6 pr-3 py-2 rounded-lg text-sm cursor-pointer transition-colors duration-150",
+                isActive
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}>
+                <span>{item.label}</span>
+                {isActive && <ChevronRight className="ml-auto h-4 w-4 opacity-60" />}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -126,6 +168,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               />
             </div>
           </div>
+          <LearningLogNav />
         </nav>
         <div className="px-4 py-4 border-t border-sidebar-border">
           <p className="text-xs text-sidebar-foreground/40 leading-relaxed">

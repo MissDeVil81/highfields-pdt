@@ -17,3 +17,4 @@ export * from "./userTeams";
 export * from "./additionalUserPermissions";
 export * from "./additionalTeamPermissions";
 export * from "./auditLog";
+export * from "./learningLog";
