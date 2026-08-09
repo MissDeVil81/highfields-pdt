@@ -3,11 +3,11 @@ import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useManagerStore } from "@/hooks/useManagerStore";
 import { Layout } from "@/components/Layout";
+import { TeamFilter } from "@/components/TeamFilter";
 import { useWhatsNewCount } from "@/hooks/useWhatsNewCount";
 import {
   Users, BookOpen, Clock, ChevronRight, Loader2, Sparkles, Check, ChevronDown, ChevronUp, X
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -77,7 +77,7 @@ function MemberCard({ member, onClick }: { member: TeamMember; onClick: () => vo
   );
 }
 
-function WhatsNewEntry({ entry, managerId, onViewed }: {
+function WhatsNewEntryCard({ entry, managerId, onViewed }: {
   entry: WhatsNewEntry;
   managerId: number;
   onViewed: () => void;
@@ -153,13 +153,17 @@ function WhatsNewEntry({ entry, managerId, onViewed }: {
   );
 }
 
-function TeamOverview({ manager }: { manager: NonNullable<ReturnType<typeof useManagerStore>["manager"]> }) {
+export default function LdRecords() {
   const [, navigate] = useLocation();
-  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(manager.selectedTeamId ?? null);
-  const [selectedTeamName, setSelectedTeamName] = useState<string | null>(manager.selectedTeamName ?? null);
-  const { setSelectedTeam } = useManagerStore();
+  const { manager } = useManagerStore();
+  const whatsNewCount = useWhatsNewCount();
+  const [filteredId, setFilteredId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
+
+  if (!manager) { navigate("/"); return null; }
 
   const isDirector = manager.role === "director";
+  const { setSelectedTeam } = useManagerStore();
 
   const { data: teams = [], isLoading: teamsLoading } = useQuery<Team[]>({
     queryKey: ["user-teams", manager.id],
@@ -171,9 +175,12 @@ function TeamOverview({ manager }: { manager: NonNullable<ReturnType<typeof useM
     enabled: isDirector,
   });
 
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(manager.selectedTeamId ?? null);
+  const [selectedTeamName, setSelectedTeamName] = useState<string | null>(manager.selectedTeamName ?? null);
+
   const teamId = isDirector ? selectedTeamId : null;
 
-  const { data: members = [], isLoading } = useQuery<TeamMember[]>({
+  const { data: members = [], isLoading: membersLoading } = useQuery<TeamMember[]>({
     queryKey: isDirector ? ["team-by-team", teamId] : ["team-members", manager.id],
     queryFn: async () => {
       if (isDirector) {
@@ -203,79 +210,7 @@ function TeamOverview({ manager }: { manager: NonNullable<ReturnType<typeof useM
     setSelectedTeam(team.id, team.name);
   };
 
-  // Director: show team selector if multiple teams and none selected
-  if (isDirector && !teamsLoading && teams.length > 1 && !selectedTeamId) {
-    return (
-      <div>
-        <h3 className="font-semibold text-base text-foreground mb-4">Select a team to view</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {teams.map(team => (
-            <button
-              key={team.id}
-              onClick={() => handleSelectTeam(team)}
-              className="bg-card border border-border rounded-xl p-5 text-left hover:border-primary/40 hover:shadow-sm transition-all group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Users className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-semibold text-sm text-foreground">{team.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">View team's learning records</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto group-hover:text-foreground transition-colors" />
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      {isDirector && selectedTeamName && (
-        <div className="flex items-center gap-2 mb-4">
-          <p className="text-sm text-muted-foreground">Viewing team:</p>
-          <span className="text-sm font-semibold text-foreground">{selectedTeamName}</span>
-          {teams.length > 1 && (
-            <button
-              onClick={() => { setSelectedTeamId(null); setSelectedTeamName(null); setSelectedTeam(null, null); }}
-              className="ml-1 text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              <X className="h-3 w-3" /> Change
-            </button>
-          )}
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
-      ) : members.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground text-sm">
-          No team members found.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-          {members.map(member => (
-            <MemberCard
-              key={member.id}
-              member={member}
-              onClick={() => navigate(`/ld-records/employee/${member.id}`)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function WhatsNew({ manager }: { manager: NonNullable<ReturnType<typeof useManagerStore>["manager"]> }) {
-  const queryClient = useQueryClient();
-
-  const { data: entries = [], isLoading } = useQuery<WhatsNewEntry[]>({
+  const { data: whatsNew = [], isLoading: whatsNewLoading } = useQuery<WhatsNewEntry[]>({
     queryKey: ["whats-new", manager.id],
     queryFn: async () => {
       const res = await fetch(`${BASE}/api/manager-ld/whats-new?managerId=${manager.id}`);
@@ -284,97 +219,141 @@ function WhatsNew({ manager }: { manager: NonNullable<ReturnType<typeof useManag
     },
   });
 
-  if (isLoading) {
+  const visibleMembers = filteredId ? members.filter(m => m.id === filteredId) : members;
+  const visibleWhatsNew = filteredId ? whatsNew.filter(e => e.userId === filteredId) : whatsNew;
+
+  // Director: show team selector if multiple teams and none selected
+  if (isDirector && !teamsLoading && teams.length > 1 && !selectedTeamId) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
+      <Layout whatsNewCount={whatsNewCount}>
+        <div className="max-w-5xl mx-auto px-8 py-10">
+          <div className="mb-8">
+            <h2 className="font-script text-4xl text-foreground">Learning Logs</h2>
+            <p className="text-muted-foreground mt-2 text-sm">Select a team to view their learning records.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {teams.map(team => (
+              <button
+                key={team.id}
+                onClick={() => handleSelectTeam(team)}
+                className="bg-card border border-border rounded-xl p-5 text-left hover:border-primary/40 hover:shadow-sm transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-foreground">{team.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">View team's learning records</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto group-hover:text-foreground transition-colors" />
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </Layout>
     );
   }
-
-  if (entries.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed border-border p-10 text-center">
-        <Sparkles className="h-7 w-7 text-muted-foreground mx-auto mb-2" />
-        <p className="text-sm font-medium text-foreground">You're all caught up</p>
-        <p className="text-xs text-muted-foreground mt-1">No new training records since your last login.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        {entries.length} new training {entries.length === 1 ? "record" : "records"} since your last login. Click the ✓ to dismiss.
-      </p>
-      {entries.map(entry => (
-        <WhatsNewEntry
-          key={entry.id}
-          entry={entry}
-          managerId={manager.id}
-          onViewed={() => queryClient.invalidateQueries({ queryKey: ["whats-new", manager.id] })}
-        />
-      ))}
-    </div>
-  );
-}
-
-export default function LdRecords() {
-  const [location, navigate] = useLocation();
-  const { manager } = useManagerStore();
-  const whatsNewCount = useWhatsNewCount();
-
-  if (!manager) { navigate("/"); return null; }
-
-  const isWhatsNew = location === "/ld-records/whats-new";
 
   return (
     <Layout whatsNewCount={whatsNewCount}>
       <div className="max-w-5xl mx-auto px-8 py-10">
-        <div className="mb-8">
-          <h2 className="font-script text-4xl text-foreground">L&amp;D Records</h2>
-          <p className="text-muted-foreground mt-2 text-sm">
-            View your team's learning and development activity.
-          </p>
+
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-8">
+          <div>
+            <h2 className="font-script text-4xl text-foreground">Learning Logs</h2>
+            <p className="text-muted-foreground mt-2 text-sm">
+              View your team's learning and development activity.
+            </p>
+          </div>
+          <div className="mt-2 flex items-center gap-3 shrink-0">
+            {isDirector && selectedTeamName && teams.length > 1 && (
+              <button
+                onClick={() => { setSelectedTeamId(null); setSelectedTeamName(null); setSelectedTeam(null, null); }}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-3 w-3" />
+                {selectedTeamName}
+              </button>
+            )}
+            <TeamFilter selectedId={filteredId} onSelect={setFilteredId} />
+          </div>
         </div>
 
-        {/* Tab bar */}
-        <div className="flex gap-1 mb-6 border-b border-border">
-          <button
-            onClick={() => navigate("/ld-records")}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px",
-              !isWhatsNew
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Users className="h-4 w-4" />
-            Team Overview
-          </button>
-          <button
-            onClick={() => navigate("/ld-records/whats-new")}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px",
-              isWhatsNew
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Sparkles className="h-4 w-4" />
+        {/* Team members grid */}
+        <section className="mb-10">
+          <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            Team Members
+            {filteredId && <span className="text-xs font-normal text-muted-foreground ml-1">— filtered</span>}
+          </h3>
+
+          {membersLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : visibleMembers.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground text-sm">
+              {filteredId ? "No entries found for this team member." : "No team members found."}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {visibleMembers.map(member => (
+                <MemberCard
+                  key={member.id}
+                  member={member}
+                  onClick={() => navigate(`/ld-records/employee/${member.id}`)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* What's New section */}
+        <section>
+          <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-muted-foreground" />
             What's New
-            {whatsNewCount > 0 && (
-              <span className="text-xs font-semibold bg-primary/15 text-primary rounded-full px-1.5 py-0.5 leading-none">
+            {whatsNewCount > 0 && !filteredId && (
+              <span className="text-xs font-semibold bg-primary/10 text-primary rounded-full px-2 py-0.5 leading-none">
                 {whatsNewCount}
               </span>
             )}
-          </button>
-        </div>
+            {filteredId && <span className="text-xs font-normal text-muted-foreground ml-1">— filtered</span>}
+          </h3>
 
-        {isWhatsNew
-          ? <WhatsNew manager={manager} />
-          : <TeamOverview manager={manager} />
-        }
+          {whatsNewLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : visibleWhatsNew.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-8 text-center">
+              <Sparkles className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm font-medium text-foreground">
+                {filteredId ? "No new entries for this person" : "You're all caught up"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {filteredId ? "No training logged since your last login." : "No new training records since your last login."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {visibleWhatsNew.length} new training {visibleWhatsNew.length === 1 ? "record" : "records"} since your last login. Click the ✓ to dismiss.
+              </p>
+              {visibleWhatsNew.map(entry => (
+                <WhatsNewEntryCard
+                  key={entry.id}
+                  entry={entry}
+                  managerId={manager.id}
+                  onViewed={() => queryClient.invalidateQueries({ queryKey: ["whats-new", manager.id] })}
+                />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </Layout>
   );

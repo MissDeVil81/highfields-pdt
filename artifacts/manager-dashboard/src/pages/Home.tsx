@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { useManagerStore } from "@/hooks/useManagerStore";
 import {
@@ -21,6 +22,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Layout } from "@/components/Layout";
+import { TeamFilter } from "@/components/TeamFilter";
 import { useWhatsNewCount } from "@/hooks/useWhatsNewCount";
 
 function getInitials(name: string) {
@@ -58,6 +60,7 @@ export default function Home() {
   const [, navigate] = useLocation();
   const { manager } = useManagerStore();
   const whatsNewCount = useWhatsNewCount();
+  const [filteredId, setFilteredId] = useState<number | null>(null);
 
   if (!manager) {
     navigate("/");
@@ -77,18 +80,35 @@ export default function Home() {
   const inProbation = team.filter((m) => m.probationStatus === "in_progress");
   const needingAttention = inProbation.filter((m) => m.reviewCount === 0);
 
+  const visibleProbation = filteredId
+    ? inProbation.filter(m => m.id === filteredId)
+    : inProbation;
+
+  const visibleAttention = filteredId
+    ? needingAttention.filter(m => m.id === filteredId)
+    : needingAttention;
+
+  const filteredNotInProbation = filteredId && inProbation.every(m => m.id !== filteredId)
+    ? team.find(m => m.id === filteredId)
+    : null;
+
   return (
     <Layout whatsNewCount={whatsNewCount}>
       <div className="max-w-4xl mx-auto px-8 py-10">
 
-        <div className="mb-8">
-          <h2 className="font-script text-4xl text-foreground">Probation</h2>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Track probation progress for your team.
-          </p>
+        <div className="flex items-start justify-between gap-4 mb-8">
+          <div>
+            <h2 className="font-script text-4xl text-foreground">In Probation</h2>
+            <p className="text-muted-foreground mt-2 text-sm">
+              Track probation progress for your team.
+            </p>
+          </div>
+          <div className="mt-2 shrink-0">
+            <TeamFilter selectedId={filteredId} onSelect={setFilteredId} />
+          </div>
         </div>
 
-        {/* Metric cards */}
+        {/* Metric cards — always show full team totals */}
         <div className="grid grid-cols-3 gap-3 mb-8">
           <MetricCard
             label="In Probation"
@@ -113,24 +133,35 @@ export default function Home() {
           />
         </div>
 
+        {/* Person not in probation message */}
+        {filteredNotInProbation && (
+          <div className="bg-card border border-border rounded-xl p-6 text-center mb-4">
+            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+              <span className="text-sm font-bold text-muted-foreground">{getInitials(filteredNotInProbation.name)}</span>
+            </div>
+            <p className="text-sm font-medium text-foreground">{filteredNotInProbation.name} is not currently on probation</p>
+            <p className="text-xs text-muted-foreground mt-1">Their probation period has been completed or hasn't started.</p>
+          </div>
+        )}
+
         {/* Needs Attention */}
-        {needingAttention.length > 0 && (
+        {!filteredNotInProbation && visibleAttention.length > 0 && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl overflow-hidden mb-4">
             <div className="px-4 pt-3.5 pb-2.5">
               <h3 className="text-sm font-semibold flex items-center gap-2 text-amber-800 mb-0.5">
                 <div className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-200 flex-shrink-0">
                   <AlertCircle className="w-3 h-3 text-amber-700" />
                 </div>
-                Action Needed — {needingAttention.length} review{needingAttention.length > 1 ? "s" : ""} overdue
+                Action Needed — {visibleAttention.length} review{visibleAttention.length > 1 ? "s" : ""} overdue
               </h3>
               <p className="text-xs text-amber-700 ml-7">
-                {needingAttention.length === 1
+                {visibleAttention.length === 1
                   ? "This team member is in probation but has no manager review recorded yet."
                   : "These team members are in probation but have no manager review recorded yet."}
               </p>
             </div>
             <ul className="divide-y divide-amber-200">
-              {needingAttention.map((member) => (
+              {visibleAttention.map((member) => (
                 <li key={member.id}>
                   <button
                     onClick={() => navigate(`/employee/${member.id}/probation`)}
@@ -155,48 +186,50 @@ export default function Home() {
         )}
 
         {/* Full probation list */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : inProbation.length === 0 ? (
-          <div className="bg-card border border-dashed border-border rounded-xl p-10 text-center">
-            <CheckCircle2 className="w-7 h-7 text-green-500 mx-auto mb-2" />
-            <p className="text-sm font-medium text-foreground">No one on probation</p>
-            <p className="text-xs text-muted-foreground mt-0.5">All team members have completed probation.</p>
-          </div>
-        ) : (
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
-            <ul className="divide-y divide-border">
-              {inProbation.map((member) => (
-                <li key={member.id}>
-                  <button
-                    onClick={() => navigate(`/employee/${member.id}/probation`)}
-                    className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors text-left group"
-                  >
-                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-xs font-semibold text-primary">{getInitials(member.name)}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{member.name}</p>
-                      {member.jobTitle && <p className="text-xs text-muted-foreground">{member.jobTitle}</p>}
-                    </div>
-                    {member.reviewCount > 0 ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-lg bg-green-100 text-green-700">
-                        <UserCheck className="w-3 h-3" />
-                        {member.reviewCount} review{member.reviewCount > 1 ? "s" : ""}
-                      </span>
-                    ) : (
-                      <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-amber-100 text-amber-700">
-                        No review yet
-                      </span>
-                    )}
-                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {!filteredNotInProbation && (
+          isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : visibleProbation.length === 0 ? (
+            <div className="bg-card border border-dashed border-border rounded-xl p-10 text-center">
+              <CheckCircle2 className="w-7 h-7 text-green-500 mx-auto mb-2" />
+              <p className="text-sm font-medium text-foreground">No one on probation</p>
+              <p className="text-xs text-muted-foreground mt-0.5">All team members have completed probation.</p>
+            </div>
+          ) : (
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
+              <ul className="divide-y divide-border">
+                {visibleProbation.map((member) => (
+                  <li key={member.id}>
+                    <button
+                      onClick={() => navigate(`/employee/${member.id}/probation`)}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors text-left group"
+                    >
+                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-xs font-semibold text-primary">{getInitials(member.name)}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">{member.name}</p>
+                        {member.jobTitle && <p className="text-xs text-muted-foreground">{member.jobTitle}</p>}
+                      </div>
+                      {member.reviewCount > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-lg bg-green-100 text-green-700">
+                          <UserCheck className="w-3 h-3" />
+                          {member.reviewCount} review{member.reviewCount > 1 ? "s" : ""}
+                        </span>
+                      ) : (
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-amber-100 text-amber-700">
+                          No review yet
+                        </span>
+                      )}
+                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
         )}
       </div>
     </Layout>

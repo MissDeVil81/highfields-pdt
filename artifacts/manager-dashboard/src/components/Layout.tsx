@@ -5,9 +5,9 @@ import {
   TrendingUp,
   BookOpen,
   Users,
-  Sparkles,
   LogOut,
   ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +27,7 @@ function NavItem({
   badge?: number;
 }) {
   const [location, navigate] = useLocation();
-  const isActive = location === href;
+  const isActive = location === href || (href !== "/home" && location.startsWith(href));
 
   return (
     <button
@@ -42,35 +42,17 @@ function NavItem({
       <span className={cn("flex-shrink-0", isActive ? "opacity-100" : "opacity-60")}>{icon}</span>
       <span className="flex-1 truncate">{label}</span>
       {badge != null && badge > 0 && (
-        <span className={cn(
-          "text-xs font-semibold rounded-full px-1.5 py-0.5 leading-none",
-          isActive ? "bg-white/20 text-white" : "bg-sidebar-primary/15 text-sidebar-primary"
-        )}>
+        <span
+          className={cn(
+            "text-xs font-semibold rounded-full px-1.5 py-0.5 leading-none",
+            isActive
+              ? "bg-white/20 text-white"
+              : "bg-sidebar-primary/15 text-sidebar-primary"
+          )}
+        >
           {badge}
         </span>
       )}
-      {isActive && <ChevronRight className="h-3.5 w-3.5 opacity-60 flex-shrink-0" />}
-    </button>
-  );
-}
-
-function SubNavItem({ href, label }: { href: string; label: string }) {
-  const [location, navigate] = useLocation();
-  // For tab-based sub-nav, check both path and query
-  const fullPath = window.location.pathname + window.location.search;
-  const isActive = fullPath.replace(/^\/manager/, "") === href || location === href;
-
-  return (
-    <button
-      onClick={() => navigate(href)}
-      className={cn(
-        "w-full flex items-center gap-3 pl-8 pr-3 py-2 rounded-lg text-sm transition-colors duration-150 text-left",
-        isActive
-          ? "bg-sidebar-primary/80 text-sidebar-primary-foreground font-medium"
-          : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-      )}
-    >
-      <span className="flex-1 truncate">{label}</span>
       {isActive && <ChevronRight className="h-3.5 w-3.5 opacity-60 flex-shrink-0" />}
     </button>
   );
@@ -92,9 +74,12 @@ interface LayoutProps {
   whatsNewCount?: number;
 }
 
-export function Layout({ children, whatsNewCount }: LayoutProps) {
+export function Layout({ children, whatsNewCount: _whatsNewCount }: LayoutProps) {
   const [, navigate] = useLocation();
   const { manager, clearManager } = useManagerStore();
+
+  // Derive the career tracker base URL from the current origin
+  const careerTrackerUrl = `${window.location.origin}/career-tracker/`;
 
   const handleLogout = () => {
     clearManager();
@@ -118,7 +103,7 @@ export function Layout({ children, whatsNewCount }: LayoutProps) {
 
           {/* Probation */}
           <SectionLabel label="Probation" icon={<ClipboardCheck className="h-3.5 w-3.5" />} />
-          <NavItem href="/home" label="My Team" icon={<Users className="h-4 w-4" />} />
+          <NavItem href="/home" label="In Probation" icon={<Users className="h-4 w-4" />} />
 
           {/* Personal Development */}
           <SectionLabel label="Personal Development" icon={<TrendingUp className="h-3.5 w-3.5" />} />
@@ -126,18 +111,24 @@ export function Layout({ children, whatsNewCount }: LayoutProps) {
 
           {/* L&D Records */}
           <SectionLabel label="L&D Records" icon={<BookOpen className="h-3.5 w-3.5" />} />
-          <NavItem href="/ld-records" label="Team Overview" icon={<Users className="h-4 w-4" />} />
-          <NavItem
-            href="/ld-records/whats-new"
-            label="What's New"
-            icon={<Sparkles className="h-4 w-4" />}
-            badge={whatsNewCount}
-          />
+          <NavItem href="/ld-records" label="Learning Logs" icon={<BookOpen className="h-4 w-4" />} />
         </nav>
+
+        {/* My Career Plan link */}
+        <div className="px-3 pb-2 border-t border-sidebar-border pt-3">
+          <a
+            href={careerTrackerUrl}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+          >
+            <TrendingUp className="h-4 w-4 opacity-60 flex-shrink-0" />
+            <span className="flex-1 truncate">My Career Plan</span>
+            <ExternalLink className="h-3.5 w-3.5 opacity-40 flex-shrink-0" />
+          </a>
+        </div>
 
         {/* User */}
         {manager && (
-          <div className="px-3 py-4 border-t border-sidebar-border">
+          <div className="px-3 py-3 border-t border-sidebar-border">
             <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg">
               <div className="h-7 w-7 rounded-full bg-sidebar-primary/20 flex items-center justify-center flex-shrink-0">
                 <span className="text-[10px] font-bold text-sidebar-primary">{getInitials(manager.name)}</span>
@@ -159,9 +150,7 @@ export function Layout({ children, whatsNewCount }: LayoutProps) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 overflow-y-auto">
-        {children}
-      </main>
+      <main className="flex-1 min-w-0 overflow-y-auto">{children}</main>
     </div>
   );
 }

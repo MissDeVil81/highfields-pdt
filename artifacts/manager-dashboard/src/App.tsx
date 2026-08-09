@@ -19,7 +19,6 @@ function Router() {
       <Route path="/" component={IdentityPicker} />
       <Route path="/home" component={Home} />
       <Route path="/development" component={Development} />
-      <Route path="/ld-records/whats-new" component={LdRecords} />
       <Route path="/ld-records/employee/:id" component={EmployeeLearning} />
       <Route path="/ld-records" component={LdRecords} />
       <Route path="/employee/:id/probation" component={EmployeeProbation} />

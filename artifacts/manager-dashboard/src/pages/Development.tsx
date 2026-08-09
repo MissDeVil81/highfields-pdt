@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { useManagerStore } from "@/hooks/useManagerStore";
 import {
@@ -20,6 +21,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Layout } from "@/components/Layout";
+import { TeamFilter } from "@/components/TeamFilter";
 import { useWhatsNewCount } from "@/hooks/useWhatsNewCount";
 
 function getInitials(name: string) {
@@ -90,6 +92,7 @@ export default function Development() {
   const [, navigate] = useLocation();
   const { manager } = useManagerStore();
   const whatsNewCount = useWhatsNewCount();
+  const [filteredId, setFilteredId] = useState<number | null>(null);
 
   if (!manager) { navigate("/"); return null; }
 
@@ -103,17 +106,24 @@ export default function Development() {
     { query: { queryKey: getGetManagerTeamQueryKey({ managerId: manager.id }) } }
   );
 
+  const visibleTeam = filteredId ? team.filter(m => m.id === filteredId) : team;
+
   return (
     <Layout whatsNewCount={whatsNewCount}>
       <div className="max-w-5xl mx-auto px-8 py-10">
-        <div className="mb-8">
-          <h2 className="font-script text-4xl text-foreground">Personal Development</h2>
-          <p className="text-muted-foreground mt-2 text-sm">
-            Monitor your team's career progression and financial targets.
-          </p>
+        <div className="flex items-start justify-between gap-4 mb-8">
+          <div>
+            <h2 className="font-script text-4xl text-foreground">Personal Development</h2>
+            <p className="text-muted-foreground mt-2 text-sm">
+              Monitor your team's career progression and financial targets.
+            </p>
+          </div>
+          <div className="mt-2 shrink-0">
+            <TeamFilter selectedId={filteredId} onSelect={setFilteredId} />
+          </div>
         </div>
 
-        {/* Metric cards */}
+        {/* Metric cards — always show full team totals */}
         <div className="grid grid-cols-3 gap-3 mb-8">
           <MetricCard
             label="Active Plans"
@@ -144,9 +154,11 @@ export default function Development() {
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
-          ) : team.length === 0 ? (
+          ) : visibleTeam.length === 0 ? (
             <div className="py-10 text-center">
-              <p className="text-sm text-muted-foreground">No team members found.</p>
+              <p className="text-sm text-muted-foreground">
+                {filteredId ? "No data found for this team member." : "No team members found."}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -174,7 +186,7 @@ export default function Development() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {team.map((member) => (
+                  {visibleTeam.map((member) => (
                     <tr key={member.id} className="hover:bg-muted/50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">

@@ -25,6 +25,45 @@ router.post("/login", async (req, res) => {
   return res.json({ prevLoginAt: prevLogin });
 });
 
+// GET /api/manager-ld/hierarchy?managerId=X&role=manager|director — full flat list of reportees
+router.get("/hierarchy", async (req, res) => {
+  const managerId = parseInt(req.query.managerId as string);
+  const role = req.query.role as string;
+  if (isNaN(managerId)) return res.status(400).json({ error: "managerId required" });
+
+  let rows;
+  if (role === "director") {
+    // Recursive CTE — everyone who reports up to this director
+    rows = await pool.query<{ id: number; name: string; job_title: string | null; department: string | null }>(`
+      WITH RECURSIVE hierarchy AS (
+        SELECT id, name, job_title, department, manager_id
+        FROM users
+        WHERE manager_id = $1 AND is_active = 'active'
+        UNION ALL
+        SELECT u.id, u.name, u.job_title, u.department, u.manager_id
+        FROM users u
+        JOIN hierarchy h ON u.manager_id = h.id
+        WHERE u.is_active = 'active'
+      )
+      SELECT id, name, job_title, department FROM hierarchy ORDER BY name
+    `, [managerId]);
+  } else {
+    rows = await pool.query<{ id: number; name: string; job_title: string | null; department: string | null }>(`
+      SELECT id, name, job_title, department
+      FROM users
+      WHERE manager_id = $1 AND is_active = 'active'
+      ORDER BY name
+    `, [managerId]);
+  }
+
+  return res.json(rows.rows.map(r => ({
+    id: r.id,
+    name: r.name,
+    jobTitle: r.job_title,
+    department: r.department,
+  })));
+});
+
 // GET /api/manager-ld/team-members?managerId=X — direct reports + their learning stats
 router.get("/team-members", async (req, res) => {
   const managerId = parseInt(req.query.managerId as string);
