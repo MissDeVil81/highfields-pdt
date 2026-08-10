@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,13 +44,31 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, CalendarDays, Pencil } from "lucide-react";
 import { Combobox } from "@/components/ui/combobox";
 import { MultiSelect } from "@/components/ui/multi-select";
+
+const PROBATION_PERIODS = ["1 Month", "3 Months", "5 Months", "6 Months"] as const;
+type ProbationPeriod = typeof PROBATION_PERIODS[number];
+type ProbationDates = Record<ProbationPeriod, string>;
+
+const emptyDates = (): ProbationDates => ({
+  "1 Month": "",
+  "3 Months": "",
+  "5 Months": "",
+  "6 Months": "",
+});
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -76,18 +94,29 @@ function primaryRole(roles: string[]): "employee" | "manager" | "director" | "ad
   return "employee";
 }
 
+function hasDates(dates: ProbationDates) {
+  return PROBATION_PERIODS.some(p => !!dates[p]);
+}
+
 export default function UserFormPage() {
   const [, navigate] = useLocation();
   const params = useParams<{ id?: string }>();
   const id = params.id ? parseInt(params.id) : undefined;
   const isEdit = id !== undefined;
-  
+
   const { adminUserId } = useAdmin();
   const reqOpts = { request: { headers: { 'x-requesting-user-id': String(adminUserId) } } };
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // ── Probation state (outside react-hook-form) ──────────────────────────
+  const [onProbation, setOnProbation] = useState(false);
+  const [probationDates, setProbationDates] = useState<ProbationDates>(emptyDates());
+  const [draftDates, setDraftDates] = useState<ProbationDates>(emptyDates());
+  const [probationDialogOpen, setProbationDialogOpen] = useState(false);
+
+  // ── Main form data ─────────────────────────────────────────────────────
   const { data: user, isLoading: userLoading } = useGetUser(id!, {
     query: {
       enabled: isEdit,
@@ -98,7 +127,7 @@ export default function UserFormPage() {
   const { data: permissions, isLoading: permissionsLoading } = useGetUserPermissions(id!, {
     query: { enabled: isEdit, queryKey: getGetUserPermissionsQueryKey(id!) }
   });
-  
+
   const { data: accessSummary } = useGetUserAccessSummary(id!, {
     query: { enabled: isEdit, queryKey: getGetUserAccessSummaryQueryKey(id!) }
   });
@@ -109,7 +138,7 @@ export default function UserFormPage() {
   const userOptions = (allUsers ?? [])
     .filter(u => u.isActive === "active" && u.id !== id)
     .map(u => ({ value: u.id, label: u.name }));
-    
+
   const teamOptions = (allTeams ?? []).map(t => ({ value: t.id, label: t.name }));
 
   const createUser = useCreateUser(reqOpts);
@@ -140,13 +169,14 @@ export default function UserFormPage() {
     },
   });
 
+  // Populate form when editing
   useEffect(() => {
     if (user && (!isEdit || permissions)) {
       const viewUsers = permissions?.userPermissions.filter(p => p.permissionType === "view").map(p => p.targetUserId) || [];
       const editUsers = permissions?.userPermissions.filter(p => p.permissionType === "edit").map(p => p.targetUserId) || [];
       const viewTeams = permissions?.teamPermissions.filter(p => p.permissionType === "view").map(p => p.teamId) || [];
       const editTeams = permissions?.teamPermissions.filter(p => p.permissionType === "edit").map(p => p.teamId) || [];
-      
+
       reset({
         name: user.name,
         email: user.email ?? "",
@@ -160,8 +190,28 @@ export default function UserFormPage() {
         additionalViewTeams: viewTeams,
         additionalEditTeams: editTeams,
       });
+
+      setOnProbation(user.probationStatus === "in_probation");
     }
   }, [user, permissions, isEdit, reset]);
+
+  // Load existing probation review dates when editing
+  useEffect(() => {
+    if (!isEdit || !id) return;
+    fetch(`/api/probation/manager-reviews?userId=${id}`)
+      .then(r => r.json())
+      .then((rows: Array<{ reviewPeriod: string; reviewDate: string | null }>) => {
+        const dates = emptyDates();
+        for (const row of rows) {
+          if (row.reviewDate && (PROBATION_PERIODS as readonly string[]).includes(row.reviewPeriod)) {
+            dates[row.reviewPeriod as ProbationPeriod] = row.reviewDate;
+          }
+        }
+        setProbationDates(dates);
+        setDraftDates(dates);
+      })
+      .catch(() => {});
+  }, [isEdit, id]);
 
   const roleValue = watch("role");
   const isActiveValue = watch("isActive");
@@ -171,6 +221,40 @@ export default function UserFormPage() {
   const addEditUsers = watch("additionalEditUsers");
   const addViewTeams = watch("additionalViewTeams");
   const addEditTeams = watch("additionalEditTeams");
+
+  function openProbationDialog() {
+    setDraftDates({ ...probationDates });
+    setProbationDialogOpen(true);
+  }
+
+  function handleProbationToggle(checked: boolean) {
+    setOnProbation(checked);
+    if (checked) {
+      setDraftDates({ ...probationDates });
+      setProbationDialogOpen(true);
+    }
+  }
+
+  function saveProbationDates() {
+    setProbationDates({ ...draftDates });
+    setProbationDialogOpen(false);
+  }
+
+  async function saveProbationReviews(userId: number) {
+    await Promise.all(
+      PROBATION_PERIODS.map(period =>
+        fetch('/api/probation/manager-reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            reviewPeriod: period,
+            reviewDate: probationDates[period] || null,
+          }),
+        })
+      )
+    );
+  }
 
   async function onSubmit(values: FormValues) {
     const roles = [values.role];
@@ -190,7 +274,8 @@ export default function UserFormPage() {
               managerId: values.managerId ?? null,
               isActive: values.isActive ? "active" : "inactive",
               teamIds: values.teamIds,
-            },
+              probationStatus: onProbation ? "in_probation" : null,
+            } as any,
           }),
           setPermissions.mutateAsync({
             id: id!,
@@ -202,13 +287,17 @@ export default function UserFormPage() {
             }
           })
         ]);
-        
+
+        if (onProbation) {
+          await saveProbationReviews(id!);
+        }
+
         queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(id!) });
         toast({ title: "User updated successfully" });
         navigate("/");
       } else {
-        await createUser.mutateAsync({
+        const created = await createUser.mutateAsync({
           data: {
             name: values.name,
             email,
@@ -217,9 +306,14 @@ export default function UserFormPage() {
             managerId: values.managerId,
             isActive: values.isActive ? "active" : "inactive",
             teamIds: values.teamIds,
-          },
+            probationStatus: onProbation ? "in_probation" : undefined,
+          } as any,
         });
-        
+
+        if (onProbation && created?.id) {
+          await saveProbationReviews(created.id);
+        }
+
         queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
         toast({ title: "User created successfully" });
         navigate("/");
@@ -301,22 +395,22 @@ export default function UserFormPage() {
               {/* Reports To */}
               <div className="space-y-2">
                 <Label>Reports To</Label>
-                <Combobox 
-                  options={userOptions} 
-                  value={managerIdValue} 
-                  onChange={v => setValue("managerId", v)} 
-                  placeholder="Select manager..." 
+                <Combobox
+                  options={userOptions}
+                  value={managerIdValue}
+                  onChange={v => setValue("managerId", v)}
+                  placeholder="Select manager..."
                 />
               </div>
 
               {/* Teams */}
               <div className="space-y-2 md:col-span-2 mt-2">
                 <Label>Team Membership</Label>
-                <MultiSelect 
-                  options={teamOptions} 
-                  selected={teamIdsValue} 
-                  onChange={v => setValue("teamIds", v)} 
-                  placeholder="Assign to teams..." 
+                <MultiSelect
+                  options={teamOptions}
+                  selected={teamIdsValue}
+                  onChange={v => setValue("teamIds", v)}
+                  placeholder="Assign to teams..."
                 />
               </div>
 
@@ -328,6 +422,38 @@ export default function UserFormPage() {
                 </div>
                 <Switch checked={isActiveValue} onCheckedChange={(v) => setValue("isActive", v)} />
               </div>
+
+              {/* Probation toggle */}
+              <div className="md:col-span-2 flex items-center justify-between rounded-lg border bg-muted/20 px-4 py-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div>
+                    <p className="text-sm font-medium">On probation</p>
+                    <p className="text-xs text-muted-foreground">
+                      Enables the probation section and connects to manager review workflows.
+                    </p>
+                  </div>
+                  {onProbation && (
+                    <div className="ml-2 flex items-center gap-2 flex-shrink-0">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        hasDates(probationDates)
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                      }`}>
+                        {hasDates(probationDates) ? "Dates set" : "No dates set"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={openProbationDialog}
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Pencil className="h-3 w-3" />
+                        Edit dates
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <Switch checked={onProbation} onCheckedChange={handleProbationToggle} />
+              </div>
             </CardContent>
           </Card>
 
@@ -338,7 +464,7 @@ export default function UserFormPage() {
                 <CardDescription>Grant access to view or edit other users outside this user's direct reporting line.</CardDescription>
               </CardHeader>
               <CardContent className="grid md:grid-cols-2 gap-x-8 gap-y-8 pt-6">
-                
+
                 <div className="space-y-4">
                   <h4 className="text-sm font-semibold flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-blue-500" />
@@ -415,7 +541,7 @@ export default function UserFormPage() {
                 <p className="text-xs font-medium text-muted-foreground mt-1 uppercase tracking-wider">Via Teams</p>
               </div>
             </div>
-            
+
             <div className="flex justify-around items-center bg-background p-4 rounded-xl border mb-6 shadow-sm divide-x">
               <div className="text-center px-4">
                 <p className="text-sm text-muted-foreground mb-1">Total Viewable Users</p>
@@ -426,7 +552,7 @@ export default function UserFormPage() {
                 <p className="text-2xl font-bold text-foreground">{accessSummary.totalCanEdit}</p>
               </div>
             </div>
-            
+
             <h4 className="font-semibold text-sm mb-3 px-1">Detailed Breakdown</h4>
             <div className="border rounded-md bg-card overflow-hidden">
               <Table>
@@ -459,6 +585,52 @@ export default function UserFormPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* ── Probation Review Dates Dialog ────────────────────────────────── */}
+      <Dialog open={probationDialogOpen} onOpenChange={(open) => {
+        if (!open) setProbationDialogOpen(false);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-primary" />
+              Probation Review Dates
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground pt-1">
+              Set the scheduled dates for each review milestone. Dates trigger the action needed and review sections in the manager dashboard.
+            </p>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-4 py-2">
+            {PROBATION_PERIODS.map((period) => (
+              <div key={period} className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {period} Review
+                </Label>
+                <Input
+                  type="date"
+                  value={draftDates[period]}
+                  onChange={e => setDraftDates(prev => ({ ...prev, [period]: e.target.value }))}
+                  className="text-sm"
+                />
+              </div>
+            ))}
+          </div>
+
+          <p className="text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-2">
+            Dates can be updated at any time by editing this user. You can also leave them blank and add them later.
+          </p>
+
+          <DialogFooter className="gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => setProbationDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={saveProbationDates}>
+              Save dates
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -28,7 +28,7 @@ const updateSchema = z.object({
   department: z.string().optional(),
   jobTitle: z.string().optional(),
   startDate: z.string().optional(),
-  probationStatus: z.string().optional(),
+  probationStatus: z.string().nullable().optional(),
   targetRoleId: z.number().int().nullable().optional(),
   isActive: z.string().optional(),
   teamIds: z.array(z.number().int()).optional(),

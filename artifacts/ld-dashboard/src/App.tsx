@@ -8,6 +8,8 @@ import IdentityPicker from "@/pages/IdentityPicker";
 import AllEmployees from "@/pages/AllEmployees";
 import WhatsNew from "@/pages/WhatsNew";
 import EmployeeLearning from "@/pages/EmployeeLearning";
+import CompanyTraining from "@/pages/CompanyTraining";
+import IndividualFeedback from "@/pages/IndividualFeedback";
 import {
   Route,
   Switch,
@@ -24,6 +26,8 @@ function Router() {
         <Route path="/" component={IdentityPicker} />
         <Route path="/home" component={AllEmployees} />
         <Route path="/whats-new" component={WhatsNew} />
+        <Route path="/company-training" component={CompanyTraining} />
+        <Route path="/individual-feedback" component={IndividualFeedback} />
         <Route path="/employee/:id" component={EmployeeLearning} />
         <Route component={NotFound} />
       </Switch>

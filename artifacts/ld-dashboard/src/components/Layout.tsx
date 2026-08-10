@@ -1,6 +1,6 @@
 import { useLocation } from "wouter";
 import { useLdStore } from "@/hooks/useLdStore";
-import { BookOpen, Users, Sparkles, LogOut, ChevronRight } from "lucide-react";
+import { BookOpen, Users, Sparkles, LogOut, ChevronRight, BookMarked, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function getInitials(name: string) {
@@ -68,6 +68,10 @@ export function Layout({ children, whatsNewCount }: { children: React.ReactNode;
             icon={<Sparkles className="h-4 w-4" />}
             badge={whatsNewCount}
           />
+
+          <SectionLabel label="Training & Development" icon={<BookMarked className="h-3.5 w-3.5" />} />
+          <NavItem href="/company-training" label="Company Training" icon={<BookMarked className="h-4 w-4" />} />
+          <NavItem href="/individual-feedback" label="Individual Feedback" icon={<MessageSquare className="h-4 w-4" />} />
         </nav>
 
         {ldUser && (
