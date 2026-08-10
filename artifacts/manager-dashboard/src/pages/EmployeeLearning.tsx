@@ -6,8 +6,6 @@ import { Layout } from "@/components/Layout";
 import { useWhatsNewCount } from "@/hooks/useWhatsNewCount";
 import { ArrowLeft, BookOpen, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-
 type LearningEntry = {
   id: number;
   userId: number;
@@ -73,7 +71,7 @@ export default function EmployeeLearning() {
   const { data: entries = [], isLoading } = useQuery<LearningEntry[]>({
     queryKey: ["employee-entries", employeeId],
     queryFn: async () => {
-      const res = await fetch(`${BASE}/api/manager-ld/employee/${employeeId}/entries`);
+      const res = await fetch(`/api/manager-ld/employee/${employeeId}/entries`);
       if (!res.ok) return [];
       return res.json();
     },

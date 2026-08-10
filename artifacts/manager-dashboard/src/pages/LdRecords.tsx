@@ -9,8 +9,6 @@ import {
   Users, BookOpen, Clock, ChevronRight, Loader2, Sparkles, Check, ChevronDown, ChevronUp, X
 } from "lucide-react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-
 type TeamMember = {
   id: number;
   name: string;
@@ -87,7 +85,7 @@ function WhatsNewEntryCard({ entry, managerId, onViewed }: {
 
   const markViewed = useMutation({
     mutationFn: async () => {
-      await fetch(`${BASE}/api/manager-ld/viewed`, {
+      await fetch(`/api/manager-ld/viewed`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ managerId, entryId: entry.id }),
@@ -168,7 +166,7 @@ export default function LdRecords() {
   const { data: teams = [], isLoading: teamsLoading } = useQuery<Team[]>({
     queryKey: ["user-teams", manager.id],
     queryFn: async () => {
-      const res = await fetch(`${BASE}/api/manager-ld/user-teams?userId=${manager.id}`);
+      const res = await fetch(`/api/manager-ld/user-teams?userId=${manager.id}`);
       if (!res.ok) return [];
       return res.json();
     },
@@ -185,11 +183,11 @@ export default function LdRecords() {
     queryFn: async () => {
       if (isDirector) {
         if (!teamId) return [];
-        const res = await fetch(`${BASE}/api/manager-ld/team-by-team?teamId=${teamId}&directorId=${manager.id}`);
+        const res = await fetch(`/api/manager-ld/team-by-team?teamId=${teamId}&directorId=${manager.id}`);
         if (!res.ok) return [];
         return res.json();
       } else {
-        const res = await fetch(`${BASE}/api/manager-ld/team-members?managerId=${manager.id}`);
+        const res = await fetch(`/api/manager-ld/team-members?managerId=${manager.id}`);
         if (!res.ok) return [];
         return res.json();
       }
@@ -213,7 +211,7 @@ export default function LdRecords() {
   const { data: whatsNew = [], isLoading: whatsNewLoading } = useQuery<WhatsNewEntry[]>({
     queryKey: ["whats-new", manager.id],
     queryFn: async () => {
-      const res = await fetch(`${BASE}/api/manager-ld/whats-new?managerId=${manager.id}`);
+      const res = await fetch(`/api/manager-ld/whats-new?managerId=${manager.id}`);
       if (!res.ok) return [];
       return res.json();
     },

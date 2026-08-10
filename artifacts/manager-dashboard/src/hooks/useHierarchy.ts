@@ -18,7 +18,7 @@ export function useHierarchy() {
     queryFn: async () => {
       if (!manager) return [];
       const res = await fetch(
-        `${BASE}/api/manager-ld/hierarchy?managerId=${manager.id}&role=${manager.role}`
+        `/api/manager-ld/hierarchy?managerId=${manager.id}&role=${manager.role}`
       );
       if (!res.ok) return [];
       return res.json();
