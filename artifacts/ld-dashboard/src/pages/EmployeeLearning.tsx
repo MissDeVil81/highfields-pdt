@@ -5,8 +5,6 @@ import { useLdStore } from "@/hooks/useLdStore";
 import { Layout } from "@/components/Layout";
 import { ArrowLeft, BookOpen, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-
 type LearningEntry = {
   id: number;
   dateOfLearning: string;
@@ -67,7 +65,7 @@ export default function EmployeeLearning() {
     queryKey: ["ld-whats-new", ldUser?.id],
     queryFn: async () => {
       if (!ldUser) return [];
-      const res = await fetch(`${BASE}/api/manager-ld/whats-new-all?ldUserId=${ldUser.id}`);
+      const res = await fetch(`/api/manager-ld/whats-new-all?ldUserId=${ldUser.id}`);
       if (!res.ok) return [];
       return res.json();
     },
@@ -80,7 +78,7 @@ export default function EmployeeLearning() {
   const { data: entries = [], isLoading } = useQuery<LearningEntry[]>({
     queryKey: ["employee-entries", employeeId],
     queryFn: async () => {
-      const res = await fetch(`${BASE}/api/manager-ld/employee/${employeeId}/entries`);
+      const res = await fetch(`/api/manager-ld/employee/${employeeId}/entries`);
       if (!res.ok) return [];
       return res.json();
     },

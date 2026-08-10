@@ -5,8 +5,6 @@ import { Layout } from "@/components/Layout";
 import { BookOpen, Clock, ChevronRight, Loader2, Search } from "lucide-react";
 import { useState } from "react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-
 type Employee = {
   id: number;
   name: string;
@@ -29,7 +27,7 @@ function useWhatsNewCount(ldUserId: number) {
   const { data = [] } = useQuery<any[]>({
     queryKey: ["ld-whats-new", ldUserId],
     queryFn: async () => {
-      const res = await fetch(`${BASE}/api/manager-ld/whats-new-all?ldUserId=${ldUserId}`);
+      const res = await fetch(`/api/manager-ld/whats-new-all?ldUserId=${ldUserId}`);
       if (!res.ok) return [];
       return res.json();
     },
@@ -50,7 +48,7 @@ export default function AllEmployees() {
   const { data: employees = [], isLoading } = useQuery<Employee[]>({
     queryKey: ["ld-all-employees"],
     queryFn: async () => {
-      const res = await fetch(`${BASE}/api/manager-ld/all-employees`);
+      const res = await fetch(`/api/manager-ld/all-employees`);
       if (!res.ok) return [];
       return res.json();
     },

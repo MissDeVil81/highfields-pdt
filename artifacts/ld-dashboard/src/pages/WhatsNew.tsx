@@ -5,8 +5,6 @@ import { useLdStore } from "@/hooks/useLdStore";
 import { Layout } from "@/components/Layout";
 import { Sparkles, ChevronDown, ChevronUp, Check, Loader2 } from "lucide-react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-
 type WhatsNewEntry = {
   id: number;
   userId: number;
@@ -30,7 +28,7 @@ function EntryCard({ entry, ldUserId }: { entry: WhatsNewEntry; ldUserId: number
 
   const markViewed = useMutation({
     mutationFn: async () => {
-      await fetch(`${BASE}/api/manager-ld/viewed`, {
+      await fetch(`/api/manager-ld/viewed`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ managerId: ldUserId, entryId: entry.id }),
@@ -103,7 +101,7 @@ export default function WhatsNew() {
   const { data: entries = [], isLoading } = useQuery<WhatsNewEntry[]>({
     queryKey: ["ld-whats-new", ldUser.id],
     queryFn: async () => {
-      const res = await fetch(`${BASE}/api/manager-ld/whats-new-all?ldUserId=${ldUser.id}`);
+      const res = await fetch(`/api/manager-ld/whats-new-all?ldUserId=${ldUser.id}`);
       if (!res.ok) return [];
       return res.json();
     },

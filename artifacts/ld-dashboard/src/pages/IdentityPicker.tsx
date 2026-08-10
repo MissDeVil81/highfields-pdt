@@ -4,8 +4,6 @@ import { useLdStore } from "@/hooks/useLdStore";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { useEffect } from "react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
-
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 }
@@ -23,7 +21,7 @@ export default function IdentityPicker() {
 
   const handleSelect = async (id: number, name: string) => {
     try {
-      await fetch(`${BASE}/api/manager-ld/login`, {
+      await fetch(`/api/manager-ld/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: id }),
