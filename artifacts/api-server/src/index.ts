@@ -4,6 +4,8 @@ import {
   seedIfEmpty,
   seedDemoProgressIfMissing,
   seedDemoProgressV2IfMissing,
+  seedManagerPortalDataIfMissing,
+  seedLdDemoDataIfMissing,
 } from "./startup-seed";
 import { RESOLVED_APP_ENV } from "@workspace/db";
 
@@ -27,7 +29,9 @@ const seedChain =
     ? Promise.resolve()
     : seedIfEmpty()
         .then(() => seedDemoProgressIfMissing())
-        .then(() => seedDemoProgressV2IfMissing());
+        .then(() => seedDemoProgressV2IfMissing())
+        .then(() => seedManagerPortalDataIfMissing())
+        .then(() => seedLdDemoDataIfMissing());
 
 seedChain
   .then(() => {

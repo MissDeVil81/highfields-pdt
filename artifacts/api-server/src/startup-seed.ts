@@ -1265,6 +1265,338 @@ export async function seedDemoProgressV2IfMissing(): Promise<void> {
   }
 }
 
+export async function seedManagerPortalDataIfMissing(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    const { rows } = await client.query("SELECT COUNT(*) FROM probation_items");
+    if (parseInt(rows[0].count, 10) > 0) {
+      logger.info("Manager portal demo data already present, skipping.");
+      return;
+    }
+    logger.info("Seeding manager portal demo data...");
+    await client.query(`
+      -- Teams
+      INSERT INTO teams (id, name, status) VALUES
+      (1, 'US Perm', 'active')
+      ON CONFLICT (id) DO NOTHING;
+      SELECT setval('teams_id_seq', GREATEST((SELECT MAX(id) FROM teams), 1));
+
+      -- Financial targets (for role-level billing benchmarks used in career tracker)
+      INSERT INTO financial_targets (id, role_id, label, target_amount, period_label, option_group, sort_order) VALUES
+      (1,  44, 'Average weekly billings over 8 weeks',   3000,  '8-week average',  '',  0),
+      (2,  57, 'Average weekly billings over 8 weeks',   3000,  '8-week average',  '',  0),
+      (3,  46, 'Average weekly billings over 13 weeks',  5000,  '13-week average', '',  0),
+      (4,  59, 'Average weekly billings over 13 weeks',  5000,  '13-week average', '',  0),
+      (5,  48, 'Average weekly billings over 13 weeks',  7000,  '13-week average', '',  0),
+      (6,  61, 'Average weekly billings over 13 weeks',  7000,  '13-week average', '',  0),
+      (7,  54, 'Average weekly billings over 13 weeks',  10000, '13-week average', '',  0),
+      (8,  67, 'Average weekly billings over 13 weeks',  10000, '13-week average', '',  0),
+      (9,  43, 'Total billed in 6 months',               80000, '6 months',        '1', 0),
+      (10, 43, 'Total billed in 12 months',              150000,'12 months',        '1', 1),
+      (11, 58, 'Total billed in 6 months',               80000, '6 months',        '1', 0),
+      (12, 58, 'Total billed in 12 months',              150000,'12 months',        '1', 1),
+      (13, 45, 'Total billed in 6 months',               120000,'6 months',        '1', 0),
+      (14, 45, 'Total billed in 12 months',              220000,'12 months',        '1', 1),
+      (15, 60, 'Total billed in 6 months',               120000,'6 months',        '1', 0),
+      (16, 60, 'Total billed in 12 months',              220000,'12 months',        '1', 1),
+      (17, 47, 'Total billed in 12 months',              250000,'12 months',        '',  0),
+      (18, 62, 'Total billed in 12 months',              250000,'12 months',        '',  0),
+      (19, 53, 'Total billed in 12 months',              400000,'12 months',        '',  0),
+      (20, 68, 'Total billed in 12 months',              400000,'12 months',        '',  0)
+      ON CONFLICT (id) DO NOTHING;
+      SELECT setval('financial_targets_id_seq', GREATEST((SELECT MAX(id) FROM financial_targets), 20));
+
+      -- Probation review items (the questions/sections used in all probation reviews)
+      INSERT INTO probation_items (id, section, section_order, item_text, item_order, rating_type) VALUES
+      (1,  'Skills',                1, 'Can use core systems and tools required for the role at a basic, functional level',      1, 'yes_no_progress'),
+      (2,  'Skills',                1, 'Is able to log accurate, appropriate information on Bullhorn and other company systems', 2, 'yes_no_progress'),
+      (3,  'Skills',                1, 'Demonstrates basic role competence required to operate safely and effectively',          3, 'yes_no_progress'),
+      (4,  'Skills',                1, 'Follows agreed ways of working and Highfield / DataX / Data Exec way of working',       4, 'yes_no_progress'),
+      (5,  'Behaviours',            2, 'Can demonstrate professional conduct at work',                                          1, 'yes_no_progress'),
+      (6,  'Behaviours',            2, 'Displays a constructive and respectful attitude',                                       2, 'yes_no_progress'),
+      (7,  'Behaviours',            2, 'Engages appropriately with feedback and guidance',                                      3, 'yes_no_progress'),
+      (8,  'Behaviours',            2, 'Shows willingness to learn and improve',                                                4, 'yes_no_progress'),
+      (9,  'Knowledge',             3, 'Has a basic understanding of the role and the recruitment lifecycle',                   1, 'yes_no_progress'),
+      (10, 'Knowledge',             3, 'Demonstrates developing awareness of their sector and market',                          2, 'yes_no_progress'),
+      (11, 'Knowledge',             3, 'Understands what is expected of them in the role',                                      3, 'yes_no_progress'),
+      (12, 'Activity',              4, 'Activity levels broadly align to expectations for the stage of their role',             1, 'yes_no_progress'),
+      (13, 'Activity',              4, 'Demonstrates consistent effort and application',                                        2, 'yes_no_progress'),
+      (14, 'Activity',              4, 'Is engaging with required activity rather than avoiding it',                            3, 'yes_no_progress'),
+      (15, 'Financial Awareness',   5, 'Understands how individual activity contributes to revenue',                            1, 'yes_no_progress'),
+      (16, 'Financial Awareness',   5, 'Is developing commercial awareness appropriate to probation stage',                     2, 'yes_no_progress'),
+      (17, 'Behaviour and Conduct', 6, 'Behaviours are aligned to company standards',                                          1, 'yes_no_progress'),
+      (18, 'Behaviour and Conduct', 6, 'No conduct or behavioural concerns identified',                                        2, 'yes_no_progress'),
+      (19, 'Values',                7, 'Driven',       1, 'values_rating'),
+      (20, 'Values',                7, 'Disciplined',  2, 'values_rating'),
+      (21, 'Values',                7, 'Competitive',  3, 'values_rating'),
+      (22, 'Values',                7, 'Committed',    4, 'values_rating'),
+      (23, 'Values',                7, 'Positive',     5, 'values_rating'),
+      (24, 'Values',                7, 'Resilient',    6, 'values_rating')
+      ON CONFLICT (id) DO NOTHING;
+      SELECT setval('probation_items_id_seq', GREATEST((SELECT MAX(id) FROM probation_items), 24));
+
+      -- Probation manager reviews — Harry Mann (user 3): Month 1 (published) + Month 3 (draft)
+      INSERT INTO probation_manager_reviews (id, user_id, review_period, going_well, development_areas, review_status, review_date, published_at, created_at, updated_at) VALUES
+      (5, 3, 'month1',
+        'Harry has made a really positive start to his probation. He has quickly adapted to core systems and consistently demonstrates professional conduct. His willingness to learn and positive attitude to feedback are real strengths — he is already building solid candidate relationships across the team.',
+        'Harry should focus on building his sector knowledge and commercial awareness over the coming weeks. We have agreed he will shadow two BD calls per week and read the weekly DataX market briefings to accelerate his understanding of the data centre space.',
+        'on_track', '2026-05-05', '2026-05-06 09:00:00', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (6, 3, 'month3',
+        'Harry continues to impress. His activity levels are consistently strong and he has built excellent candidate relationships across the data centre and tech infrastructure market. His sector knowledge has improved significantly since Month 1 — he is asking the right questions and really engaging with the market.',
+        'Harry now needs to start converting more of his BD activity into live roles. We will work together on objection handling and how to tailor his pitch to different client profiles. Key focus before Month 6: secure at least one PSL or retained assignment.',
+        'on_track', '2026-06-16', NULL, '2026-06-15 19:22:57', '2026-06-15 19:22:57')
+      ON CONFLICT (id) DO NOTHING;
+      SELECT setval('probation_manager_reviews_id_seq', GREATEST((SELECT MAX(id) FROM probation_manager_reviews), 6));
+
+      -- Probation self-reflections
+      INSERT INTO probation_reflections (id, user_id, review_period, went_well, learned, more_support, focus_next, confidence, created_at, updated_at) VALUES
+      (4, 3, 'month1',
+        'I really enjoyed getting to grips with Bullhorn and the team''s way of working. The shadowing sessions with senior consultants have been really helpful — I feel much more confident on the phone than I did on day one.',
+        'I''ve learned a lot about the data centre and tech infrastructure market from the weekly briefings and the team. I now have a much better understanding of the types of roles clients are typically looking to fill.',
+        'I would like more guidance on how to structure my BD emails and initial client calls. I sometimes struggle to know how to open a conversation with a new client.',
+        'Focus on increasing my BD activity and converting more conversations into at least expressions of interest before the Month 3 review.',
+        'amber', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (5, 3, 'month3',
+        'My activity levels have been consistently high and I have built some strong candidate relationships. I have also started to have some really productive BD conversations that I think could turn into live roles.',
+        'How to tailor my approach to different types of candidates and clients. I am getting much better at identifying when someone is the right fit for a role, and when to push hard for an interview.',
+        'I would benefit from more practice on handling objections from clients, particularly around preferred supplier lists and exclusivity arrangements.',
+        'Convert at least one BD conversation into a live role before Month 6, and continue building market knowledge through the DataX reports.',
+        'green', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (6, 5, 'month1',
+        'Really enjoyed getting stuck in. Picked up the systems quickly and feel comfortable with the day-to-day process.',
+        'The full recruitment lifecycle end-to-end. The team have been really supportive.',
+        'More guidance on BD cold outreach — I am not sure how to approach new clients yet.',
+        'Start building my BD call list and make at least 5 new client approaches before Month 3.',
+        'green', '2026-06-15 20:26:34', '2026-06-16 06:57:29')
+      ON CONFLICT (id) DO NOTHING;
+      SELECT setval('probation_reflections_id_seq', GREATEST((SELECT MAX(id) FROM probation_reflections), 6));
+
+      -- Probation agreed actions
+      INSERT INTO probation_actions (id, user_id, review_period, action_text, status, created_at, updated_at) VALUES
+      (3, 3, 'month1', 'Shadow 2 BD calls per week with senior consultants',          'complete',     '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (4, 3, 'month1', 'Read the weekly DataX market briefings',                      'complete',     '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (5, 3, 'month1', 'Build a target client list of 20 data centre companies',      'in_progress',  '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (6, 3, 'month3', 'Deliver tailored BD pitches to 5 new target clients',         'in_progress',  '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (7, 3, 'month3', 'Complete sector mapping for top 10 target accounts',          'not_started',  '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (8, 3, 'month3', 'Attend a data centre networking event before Month 6 review', 'not_started',  '2026-06-15 19:22:57', '2026-06-15 19:22:57')
+      ON CONFLICT (id) DO NOTHING;
+      SELECT setval('probation_actions_id_seq', GREATEST((SELECT MAX(id) FROM probation_actions), 8));
+
+      -- Probation item assessments — Harry Mann (user 3) Month 1 + Month 3, Kirsty Rossell (user 5) Month 1
+      INSERT INTO probation_assessments (id, user_id, item_id, rating, note, manager_rating, manager_comment, review_period, created_at, updated_at) VALUES
+      -- Harry Month 1
+      (20, 3,  1, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (21, 3,  2, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (22, 3,  3, 'in_progress', 'Getting better but still building confidence in complex tasks.',          'in_progress', 'Developing well — benefits from shadowing senior consultants for more complex situations.',                  'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (23, 3,  4, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (24, 3,  5, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (25, 3,  6, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (26, 3,  7, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (27, 3,  8, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (28, 3,  9, 'in_progress', '',                                                                       'in_progress', '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (29, 3, 10, 'in_progress', 'Reading the weekly briefings to build sector knowledge.',                'in_progress', 'Market awareness is growing — asks good questions in team meetings.',                                       'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (30, 3, 11, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (31, 3, 12, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (32, 3, 13, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (33, 3, 14, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (34, 3, 15, 'in_progress', '',                                                                       'in_progress', '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (35, 3, 16, 'in_progress', '',                                                                       'in_progress', '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (36, 3, 17, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (37, 3, 18, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (38, 3, 19, 'most',        '',                                                                       'most',        '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (39, 3, 20, 'most',        '',                                                                       'most',        '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (40, 3, 21, 'some',        '',                                                                       'some',        '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (41, 3, 22, 'most',        '',                                                                       'most',        '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (42, 3, 23, 'most',        '',                                                                       'most',        '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (43, 3, 24, 'most',        '',                                                                       'most',        '',                                                                                                         'month1', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      -- Harry Month 3
+      (44, 3,  1, 'yes',         'Comfortable with all systems now, including SourceWhale.',               'yes',         'Strong progress — using systems effectively and efficiently.',                                              'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (45, 3,  2, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (46, 3,  3, 'yes',         'Had some really productive BD calls this month.',                        '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (47, 3,  4, 'yes',         '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (48, 3,  5, 'yes',         '',                                                                       'yes',         '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (49, 3,  6, 'yes',         '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (50, 3,  7, 'yes',         '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (51, 3,  8, 'yes',         '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (52, 3,  9, 'yes',         '',                                                                       'yes',         'Has a solid understanding of the full recruitment lifecycle now.',                                          'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (53, 3, 10, 'in_progress', 'Still learning — following sector news and DataX reports weekly.',       'in_progress', 'Showing real improvement. Continue with the DataX reports and add key sector LinkedIn follows.',            'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (54, 3, 11, 'yes',         '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (55, 3, 12, 'yes',         '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (56, 3, 13, 'yes',         '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (57, 3, 14, 'yes',         '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (58, 3, 15, 'in_progress', '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (59, 3, 16, 'yes',         '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (60, 3, 17, 'yes',         '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (61, 3, 18, 'yes',         '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (62, 3, 19, 'most',        '',                                                                       'most',        'Harry consistently demonstrates a driven attitude — proactively seeks out new opportunities.',             'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (63, 3, 20, 'most',        '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (64, 3, 21, 'most',        '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (65, 3, 22, 'most',        '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (66, 3, 23, 'most',        '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      (67, 3, 24, 'most',        '',                                                                       '',            '',                                                                                                         'month3', '2026-06-15 19:22:57', '2026-06-15 19:22:57'),
+      -- Kirsty Month 1
+      (68, 5,  1, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (69, 5,  2, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (70, 5,  3, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (71, 5,  4, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (72, 5,  5, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (73, 5,  6, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (74, 5,  7, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (75, 5,  8, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (76, 5,  9, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (77, 5, 10, 'in_progress', 'Still building sector knowledge.', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (78, 5, 11, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (79, 5, 12, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (80, 5, 13, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (81, 5, 14, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (82, 5, 15, 'in_progress', '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (83, 5, 16, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (84, 5, 17, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (85, 5, 18, 'yes',         '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (86, 5, 19, 'most',        '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (87, 5, 20, 'most',        '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (88, 5, 21, 'most',        '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (89, 5, 22, 'most',        '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (90, 5, 23, 'most',        '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34'),
+      (91, 5, 24, 'most',        '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34')
+      ON CONFLICT (id) DO NOTHING;
+      SELECT setval('probation_assessments_id_seq', GREATEST((SELECT MAX(id) FROM probation_assessments), 91));
+    `);
+    logger.info("Manager portal demo data seeded successfully.");
+  } catch (err) {
+    logger.error({ err }, "Failed to seed manager portal demo data");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export async function seedLdDemoDataIfMissing(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    const { rows } = await client.query("SELECT COUNT(*) FROM learning_log_entries");
+    if (parseInt(rows[0].count, 10) > 0) {
+      logger.info("L&D demo data already present, skipping.");
+      return;
+    }
+    logger.info("Seeding L&D demo data...");
+    await client.query(`
+      -- L&D users (ids 12-15)
+      INSERT INTO users (id, name, email, job_title, department, is_active, roles, manager_id) VALUES
+      (12, 'Emily Amos',        NULL, 'Learning & Development Manager',     'People & Culture', 'active', ARRAY['ld','employee'], NULL),
+      (13, 'Rhonda D''Ambrosio',NULL, 'L&D Business Partner',               'People & Culture', 'active', ARRAY['ld','employee'], NULL),
+      (14, 'Claire Proudlove',  NULL, 'Training & Development Coordinator', 'People & Culture', 'active', ARRAY['ld','employee'], NULL),
+      (15, 'Derek Goff',        NULL, 'L&D Consultant',                     'People & Culture', 'active', ARRAY['ld','employee'], NULL)
+      ON CONFLICT (id) DO NOTHING;
+
+      SELECT setval('users_id_seq', GREATEST((SELECT MAX(id) FROM users), 15));
+
+      -- Manager logins for user 1 and 2
+      INSERT INTO manager_logins (user_id, prev_login_at, last_login_at) VALUES
+      (1, '2026-08-03 20:58:25.914547', '2026-08-09 20:58:25.914547'),
+      (2, '2026-08-03 20:58:25.914547', '2026-08-09 20:58:25.914547')
+      ON CONFLICT (user_id) DO NOTHING;
+
+      -- Learning log entries (all 17)
+      INSERT INTO learning_log_entries (id, user_id, training, date_of_learning, delivered_by, what_did_i_learn, further_training_needed, created_at) VALUES
+      (1,  3, 'LinkedIn Recruiter Advanced Search',          '2026-05-14', 'Internal L&D',
+        'Learned to use Boolean search strings and filters to build targeted talent pipelines. Explored saving searches and setting up automated alerts for passive candidates.',
+        'Would benefit from a session on LinkedIn InMail best practices and response rate optimisation.', '2026-05-15 20:59:07'),
+      (2,  3, 'Structured Interviewing & Competency Frameworks', '2026-06-03', 'Josie Hughes',
+        'Covered how to design competency-based questions aligned to role requirements. Practiced scoring candidate responses using the STAR method consistently.',
+        'None at this stage — will apply framework on next round of client interviews.', '2026-06-04 20:59:07'),
+      (3,  4, 'Business Development & Client Outreach',      '2026-05-20', 'Andrew Collins',
+        'Covered warm calling techniques, handling objections, and structuring a first client meeting. Discussed how to identify decision-makers on LinkedIn and craft personalised outreach messages.',
+        'Would like a session on pitch decks and presenting the agency value proposition to new clients.', '2026-05-21 20:59:07'),
+      (4,  4, 'Salary Benchmarking & Market Data',           '2026-06-18', 'Internal L&D',
+        'Used industry salary surveys and competitor data to set realistic salary bands for active roles. Learned how to present market data to candidates and clients to manage expectations.',
+        '', '2026-06-19 20:59:07'),
+      (5,  5, 'Candidate Experience & Retention',            '2026-05-08', 'Josie Hughes',
+        'Explored the candidate journey from first contact to placement and beyond. Identified key touchpoints where candidate experience can be improved — especially post-offer communication.',
+        'Follow-up session on NPS measurement for candidates would be useful.', '2026-05-09 20:59:07'),
+      (6,  5, 'Employment Law Essentials for Recruiters',    '2026-07-01', 'External Trainer — Peninsula HR',
+        'Covered key legislation including the Equality Act 2010, IR35 rules for contractors, and GDPR requirements for storing candidate data. Discussed what constitutes a discriminatory job advert.',
+        'Would like a refresher on IR35 specifically as it affects several of our current contractor placements.', '2026-07-02 20:59:07'),
+      (7,  6, 'Introduction to the Recruitment Lifecycle',   '2026-06-10', 'Andrew Collins',
+        'Walked through the end-to-end recruitment process: taking a job brief, sourcing, screening, shortlisting, interview management, and offer. Understood how each stage impacts the next.',
+        'Need to shadow at least two full client meetings before handling independently.', '2026-06-11 20:59:07'),
+      (8,  6, 'CV Screening & Candidate Assessment',         '2026-07-08', 'Harry Mann',
+        'Learned how to quickly assess CVs against a job brief, identify transferable skills, and flag red flags. Practiced screening 10 real CVs and received feedback on my shortlist decisions.',
+        'Would like more practice on telephone screening — found it harder than CV screening.', '2026-07-09 20:59:07'),
+      (9,  7, 'Account Management & Client Relationships',   '2026-05-27', 'Andrew Collins',
+        'Discussed how to transition from transactional recruitment to becoming a trusted advisor. Covered regular client contact plans, QBRs, and identifying cross-sell opportunities within existing accounts.',
+        '', '2026-05-28 20:59:07'),
+      (10, 7, 'Negotiation Skills for Recruiters',           '2026-06-25', 'External Trainer — Huthwaite International',
+        'Covered principled negotiation, understanding both parties'' positions and best alternatives, and how to handle salary counteroffers. Practiced live negotiation scenarios with a partner.',
+        'None — the external trainer was excellent and the content was comprehensive.', '2026-06-26 20:59:07'),
+      (11, 8, 'Managing a Desk & Hitting Targets',           '2026-04-22', 'Andrew Collins',
+        'Reviewed pipeline management, activity metrics, and how to prioritise a busy desk during competing deadlines. Discussed how to forecast billings accurately and communicate risks early.',
+        '', '2026-04-23 20:59:07'),
+      (12, 8, 'Mentoring & Developing Junior Consultants',   '2026-06-30', 'Josie Hughes',
+        'Covered the role of an informal mentor, how to give constructive feedback, and how to set development goals with junior team members. Discussed how to balance mentoring with personal billing targets.',
+        'Would value a session on coaching methodology — currently using a more directive style.', '2026-07-01 20:59:07'),
+      (13, 6, 'Telephone Screening Techniques',              '2026-08-06', 'Kirsty Rossell',
+        'Practised telephone screening calls with role plays. Learned how to quickly build rapport, ask concise qualifying questions, and assess enthusiasm and communication skills in under 15 minutes. Took notes on how to structure post-call summaries for clients.',
+        'Want to do a live call with a senior consultant present to get real-time feedback.', '2026-08-06 20:59:07'),
+      (14, 4, 'Writing Compelling Job Adverts',              '2026-08-07', 'Josie Hughes',
+        'Reviewed the difference between a job description and a job advert. Learned how to write benefit-led copy, use inclusive language, and structure adverts to improve application rates. Rewrote two live adverts during the session and saw immediate improvement.',
+        '', '2026-08-07 20:59:07'),
+      (15, 8, 'AI Tools in Recruitment: Practical Applications', '2026-08-07', 'External Webinar — RecTech Summit',
+        'Explored how AI tools are being used for sourcing, outreach personalisation, and candidate screening. Discussed ethical considerations and the risk of bias in automated screening. Hands-on demo of two platforms.',
+        'Would like budget approval to trial one of the AI sourcing tools for 30 days.', '2026-08-07 20:59:07'),
+      (16, 5, 'GDPR Refresher for Recruitment Teams',        '2026-08-08', 'External Trainer — Peninsula HR',
+        'Annual refresher covering data retention policies, subject access requests, and lawful basis for processing candidate data. Updated on recent ICO guidance relevant to recruitment databases. Reviewed our internal privacy notices.',
+        'Team should review our candidate database for records older than 2 years that need purging.', '2026-08-08 20:59:07'),
+      (17, 3, 'Closing Techniques & Overcoming Candidate Hesitation', '2026-08-08', 'Tom Westwood',
+        'Worked through common reasons candidates stall at offer stage — competing offers, counter-offers, cold feet. Learned how to identify hesitation early in the process and address concerns before they become blockers. Practised close conversations with Tom.',
+        'None — excellent session. Will start applying the pre-close technique immediately.', '2026-08-08 20:59:07')
+      ON CONFLICT (id) DO NOTHING;
+
+      SELECT setval('learning_log_entries_id_seq', GREATEST((SELECT MAX(id) FROM learning_log_entries), 17));
+
+      -- Company training sessions
+      INSERT INTO company_learning_entries (id, title, date_of_learning, trainer, description) VALUES
+      (1, 'Trust Equation',    '03/03/26', 'Emily Amos',
+        'An exploration of the Trust Equation framework (Credibility + Reliability + Intimacy / Self-Orientation) and how it applies to building stronger client and candidate relationships in recruitment. The session covered practical ways to increase each component of the equation and how to identify where trust may be breaking down in a relationship.'),
+      (2, 'Recruiter Insider', '03/03/26', 'Emily Amos',
+        'An interactive session drawing on real-world recruiter experiences to explore what separates good consultants from great ones. Topics included market positioning, building a personal brand as a recruiter, managing high-pressure pipelines, and how to use insight and data to add genuine value to clients and candidates alike.')
+      ON CONFLICT (id) DO NOTHING;
+
+      SELECT setval('company_learning_entries_id_seq', GREATEST((SELECT MAX(id) FROM company_learning_entries), 2));
+
+      -- Individual feedback entries
+      INSERT INTO ld_feedback (id, user_id, author_name, title, content, feedback_date, send_to_manager, send_to_individual) VALUES
+      (2, 3, 'Emily Amos', 'Q2 Performance Review',
+        'Harry has shown excellent progress in his sourcing techniques this quarter. His Boolean search skills have noticeably improved and he is building strong candidate pipelines consistently. He would benefit from working on his client communication confidence — recommend pairing him with a senior consultant for joint client calls over the next 4 weeks.',
+        '15/07/26', true, false),
+      (3, 4, 'Emily Amos', 'Onboarding Check-In — 3 Months',
+        'Matt has settled in well and is showing real commercial awareness for someone at his stage. His activity metrics are strong. Main development area is structured follow-up with candidates post-interview. Recommend a session on pipeline discipline in Q3.',
+        '20/06/26', false, false),
+      (4, 5, 'Derek Goff', 'Compliance Training Review',
+        'Kirsty completed all mandatory compliance modules on time and scored above average on the GDPR assessment. She asked thoughtful questions during the employment law session which shows good engagement with the content. No further training required at this stage.',
+        '05/07/26', false, false),
+      (5, 6, 'Emily Amos', 'Probation Mid-Point Feedback',
+        'Jamie is progressing well for a trainee. CV screening accuracy has improved markedly since the July session. He is proactive in asking for guidance which is a great attitude. Focus for H2 is building telephone confidence — would like to see him lead 3 candidate screening calls independently by end of September.',
+        '10/08/26', true, true),
+      (6, 7, 'Derek Goff', 'Negotiation Skills Follow-Up',
+        'Chloe applied the principled negotiation framework effectively on her last two placements. Both resulted in accepted offers with no counter-offer complications. Strong performance — ready to take on more complex salary negotiation scenarios. Suggest enrolling in the advanced salary benchmarking workshop in Q4.',
+        '02/08/26', false, false),
+      (7, 8, 'Emily Amos', 'Mentoring Programme Assessment',
+        'Tom has demonstrated genuine coaching aptitude in his informal mentoring of junior team members. His feedback to them is constructive and well-framed. As discussed, enrolling him in the formal coaching methodology programme in September will help him build on this natural strength and provide a more structured approach.',
+        '28/07/26', true, false)
+      ON CONFLICT (id) DO NOTHING;
+
+      SELECT setval('ld_feedback_id_seq', GREATEST((SELECT MAX(id) FROM ld_feedback), 7));
+    `);
+    logger.info("L&D demo data seeded successfully.");
+  } catch (err) {
+    logger.error({ err }, "Failed to seed L&D demo data");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 export async function seedDemoProgressIfMissing(): Promise<void> {
   const client = await pool.connect();
   try {
