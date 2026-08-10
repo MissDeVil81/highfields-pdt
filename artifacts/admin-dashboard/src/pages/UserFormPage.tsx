@@ -72,9 +72,7 @@ const emptyDates = (): ProbationDates => ({
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  email: z.string().email("Must be a valid email").optional().or(z.literal("")),
   role: z.enum(["employee", "manager", "director", "admin", "ld"]),
-  department: z.string().optional(),
   managerId: z.number().optional(),
   isActive: z.boolean(),
   teamIds: z.array(z.number()).default([]),
@@ -156,9 +154,7 @@ export default function UserFormPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      email: "",
       role: "employee",
-      department: "",
       managerId: undefined,
       isActive: true,
       teamIds: [],
@@ -179,9 +175,7 @@ export default function UserFormPage() {
 
       reset({
         name: user.name,
-        email: user.email ?? "",
         role: primaryRole(user.roles),
-        department: user.department ?? "",
         managerId: user.managerId ?? undefined,
         isActive: user.isActive === "active",
         teamIds: user.teamIds || [],
@@ -258,8 +252,6 @@ export default function UserFormPage() {
 
   async function onSubmit(values: FormValues) {
     const roles = [values.role];
-    const email = values.email || undefined;
-    const department = values.department || undefined;
 
     try {
       if (isEdit) {
@@ -268,9 +260,7 @@ export default function UserFormPage() {
             id: id!,
             data: {
               name: values.name,
-              email,
               roles,
-              department,
               managerId: values.managerId ?? null,
               isActive: values.isActive ? "active" : "inactive",
               teamIds: values.teamIds,
@@ -300,9 +290,7 @@ export default function UserFormPage() {
         const created = await createUser.mutateAsync({
           data: {
             name: values.name,
-            email,
             roles,
-            department,
             managerId: values.managerId,
             isActive: values.isActive ? "active" : "inactive",
             teamIds: values.teamIds,
@@ -361,13 +349,6 @@ export default function UserFormPage() {
                 {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
               </div>
 
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email address</Label>
-                <Input id="email" type="email" placeholder="jane.smith@highfield.co.uk" {...register("email")} />
-                {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-              </div>
-
               {/* Role */}
               <div className="space-y-2">
                 <Label>Role</Label>
@@ -384,12 +365,6 @@ export default function UserFormPage() {
                   </SelectContent>
                 </Select>
                 {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
-              </div>
-
-              {/* Department */}
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Input id="department" placeholder="e.g. Perm Recruitment" {...register("department")} />
               </div>
 
               {/* Reports To */}
