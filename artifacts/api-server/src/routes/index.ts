@@ -23,6 +23,8 @@ import hierarchyRouter from "./hierarchy";
 import auditLogRouter from "./auditLog";
 import learningLogRouter from "./learningLog";
 import managerLdRouter from "./managerLd";
+import companyLearningRouter from "./companyLearning";
+import ldFeedbackRouter from "./ldFeedback";
 
 const router: IRouter = Router();
 
@@ -50,5 +52,7 @@ router.use("/hierarchy", hierarchyRouter);
 router.use("/audit-log", auditLogRouter);
 router.use("/learning-log", learningLogRouter);
 router.use("/manager-ld", managerLdRouter);
+router.use("/company-learning", companyLearningRouter);
+router.use("/ld-feedback", ldFeedbackRouter);
 
 export default router;

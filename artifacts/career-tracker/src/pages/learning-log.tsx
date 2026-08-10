@@ -18,6 +18,24 @@ type LearningEntry = {
   createdAt: string;
 };
 
+type CompanyLearningEntry = {
+  id: number;
+  title: string;
+  dateOfLearning: string;
+  trainer: string;
+  description: string;
+  createdAt: string;
+};
+
+type LdFeedbackEntry = {
+  id: number;
+  userId: number;
+  authorName: string;
+  content: string;
+  feedbackDate: string;
+  createdAt: string;
+};
+
 const TABS = [
   { key: "company-learning", label: "Company Learning",  icon: Building2 },
   { key: "my-learning",      label: "My Learning",       icon: BookOpen },
@@ -47,13 +65,16 @@ function EntryCard({ entry, onDelete }: { entry: LearningEntry; onDelete: () => 
           <p className="text-xs text-muted-foreground mt-0.5">{entry.dateOfLearning} · {entry.deliveredBy}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <span
+            role="button"
+            tabIndex={0}
             onClick={e => { e.stopPropagation(); onDelete(); }}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+            onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); onDelete(); } }}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
             title="Delete entry"
           >
             <Trash2 className="h-4 w-4" />
-          </button>
+          </span>
           {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </div>
       </button>
@@ -69,6 +90,55 @@ function EntryCard({ entry, onDelete }: { entry: LearningEntry; onDelete: () => 
               <p className="text-sm text-foreground whitespace-pre-wrap">{entry.furtherTrainingNeeded}</p>
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CompanyLearningCard({ entry }: { entry: CompanyLearningEntry }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <button
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-accent/40 transition-colors"
+        onClick={() => setExpanded(v => !v)}
+      >
+        <div>
+          <p className="font-semibold text-sm text-foreground">{entry.title}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{entry.dateOfLearning} · {entry.trainer}</p>
+        </div>
+        {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+      </button>
+      {expanded && entry.description && (
+        <div className="px-5 pb-5 border-t border-border pt-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">About this session</p>
+          <p className="text-sm text-foreground whitespace-pre-wrap">{entry.description}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FeedbackCard({ entry }: { entry: LdFeedbackEntry }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <button
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-accent/40 transition-colors"
+        onClick={() => setExpanded(v => !v)}
+      >
+        <div>
+          <p className="font-semibold text-sm text-foreground">Note from {entry.authorName}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {entry.feedbackDate || new Date(entry.createdAt).toLocaleDateString("en-GB")}
+          </p>
+        </div>
+        {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+      </button>
+      {expanded && (
+        <div className="px-5 pb-5 border-t border-border pt-4">
+          <p className="text-sm text-foreground whitespace-pre-wrap">{entry.content}</p>
         </div>
       )}
     </div>
@@ -116,7 +186,6 @@ function AddEntryForm({ userId, onClose }: { userId: number; onClose: () => void
         </button>
       </div>
 
-      {/* Date of learning */}
       <div>
         <label className="block text-xs font-semibold text-foreground mb-1.5">Date of learning</label>
         <input
@@ -127,7 +196,6 @@ function AddEntryForm({ userId, onClose }: { userId: number; onClose: () => void
         />
       </div>
 
-      {/* Training */}
       <div>
         <label className="block text-xs font-semibold text-foreground mb-1.5">Training</label>
         <textarea
@@ -138,7 +206,6 @@ function AddEntryForm({ userId, onClose }: { userId: number; onClose: () => void
         />
       </div>
 
-      {/* Delivered by */}
       <div>
         <label className="block text-xs font-semibold text-foreground mb-1.5">Delivered by</label>
         <input
@@ -149,7 +216,6 @@ function AddEntryForm({ userId, onClose }: { userId: number; onClose: () => void
         />
       </div>
 
-      {/* What did I learn */}
       <div>
         <label className="block text-xs font-semibold text-foreground mb-1.5">What did I learn?</label>
         <textarea
@@ -160,7 +226,6 @@ function AddEntryForm({ userId, onClose }: { userId: number; onClose: () => void
         />
       </div>
 
-      {/* Further training needed */}
       <div>
         <label className="block text-xs font-semibold text-foreground mb-1.5">Any further training needed?</label>
         <textarea
@@ -187,6 +252,74 @@ function AddEntryForm({ userId, onClose }: { userId: number; onClose: () => void
         </button>
       </div>
       {mutation.isError && <p className="text-xs text-destructive">Failed to save. Please try again.</p>}
+    </div>
+  );
+}
+
+function CompanyLearningTab() {
+  const { data: entries = [], isLoading } = useQuery<CompanyLearningEntry[]>({
+    queryKey: ["company-learning"],
+    queryFn: async () => {
+      const res = await fetch(`${BASE}/api/company-learning`);
+      if (!res.ok) throw new Error("Failed to load");
+      return res.json();
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(2)].map((_, i) => <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />)}
+      </div>
+    );
+  }
+
+  if (entries.length === 0) {
+    return <EmptyReadOnly message="No company learning sessions have been added yet. Check back soon." />;
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground pb-1">
+        Company-wide training and development sessions, managed by the L&amp;D team.
+      </p>
+      {entries.map(entry => (
+        <CompanyLearningCard key={entry.id} entry={entry} />
+      ))}
+    </div>
+  );
+}
+
+function LdFeedbackTab({ userId }: { userId: number }) {
+  const { data: entries = [], isLoading } = useQuery<LdFeedbackEntry[]>({
+    queryKey: ["ld-feedback", userId],
+    queryFn: async () => {
+      const res = await fetch(`${BASE}/api/ld-feedback?userId=${userId}`);
+      if (!res.ok) throw new Error("Failed to load");
+      return res.json();
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(2)].map((_, i) => <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />)}
+      </div>
+    );
+  }
+
+  if (entries.length === 0) {
+    return <EmptyReadOnly message="No L&D feedback has been added yet. Your L&D team will add notes here as part of your development." />;
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground pb-1">
+        Feedback and notes added by your L&amp;D team.
+      </p>
+      {entries.map(entry => (
+        <FeedbackCard key={entry.id} entry={entry} />
+      ))}
     </div>
   );
 }
@@ -286,16 +419,14 @@ export default function LearningLog() {
       </div>
 
       {/* Tab content */}
-      {activeTab === "company-learning" && (
-        <EmptyReadOnly message="Company learning is managed by the L&D team. Content will appear here once the L&D portal is set up." />
-      )}
+      {activeTab === "company-learning" && <CompanyLearningTab />}
 
       {activeTab === "my-learning" && userId != null && (
         <MyLearningTab userId={userId} />
       )}
 
-      {activeTab === "ld-feedback" && (
-        <EmptyReadOnly message="L&D feedback is managed by the L&D team. Feedback on your learning will appear here once the L&D portal is set up." />
+      {activeTab === "ld-feedback" && userId != null && (
+        <LdFeedbackTab userId={userId} />
       )}
     </div>
   );
