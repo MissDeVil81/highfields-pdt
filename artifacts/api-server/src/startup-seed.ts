@@ -1533,7 +1533,9 @@ export async function seedDemoProgressV2IfMissing(): Promise<void> {
 export async function seedManagerPortalDataIfMissing(): Promise<void> {
   const client = await pool.connect();
   try {
-    const { rows } = await client.query("SELECT COUNT(*) FROM probation_items");
+    // Guard on `teams` — unique to this seed function. Earlier seeds populate
+    // probation_items, so checking that table causes a false skip.
+    const { rows } = await client.query("SELECT COUNT(*) FROM teams");
     if (parseInt(rows[0].count, 10) > 0) {
       logger.info("Manager portal demo data already present, skipping.");
       return;
