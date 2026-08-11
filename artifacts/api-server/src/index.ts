@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import {
+  ensureSchemaExists,
   seedIfEmpty,
   seedDemoProgressIfMissing,
   seedDemoProgressV2IfMissing,
@@ -25,13 +26,15 @@ if (Number.isNaN(port) || port <= 0) {
 
 // In production, skip demo seeding — live data is created via seed scripts.
 const seedChain =
-  RESOLVED_APP_ENV === "production"
-    ? Promise.resolve()
-    : seedIfEmpty()
-        .then(() => seedDemoProgressIfMissing())
-        .then(() => seedDemoProgressV2IfMissing())
-        .then(() => seedManagerPortalDataIfMissing())
-        .then(() => seedLdDemoDataIfMissing());
+  ensureSchemaExists()
+    .then(() => RESOLVED_APP_ENV === "production"
+      ? Promise.resolve()
+      : seedIfEmpty()
+          .then(() => seedDemoProgressIfMissing())
+          .then(() => seedDemoProgressV2IfMissing())
+          .then(() => seedManagerPortalDataIfMissing())
+          .then(() => seedLdDemoDataIfMissing())
+    );
 
 seedChain
   .then(() => {

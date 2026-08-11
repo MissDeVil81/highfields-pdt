@@ -1,6 +1,271 @@
 import { pool } from "@workspace/db";
 import { logger } from "./lib/logger";
 
+/**
+ * Creates every table in the schema using CREATE TABLE IF NOT EXISTS.
+ * Runs first on every startup — fully idempotent.
+ * This ensures Demo / Live databases catch up after a git pull without
+ * needing manual drizzle-kit push or migration commands.
+ */
+export async function ensureSchemaExists(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    logger.info("Ensuring database schema is up to date...");
+    await client.query(`
+      -- Independent base tables
+      CREATE TABLE IF NOT EXISTS career_paths (
+        id         SERIAL PRIMARY KEY,
+        name       TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS users (
+        id               SERIAL PRIMARY KEY,
+        name             TEXT NOT NULL,
+        email            TEXT UNIQUE,
+        roles            TEXT[] NOT NULL DEFAULT '{employee}',
+        manager_id       INTEGER,
+        department       TEXT,
+        job_title        TEXT,
+        start_date       TEXT,
+        probation_status TEXT,
+        target_role_id   INTEGER,
+        is_active        TEXT NOT NULL DEFAULT 'active',
+        created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS teams (
+        id         SERIAL PRIMARY KEY,
+        name       TEXT NOT NULL,
+        status     TEXT NOT NULL DEFAULT 'active',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id               SERIAL PRIMARY KEY,
+        admin_user_id    INTEGER NOT NULL,
+        affected_user_id INTEGER,
+        action           TEXT NOT NULL,
+        previous_value   TEXT,
+        new_value        TEXT,
+        created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS probation_items (
+        id            SERIAL PRIMARY KEY,
+        section       TEXT NOT NULL,
+        section_order INTEGER NOT NULL,
+        item_text     TEXT NOT NULL,
+        item_order    INTEGER NOT NULL,
+        rating_type   TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS learning_log_entries (
+        id                      SERIAL PRIMARY KEY,
+        user_id                 INTEGER NOT NULL,
+        date_of_learning        TEXT NOT NULL,
+        training                TEXT NOT NULL,
+        delivered_by            TEXT NOT NULL,
+        what_did_i_learn        TEXT NOT NULL,
+        further_training_needed TEXT NOT NULL DEFAULT '',
+        created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS manager_logins (
+        user_id       INTEGER PRIMARY KEY,
+        last_login_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        prev_login_at TIMESTAMPTZ
+      );
+
+      CREATE TABLE IF NOT EXISTS manager_viewed_entries (
+        manager_id INTEGER NOT NULL,
+        entry_id   INTEGER NOT NULL,
+        viewed_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS company_learning_entries (
+        id               SERIAL PRIMARY KEY,
+        title            TEXT NOT NULL,
+        date_of_learning TEXT NOT NULL DEFAULT '',
+        trainer          TEXT NOT NULL DEFAULT '',
+        description      TEXT NOT NULL DEFAULT '',
+        created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      -- Tables depending on career_paths
+      CREATE TABLE IF NOT EXISTS roles (
+        id             SERIAL PRIMARY KEY,
+        career_path_id INTEGER NOT NULL REFERENCES career_paths(id) ON DELETE CASCADE,
+        title          TEXT NOT NULL,
+        level          INTEGER NOT NULL,
+        job_spec       TEXT NOT NULL DEFAULT '',
+        created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      -- Tables depending on roles
+      CREATE TABLE IF NOT EXISTS competencies (
+        id          SERIAL PRIMARY KEY,
+        role_id     INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+        name        TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        category    TEXT NOT NULL DEFAULT '',
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS financial_targets (
+        id            SERIAL PRIMARY KEY,
+        role_id       INTEGER NOT NULL REFERENCES roles(id),
+        label         TEXT NOT NULL,
+        target_amount INTEGER NOT NULL,
+        period_label  TEXT NOT NULL,
+        option_group  TEXT,
+        sort_order    INTEGER NOT NULL DEFAULT 0
+      );
+
+      -- Tables depending on users + roles/competencies
+      CREATE TABLE IF NOT EXISTS assessments (
+        id             SERIAL PRIMARY KEY,
+        user_id        INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        competency_id  INTEGER NOT NULL REFERENCES competencies(id),
+        role_id        INTEGER NOT NULL REFERENCES roles(id),
+        rating         TEXT,
+        updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS evidence (
+        id            SERIAL PRIMARY KEY,
+        user_id       INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        competency_id INTEGER NOT NULL REFERENCES competencies(id),
+        role_id       INTEGER NOT NULL REFERENCES roles(id),
+        title         TEXT NOT NULL,
+        description   TEXT NOT NULL,
+        rating        TEXT NOT NULL,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS financial_progress (
+        id             SERIAL PRIMARY KEY,
+        user_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        target_id      INTEGER NOT NULL REFERENCES financial_targets(id),
+        role_id        INTEGER NOT NULL REFERENCES roles(id),
+        current_amount INTEGER NOT NULL,
+        updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      -- Tables depending on users + teams
+      CREATE TABLE IF NOT EXISTS user_teams (
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+        PRIMARY KEY (user_id, team_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS additional_user_permissions (
+        id              SERIAL PRIMARY KEY,
+        owner_user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        target_user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        permission_type TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS additional_team_permissions (
+        id              SERIAL PRIMARY KEY,
+        owner_user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        team_id         INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+        permission_type TEXT NOT NULL
+      );
+
+      -- Probation tables (depend on users + probation_items)
+      CREATE TABLE IF NOT EXISTS probation_assessments (
+        id                  SERIAL PRIMARY KEY,
+        user_id             INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        item_id             INTEGER NOT NULL REFERENCES probation_items(id),
+        review_period       TEXT NOT NULL DEFAULT 'month1',
+        rating              TEXT,
+        note                TEXT,
+        manager_rating      TEXT,
+        manager_comment     TEXT,
+        manager_reviewed_at TIMESTAMPTZ,
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS probation_reflections (
+        id                  SERIAL PRIMARY KEY,
+        user_id             INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        review_period       TEXT NOT NULL,
+        went_well           TEXT,
+        learned             TEXT,
+        more_support        TEXT,
+        focus_next          TEXT,
+        confidence          TEXT,
+        biggest_achievements TEXT,
+        most_proud_of       TEXT,
+        still_develop       TEXT,
+        ready_to_pass       TEXT,
+        manager_comment     TEXT,
+        manager_status      TEXT,
+        manager_reviewed_at TIMESTAMPTZ,
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS probation_actions (
+        id              SERIAL PRIMARY KEY,
+        user_id         INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        review_period   TEXT NOT NULL,
+        action_text     TEXT NOT NULL,
+        status          TEXT NOT NULL DEFAULT 'not_started',
+        manager_comment TEXT,
+        created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS probation_action_evidence (
+        id            SERIAL PRIMARY KEY,
+        action_id     INTEGER NOT NULL REFERENCES probation_actions(id) ON DELETE CASCADE,
+        evidence_text TEXT NOT NULL,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS probation_manager_reviews (
+        id                SERIAL PRIMARY KEY,
+        user_id           INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        review_period     TEXT NOT NULL,
+        going_well        TEXT,
+        development_areas TEXT,
+        review_status     TEXT,
+        review_date       TEXT,
+        published_at      TIMESTAMPTZ,
+        created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      -- L&D feedback (may already exist from earlier push — use IF NOT EXISTS + ADD COLUMN IF NOT EXISTS)
+      CREATE TABLE IF NOT EXISTS ld_feedback (
+        id                SERIAL PRIMARY KEY,
+        user_id           INTEGER NOT NULL,
+        author_name       TEXT NOT NULL DEFAULT '',
+        content           TEXT NOT NULL DEFAULT '',
+        feedback_date     TEXT NOT NULL DEFAULT '',
+        created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      ALTER TABLE ld_feedback ADD COLUMN IF NOT EXISTS title          TEXT NOT NULL DEFAULT '';
+      ALTER TABLE ld_feedback ADD COLUMN IF NOT EXISTS send_to_manager    BOOLEAN NOT NULL DEFAULT FALSE;
+      ALTER TABLE ld_feedback ADD COLUMN IF NOT EXISTS send_to_individual BOOLEAN NOT NULL DEFAULT FALSE;
+    `);
+    logger.info("Database schema is up to date.");
+  } catch (err) {
+    logger.error({ err }, "Failed to ensure database schema");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 const SEED_SQL = `
 INSERT INTO public.career_paths VALUES (1, '360 Career Path', 'The full 360° recruitment career track. Manage the full recruitment lifecycle from client development through to placement. Click to view the full career path diagram.', '2026-04-16 14:30:07.063937');
 INSERT INTO public.career_paths VALUES (2, '180 Career Path', 'The 180° delivery recruitment track. Specialist recruiters focused on candidate sourcing, delivery and talent placement. Click to view the full career path diagram.', '2026-04-16 14:30:07.108624');
