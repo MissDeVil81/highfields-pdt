@@ -25,21 +25,16 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 // In production, skip demo seeding — live data is created via seed scripts.
-// In production (Cloud Run / autoscale), skip all database startup work.
-// The production container cannot reach the internal Replit DB hostname used
-// in DEVELOPMENT_DATABASE_URL, and schema/seed management is handled outside
-// of the container lifecycle.  NODE_ENV is set to "production" by artifact.toml
-// for the production run, so it is the reliable signal to use here.
-const isProductionRuntime = process.env["NODE_ENV"] === "production";
-
-const seedChain = isProductionRuntime
-  ? Promise.resolve()
-  : ensureSchemaExists()
-      .then(() => seedIfEmpty())
-      .then(() => seedDemoProgressIfMissing())
-      .then(() => seedDemoProgressV2IfMissing())
-      .then(() => seedManagerPortalDataIfMissing())
-      .then(() => seedLdDemoDataIfMissing());
+// Always run schema creation and seeding regardless of environment.
+// Each environment has its own database URL (DEVELOPMENT_DATABASE_URL /
+// PRODUCTION_DATABASE_URL) selected by APP_ENV, so this is safe to run
+// everywhere — all operations are idempotent (IF NOT EXISTS / count guards).
+const seedChain = ensureSchemaExists()
+  .then(() => seedIfEmpty())
+  .then(() => seedDemoProgressIfMissing())
+  .then(() => seedDemoProgressV2IfMissing())
+  .then(() => seedManagerPortalDataIfMissing())
+  .then(() => seedLdDemoDataIfMissing());
 
 seedChain
   .then(() => {

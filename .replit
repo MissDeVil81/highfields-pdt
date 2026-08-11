@@ -53,4 +53,9 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
+
+[userenv.development]
 APP_ENV = "development"
+
+[userenv.production]
+APP_ENV = "production"
