@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "jg063a6TwwanL-RVJgjkK"
+uri = "file://admin-user-guide.docx"
+type = "word_document"
+title = "Admin User Guide"
+description = "System Administrator User Guide — L&D Platform (Word document, 11 sections)"
