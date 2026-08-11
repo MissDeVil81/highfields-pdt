@@ -34,14 +34,22 @@ app.listen(port, (err) => {
   logger.info({ port, appEnv: RESOLVED_APP_ENV }, "Server listening");
 });
 
+// In production (Cloud Run / autoscale), apply schema but skip demo seeding —
+// live data is managed outside the container lifecycle.
+// NODE_ENV is set to "production" by artifact.toml, so it is the reliable signal.
+const isProductionRuntime = process.env["NODE_ENV"] === "production";
+
 // Run schema + seed in background — failures are logged but do not crash the
 // server, so a transient DB hiccup on first boot doesn't take down the app.
-ensureSchemaExists()
-  .then(() => seedIfEmpty())
-  .then(() => seedDemoProgressIfMissing())
-  .then(() => seedDemoProgressV2IfMissing())
-  .then(() => seedManagerPortalDataIfMissing())
-  .then(() => seedLdDemoDataIfMissing())
-  .catch((err) => {
-    logger.error({ err }, "Startup seed failed (non-fatal, server still running)");
-  });
+const startupChain = isProductionRuntime
+  ? ensureSchemaExists()
+  : ensureSchemaExists()
+      .then(() => seedIfEmpty())
+      .then(() => seedDemoProgressIfMissing())
+      .then(() => seedDemoProgressV2IfMissing())
+      .then(() => seedManagerPortalDataIfMissing())
+      .then(() => seedLdDemoDataIfMissing());
+
+startupChain.catch((err) => {
+  logger.error({ err }, "Startup seed failed (non-fatal, server still running)");
+});
