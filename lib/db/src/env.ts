@@ -5,7 +5,13 @@
  */
 export type AppEnv = "development" | "demo" | "production";
 
-const raw = process.env.APP_ENV;
+// APP_ENV is the primary signal. In the production container, NODE_ENV=production
+// is hardcoded in artifact.toml's [services.production.run.env], so we fall back
+// to that when APP_ENV is absent — this avoids needing APP_ENV as an injected
+// secret in the production runtime.
+const raw =
+  process.env.APP_ENV ??
+  (process.env.NODE_ENV === "production" ? "production" : undefined);
 
 if (!raw || !["development", "demo", "production"].includes(raw)) {
   throw new Error(
