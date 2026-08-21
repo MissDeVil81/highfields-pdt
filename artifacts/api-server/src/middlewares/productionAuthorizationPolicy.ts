@@ -8,6 +8,24 @@ export type UserRelationship = {
   managerId: number | null;
 };
 
+export function requiresTemporaryPasswordChange(mustChangePassword: boolean): boolean {
+  return mustChangePassword;
+}
+
+export function matchesProvisionedClerkIdentity(
+  provisionedClerkUserId: string | null,
+  authenticatedClerkUserId: string,
+): boolean {
+  return provisionedClerkUserId === authenticatedClerkUserId;
+}
+
+export function needsInitialAdministratorProvisioning(
+  clerkUserId: string | null,
+  temporaryPassword: string | undefined,
+): boolean {
+  return !clerkUserId && Boolean(temporaryPassword);
+}
+
 const hasRole = (actor: AuthorizationActor, roles: readonly string[]) =>
   actor.roles.some((role) => roles.includes(role));
 

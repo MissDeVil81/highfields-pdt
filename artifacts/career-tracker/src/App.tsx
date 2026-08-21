@@ -52,7 +52,7 @@ function Router() {
 type AppUser = { id: number; name: string; email: string | null; roles: string[]; mustChangePassword: boolean };
 
 function SignInPage() {
-  return <div className="min-h-screen grid place-items-center bg-sidebar p-4"><SignIn routing="path" path={`${basePath}/sign-in`} /></div>;
+  return <div className="min-h-screen grid place-items-center bg-sidebar p-4"><SignIn routing="path" path={`${basePath}/sign-in`} withSignUp={false} transferable={false} /></div>;
 }
 
 function TemporaryPasswordGate({ onComplete }: { onComplete: () => void }) {

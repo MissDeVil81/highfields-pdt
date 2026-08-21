@@ -1,11 +1,13 @@
 import type { NextFunction, Request, Response } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
 import { db, RESOLVED_APP_ENV, usersTable, type User } from "@workspace/db";
-import { and, eq, or } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
+  matchesProvisionedClerkIdentity,
   permitsManagerAction,
   permitsManagerDashboard,
   permitsUserAccess,
+  requiresTemporaryPasswordChange,
 } from "./productionAuthorizationPolicy";
 
 declare global {
@@ -46,7 +48,7 @@ export async function resolveProductionUser(
     .where(
       and(
         eq(usersTable.isActive, "active"),
-        or(eq(usersTable.clerkUserId, clerkUserId), eq(usersTable.email, email)),
+        eq(usersTable.clerkUserId, clerkUserId),
       ),
     );
 
@@ -57,17 +59,12 @@ export async function resolveProductionUser(
     };
   }
 
-  if (appUser.clerkUserId && appUser.clerkUserId !== clerkUserId) {
+  if (!matchesProvisionedClerkIdentity(appUser.clerkUserId, clerkUserId)) {
     return { status: 403, error: "This account is linked to a different sign-in." };
   }
 
-  if (!appUser.clerkUserId) {
-    const [linkedUser] = await db
-      .update(usersTable)
-      .set({ clerkUserId, updatedAt: new Date() })
-      .where(eq(usersTable.id, appUser.id))
-      .returning();
-    return { user: linkedUser };
+  if (!appUser.email || appUser.email.trim().toLowerCase() !== email) {
+    return { status: 403, error: "Your signed-in email does not match the approved work email for this account." };
   }
 
   return { user: appUser };
@@ -93,7 +90,7 @@ export async function requireApprovedProductionUser(
     res.status(403).json({ error: "Your account could not be resolved." });
     return;
   }
-  if (appUser.mustChangePassword) {
+  if (requiresTemporaryPasswordChange(appUser.mustChangePassword)) {
     res.status(403).json({
       error: "You must choose a new password before using the system.",
       code: "PASSWORD_CHANGE_REQUIRED",

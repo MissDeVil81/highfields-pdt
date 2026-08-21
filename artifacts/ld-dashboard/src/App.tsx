@@ -45,7 +45,7 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 }
 
 type AppUser = { id: number; name: string; roles: string[]; mustChangePassword: boolean };
-function SignInPage() { return <div className="min-h-screen grid place-items-center bg-muted p-4"><SignIn routing="path" path={`${basePath}/sign-in`} /></div>; }
+function SignInPage() { return <div className="min-h-screen grid place-items-center bg-muted p-4"><SignIn routing="path" path={`${basePath}/sign-in`} withSignUp={false} transferable={false} /></div>; }
 function TemporaryPasswordGate({ onComplete }: { onComplete: () => void }) {
   const [currentPassword, setCurrentPassword] = useState(""); const [newPassword, setNewPassword] = useState(""); const [confirmation, setConfirmation] = useState(""); const [error, setError] = useState(""); const [saving, setSaving] = useState(false);
   async function submit(event: React.FormEvent) { event.preventDefault(); if (newPassword !== confirmation) return setError("Your new passwords do not match."); setSaving(true); setError(""); const response = await fetch("/api/auth/change-temporary-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentPassword, newPassword }) }); if (!response.ok) { const body = await response.json().catch(() => ({})); setError(body.error ?? "We could not change your password. Please try again."); setSaving(false); return; } onComplete(); }

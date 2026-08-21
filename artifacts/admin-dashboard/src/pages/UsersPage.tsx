@@ -289,8 +289,8 @@ export default function UsersPage() {
                             variant="ghost"
                             className="h-8 w-8 text-muted-foreground hover:text-foreground"
                             onClick={() => setResetId(user.id)}
-                            aria-label={`Reset password for ${user.name}`}
-                            title="Reset password"
+                            aria-label={`Issue a temporary password for ${user.name}`}
+                            title="Issue temporary password"
                           >
                             <KeyRoundIcon className="h-4 w-4" />
                           </Button>
@@ -347,9 +347,9 @@ export default function UsersPage() {
       <AlertDialog open={resetId !== null} onOpenChange={(open) => { if (!open) setResetId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Issue a new temporary password?</AlertDialogTitle>
+            <AlertDialogTitle>Issue a temporary password?</AlertDialogTitle>
             <AlertDialogDescription>
-              This immediately signs <strong className="text-foreground">{userToReset?.name}</strong> out of other sessions. Give the new temporary password to them privately; they will have to choose a new password before they can use the system.
+              This creates the user's first live login, or replaces their existing password and signs them out of other sessions. Give the temporary password to <strong className="text-foreground">{userToReset?.name}</strong> privately; they will have to choose a new password before they can use the system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

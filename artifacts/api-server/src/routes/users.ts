@@ -10,6 +10,23 @@ import { canAccessProductionUser, hasAnyRole } from "../middlewares/productionAu
 const router = Router();
 const isProduction = () => RESOLVED_APP_ENV === "production";
 
+class ClerkIdentityConflictError extends Error {
+  constructor() {
+    super("A separate Clerk account already uses this work email.");
+  }
+}
+
+function isClerkIdentityConflict(error: unknown): boolean {
+  if (!error || typeof error !== "object" || !("errors" in error)) return false;
+  const errors = (error as { errors?: unknown }).errors;
+  return Array.isArray(errors) && errors.some((item) => {
+    const code = typeof item === "object" && item && "code" in item
+      ? String((item as { code?: unknown }).code)
+      : "";
+    return code === "form_identifier_exists" || code === "identifier_exists";
+  });
+}
+
 function generateTemporaryPassword(): string {
   const pick = (characters: string) => characters[randomBytes(1)[0] % characters.length];
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -123,13 +140,19 @@ async function issueTemporaryPassword(user: typeof usersTable.$inferSelect): Pro
     });
   } else {
     const [firstName, ...lastName] = user.name.trim().split(/\s+/);
-    const clerkUser = await clerkClient.users.createUser({
-      emailAddress: [user.email],
-      password: temporaryPassword,
-      firstName,
-      lastName: lastName.join(" ") || undefined,
-      skipLegalChecks: true,
-    });
+    let clerkUser;
+    try {
+      clerkUser = await clerkClient.users.createUser({
+        emailAddress: [user.email],
+        password: temporaryPassword,
+        firstName,
+        lastName: lastName.join(" ") || undefined,
+        skipLegalChecks: true,
+      });
+    } catch (error) {
+      if (isClerkIdentityConflict(error)) throw new ClerkIdentityConflictError();
+      throw error;
+    }
     clerkUserId = clerkUser.id;
   }
 
@@ -331,7 +354,7 @@ router.delete("/:id", async (req, res) => {
   return res.status(204).send();
 });
 
-// POST /users/:id/reset-password
+// POST /users/:id/reset-password — issues a first login when one has not yet been provisioned.
 router.post("/:id/reset-password", async (req, res) => {
   if (!currentAdmin(req)) {
     return res.status(403).json({ error: "Administrator access is required to reset passwords." });
@@ -345,8 +368,8 @@ router.post("/:id/reset-password", async (req, res) => {
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, id));
   if (!user) return res.status(404).json({ error: "Not found" });
-  if (!user.clerkUserId) {
-    return res.status(400).json({ error: "This user does not have an issued login yet." });
+  if (!user.email) {
+    return res.status(400).json({ error: "Add a work email to this user before issuing a live login." });
   }
 
   try {
@@ -357,11 +380,16 @@ router.post("/:id/reset-password", async (req, res) => {
         adminUserId: adminId,
         affectedUserId: id,
         action: "temporary_password_issued",
-        newValue: "Password reset issued",
+        newValue: user.clerkUserId ? "Password reset issued" : "Initial login issued",
       });
     }
     return res.json({ userId: id, temporaryPassword });
   } catch (error) {
+    if (error instanceof ClerkIdentityConflictError) {
+      return res.status(409).json({
+        error: "A separate Clerk account already uses this work email. It must be resolved before a controlled login can be issued.",
+      });
+    }
     req.log?.error({ err: error, userId: id }, "Unable to reset user password");
     return res.status(502).json({ error: "The password could not be reset. Please try again." });
   }

@@ -1,6 +1,7 @@
 import { pool } from "@workspace/db";
 import { clerkClient } from "@clerk/express";
 import { logger } from "./lib/logger";
+import { needsInitialAdministratorProvisioning } from "./middlewares/productionAuthorizationPolicy";
 
 /**
  * Creates every table in the schema using CREATE TABLE IF NOT EXISTS.
@@ -1502,8 +1503,8 @@ export async function seedIfEmpty(): Promise<void> {
 
 /**
  * Creates the only initial production account. Other live users are added
- * through the authenticated Admin Dashboard and are bound to Clerk on first
- * verified sign-in.
+ * through the authenticated Admin Dashboard and receive a Clerk identity when
+ * an administrator issues their first temporary password.
  */
 export async function bootstrapProductionAdmin(): Promise<void> {
   const { rows } = await pool.query(
@@ -1517,13 +1518,12 @@ export async function bootstrapProductionAdmin(): Promise<void> {
     ["Claire Proudlove", "claire.proudlove@highfieldps.co.uk"],
   );
   const admin = rows[0] as { id: number; name: string; email: string; clerk_user_id: string | null };
-  if (admin.clerk_user_id) {
-    logger.info("Production administrator record is ready");
-    return;
-  }
-
   const temporaryPassword = process.env.INITIAL_ADMIN_TEMP_PASSWORD;
-  if (!temporaryPassword) {
+  if (!needsInitialAdministratorProvisioning(admin.clerk_user_id, temporaryPassword)) {
+    if (admin.clerk_user_id) {
+      logger.info("Production administrator record is ready");
+      return;
+    }
     logger.warn("Production administrator login is waiting for INITIAL_ADMIN_TEMP_PASSWORD");
     return;
   }

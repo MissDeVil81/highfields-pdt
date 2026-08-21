@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   managerAssessmentFields,
+  matchesProvisionedClerkIdentity,
+  needsInitialAdministratorProvisioning,
   permitsManagerAction,
   permitsManagerDashboard,
   permitsTeamReporting,
   permitsUserAccess,
+  requiresTemporaryPasswordChange,
 } from "./productionAuthorizationPolicy";
 
 const users = new Map([
@@ -54,4 +57,21 @@ test("preserves manager-only assessment fields during an employee update", () =>
     managerAssessmentFields(existing, { managerRating: "amber", managerComment: "Follow up" }, true),
     { managerRating: "amber", managerComment: "Follow up" },
   );
+});
+
+test("requires a password change only while a temporary password is active", () => {
+  assert.equal(requiresTemporaryPasswordChange(true), true);
+  assert.equal(requiresTemporaryPasswordChange(false), false);
+});
+
+test("accepts only the Clerk identity provisioned by an administrator", () => {
+  assert.equal(matchesProvisionedClerkIdentity("user_issued_by_admin", "user_issued_by_admin"), true);
+  assert.equal(matchesProvisionedClerkIdentity("user_issued_by_admin", "user_created_elsewhere"), false);
+  assert.equal(matchesProvisionedClerkIdentity(null, "user_created_elsewhere"), false);
+});
+
+test("does not reissue the first administrator login after it has been provisioned", () => {
+  assert.equal(needsInitialAdministratorProvisioning(null, "private-temporary-password"), true);
+  assert.equal(needsInitialAdministratorProvisioning("user_claire", "private-temporary-password"), false);
+  assert.equal(needsInitialAdministratorProvisioning(null, undefined), false);
 });
