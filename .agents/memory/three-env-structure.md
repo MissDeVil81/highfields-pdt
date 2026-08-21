@@ -35,9 +35,15 @@ description: How the Dev/Demo/Live environment separation works and what was bui
 - `generate` + `migrate` — migration-based promotion path for demo and live.
 - Migration output: `lib/db/drizzle/`.
 
-## Current state (this dev repl)
-- `APP_ENV=development` set as shared env var.
-- `DEVELOPMENT_DATABASE_URL` not yet set by user; falls back to runtime `DATABASE_URL` with warning.
-- Demo and Live repls don't exist yet — need to be forked and configured (Task 5).
+## Confirmed repl setup
 
-**Why:** User declined to manually copy DATABASE_URL → DEVELOPMENT_DATABASE_URL, so the explicit fallback was added to keep the server running during transition.
+The user confirmed that separate Development, Demo, and Live Replit instances
+are now in place.
+
+**Why:** Replit provisions a separate database per repl, giving the three
+environments physical data isolation.
+
+**How to apply:** Keep `APP_ENV` aligned to the repl's purpose and configure
+only its matching database secret (`DEVELOPMENT_DATABASE_URL`,
+`DEMO_DATABASE_URL`, or `PRODUCTION_DATABASE_URL`). Never reuse a connection
+string from another environment.

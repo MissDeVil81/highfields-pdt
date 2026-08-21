@@ -38,6 +38,10 @@ app.listen(port, (err) => {
 
 // APP_ENV is the database isolation boundary and must be the sole source of
 // truth for lifecycle decisions. NODE_ENV is only a build/runtime setting.
+// In the live environment, apply schema but skip demo seeding — live data is
+// managed outside the container lifecycle. APP_ENV is deliberately the source
+// of truth rather than NODE_ENV: a demo server must still seed demo data even
+// when it uses production-like Node settings.
 const isProductionRuntime = RESOLVED_APP_ENV === "production";
 
 // Run schema + seed in the background.
