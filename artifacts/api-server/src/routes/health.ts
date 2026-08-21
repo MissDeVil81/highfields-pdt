@@ -5,7 +5,7 @@ import { HealthCheckResponse } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-router.get("/healthz", async (_req, res) => {
+const handleHealthCheck = async (_req: Parameters<IRouter["get"]>[1] extends (req: infer T, ...args: never[]) => unknown ? T : never, res: Parameters<IRouter["get"]>[1] extends (req: never, res: infer T, ...args: never[]) => unknown ? T : never) => {
   const seedState = getSeedState();
 
   if (seedState.status === "failed" || seedState.status === "partial") {
@@ -58,6 +58,12 @@ router.get("/healthz", async (_req, res) => {
   } finally {
     client?.release();
   }
-});
+};
+
+router.get("/healthz", handleHealthCheck);
+// Artifact deployments may probe the service mount root (/api) even when a
+// custom startup path is configured. Keep that probe independent of routing
+// details while preserving the explicit /api/healthz endpoint.
+router.get("/", handleHealthCheck);
 
 export default router;
