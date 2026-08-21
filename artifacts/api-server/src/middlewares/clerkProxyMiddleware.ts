@@ -34,11 +34,19 @@ export function clerkProxyMiddleware(): RequestHandler {
       proxyReq: (proxyReq, req) => {
         const protocol = req.headers["x-forwarded-proto"] || "https";
         const host = getClerkProxyHost(req) || "";
-        proxyReq.setHeader(
-          "Clerk-Proxy-Url",
-          `${protocol}://${host}${CLERK_PROXY_PATH}`,
-        );
+        const proxyUrl = `${protocol}://${host}${CLERK_PROXY_PATH}`;
+
+        proxyReq.setHeader("Clerk-Proxy-Url", proxyUrl);
         proxyReq.setHeader("Clerk-Secret-Key", secretKey);
+
+        const forwardedFor = req.headers["x-forwarded-for"];
+        const clientIp =
+          (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor)
+            ?.split(",")[0]
+            ?.trim() ||
+          req.socket?.remoteAddress ||
+          "";
+        if (clientIp) proxyReq.setHeader("X-Forwarded-For", clientIp);
       },
       proxyRes: (proxyRes, req, res) => {
         const headers = { ...proxyRes.headers };
@@ -47,6 +55,10 @@ export function clerkProxyMiddleware(): RequestHandler {
         delete headers["keep-alive"];
 
         const status = proxyRes.statusCode ?? 502;
+        if (status < 200 || status === 204) {
+          delete headers["content-length"];
+        }
+
         const bodyless =
           req.method === "HEAD" ||
           status < 200 ||
@@ -54,7 +66,6 @@ export function clerkProxyMiddleware(): RequestHandler {
           status === 304;
 
         if (headers["content-length"] !== undefined || bodyless) {
-          if (status < 200 || status === 204) delete headers["content-length"];
           res.writeHead(status, headers);
           proxyRes.on("error", () => res.destroy());
           proxyRes.pipe(res);

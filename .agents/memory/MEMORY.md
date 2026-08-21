@@ -10,3 +10,4 @@
 - [Controlled production logins](controlled-login-policy.md) — admins privately hand over one-time passwords; normal access waits for a password change.
 - [Production route-test isolation](production-route-test-isolation.md) — production-mode API tests must unset DATABASE_URL before using a closed local database URL.
 - [Artifact API health probe](artifact-api-health-probe.md) — publishing may probe `/api` even with `/api/healthz` configured, so both must be ready.
+- [Clerk proxy response handling](clerk-proxy-response-handling.md) — deployment edges reject chunked proxied Clerk responses; preserve the canonical buffered response path.
