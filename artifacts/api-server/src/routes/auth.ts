@@ -1,21 +1,22 @@
 import { Router } from "express";
-import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { RESOLVED_APP_ENV } from "@workspace/db";
+import { resolveProductionUser } from "../middlewares/productionAuth";
 
 const router = Router();
 
-router.get("/identify", async (req, res) => {
-  const email = (req.query.email as string | undefined)?.toLowerCase().trim();
-  if (!email) return res.status(400).json({ error: "email is required" });
+router.get("/me", async (req, res) => {
+  if (RESOLVED_APP_ENV !== "production") {
+    res.status(404).json({ error: "This endpoint is only used for production authentication." });
+    return;
+  }
 
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.email, email));
+  const resolved = await resolveProductionUser(req);
+  if (!("user" in resolved)) {
+    res.status(resolved.status).json({ error: resolved.error });
+    return;
+  }
 
-  if (!user) return res.status(404).json({ error: "No user found with that email address. Please contact your admin." });
-
-  return res.json(user);
+  res.json(resolved.user);
 });
 
 export default router;

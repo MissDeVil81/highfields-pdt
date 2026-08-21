@@ -1,10 +1,16 @@
 import { Router } from "express";
-import { db, usersTable, userTeamsTable, teamsTable, additionalUserPermissionsTable, additionalTeamPermissionsTable, auditLogTable } from "@workspace/db";
+import { db, RESOLVED_APP_ENV, usersTable, userTeamsTable, teamsTable, additionalUserPermissionsTable, additionalTeamPermissionsTable, auditLogTable } from "@workspace/db";
 import { eq, and, sql, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
 import { isAdmin, wouldCreateCycle, buildAccessSummary } from "../lib/permissions";
+import { canAccessProductionUser, hasAnyRole } from "../middlewares/productionAuth";
 
 const router = Router();
+const isProduction = () => RESOLVED_APP_ENV === "production";
+
+function currentAdmin(req: Parameters<typeof router.get>[1] extends (req: infer T, ...args: never[]) => unknown ? T : never): boolean {
+  return !isProduction() || Boolean(req.appUser && hasAnyRole(req.appUser, ["admin"]));
+}
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -107,12 +113,24 @@ router.get("/", async (req, res) => {
     users = users.filter((u) => memberIds.has(u.id));
   }
 
+  if (isProduction() && !currentAdmin(req)) {
+    const actor = req.appUser!;
+    users = users.filter((user) =>
+      user.id === actor.id ||
+      (hasAnyRole(actor, ["manager", "director", "ld"]) && user.managerId === actor.id),
+    );
+  }
+
   const enriched = await enrichWithTeams(users);
-  return res.json(enriched);
+  res.json(enriched);
 });
 
 // POST /users
 router.post("/", async (req, res) => {
+  if (!currentAdmin(req)) {
+    res.status(403).json({ error: "Administrator access is required to create users." });
+    return;
+  }
   const result = createSchema.safeParse(req.body);
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
@@ -123,18 +141,14 @@ router.post("/", async (req, res) => {
     await syncTeams(created.id, teamIds);
   }
 
-  // Audit log (if requesting user info is present)
-  const rawRequestingId = req.headers["x-requesting-user-id"];
-  if (rawRequestingId) {
-    const adminId = Number(rawRequestingId);
-    if (!isNaN(adminId)) {
-      await db.insert(auditLogTable).values({
-        adminUserId: adminId,
-        affectedUserId: created.id,
-        action: "user_created",
-        newValue: created.name,
-      });
-    }
+  const adminId = req.appUser?.id ?? Number(req.headers["x-requesting-user-id"]);
+  if (Number.isInteger(adminId)) {
+    await db.insert(auditLogTable).values({
+      adminUserId: adminId,
+      affectedUserId: created.id,
+      action: "user_created",
+      newValue: created.name,
+    });
   }
 
   const enriched = await enrichWithTeams([created]);
@@ -148,6 +162,10 @@ router.get("/:id", async (req, res) => {
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, id));
   if (!user) return res.status(404).json({ error: "Not found" });
+  if (!(await canAccessProductionUser(req, id))) {
+    res.status(403).json({ error: "You do not have permission to view this user." });
+    return;
+  }
 
   const enriched = await enrichWithTeams([user]);
   return res.json(enriched[0]);
@@ -155,6 +173,10 @@ router.get("/:id", async (req, res) => {
 
 // PUT /users/:id
 router.put("/:id", async (req, res) => {
+  if (!currentAdmin(req)) {
+    res.status(403).json({ error: "Administrator access is required to update users." });
+    return;
+  }
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -194,11 +216,8 @@ router.put("/:id", async (req, res) => {
   }
 
   // Audit log
-  const rawRequestingId = req.headers["x-requesting-user-id"];
-  if (rawRequestingId) {
-    const adminId = Number(rawRequestingId);
-    if (!isNaN(adminId)) {
-      const auditEntries: Parameters<typeof db.insert>[0] extends any ? any[] : never = [];
+  const adminId = req.appUser?.id ?? Number(req.headers["x-requesting-user-id"]);
+  if (Number.isInteger(adminId)) {
 
       if (before.roles.join(",") !== (updateData.roles ?? before.roles).join(",")) {
         await db.insert(auditLogTable).values({
@@ -229,7 +248,6 @@ router.put("/:id", async (req, res) => {
           newValue: updateData.isActive,
         });
       }
-    }
   }
 
   const enriched = await enrichWithTeams([updated]);
@@ -238,6 +256,10 @@ router.put("/:id", async (req, res) => {
 
 // DELETE /users/:id
 router.delete("/:id", async (req, res) => {
+  if (!currentAdmin(req)) {
+    res.status(403).json({ error: "Administrator access is required to delete users." });
+    return;
+  }
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -247,6 +269,10 @@ router.delete("/:id", async (req, res) => {
 
 // GET /users/:id/permissions
 router.get("/:id/permissions", async (req, res) => {
+  if (!currentAdmin(req)) {
+    res.status(403).json({ error: "Administrator access is required." });
+    return;
+  }
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -260,10 +286,8 @@ router.get("/:id/permissions", async (req, res) => {
 
 // PUT /users/:id/permissions
 router.put("/:id/permissions", async (req, res) => {
-  const rawRequestingId = req.headers["x-requesting-user-id"];
-  if (!rawRequestingId) return res.status(401).json({ error: "x-requesting-user-id header is required" });
-  const adminId = Number(rawRequestingId);
-  if (isNaN(adminId)) return res.status(400).json({ error: "Invalid requesting user id" });
+  const adminId = req.appUser?.id ?? Number(req.headers["x-requesting-user-id"]);
+  if (!Number.isInteger(adminId)) return res.status(401).json({ error: "Administrator identity is required" });
 
   const [adminUser] = await db.select().from(usersTable).where(eq(usersTable.id, adminId));
   if (!adminUser || !isAdmin(adminUser)) return res.status(403).json({ error: "Admin access required" });
@@ -322,6 +346,10 @@ router.put("/:id/permissions", async (req, res) => {
 
 // GET /users/:id/access-summary
 router.get("/:id/access-summary", async (req, res) => {
+  if (!currentAdmin(req)) {
+    res.status(403).json({ error: "Administrator access is required." });
+    return;
+  }
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 

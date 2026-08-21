@@ -17,6 +17,13 @@ const updateSchema = z.object({
 
 // Helper: get requesting admin user
 async function getRequestingAdmin(req: any, res: any): Promise<typeof usersTable.$inferSelect | null> {
+  if (req.appUser) {
+    if (!isAdmin(req.appUser)) {
+      res.status(403).json({ error: "Admin access required" });
+      return null;
+    }
+    return req.appUser;
+  }
   const rawId = req.headers["x-requesting-user-id"] ?? req.query.requestingUserId;
   if (!rawId) {
     res.status(401).json({ error: "x-requesting-user-id header is required" });

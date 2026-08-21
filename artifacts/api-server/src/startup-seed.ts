@@ -24,6 +24,7 @@ export async function ensureSchemaExists(): Promise<void> {
         id               SERIAL PRIMARY KEY,
         name             TEXT NOT NULL,
         email            TEXT UNIQUE,
+        clerk_user_id    TEXT UNIQUE,
         roles            TEXT[] NOT NULL DEFAULT '{employee}',
         manager_id       INTEGER,
         department       TEXT,
@@ -35,6 +36,8 @@ export async function ensureSchemaExists(): Promise<void> {
         created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS clerk_user_id TEXT UNIQUE;
 
       CREATE TABLE IF NOT EXISTS teams (
         id         SERIAL PRIMARY KEY,
@@ -1492,6 +1495,24 @@ export async function seedIfEmpty(): Promise<void> {
   } finally {
     client.release();
   }
+}
+
+/**
+ * Creates the only initial production account. Other live users are added
+ * through the authenticated Admin Dashboard and are bound to Clerk on first
+ * verified sign-in.
+ */
+export async function bootstrapProductionAdmin(): Promise<void> {
+  await pool.query(
+    `INSERT INTO users (name, email, roles, is_active)
+     VALUES ($1, $2, ARRAY['admin']::text[], 'active')
+     ON CONFLICT (email) DO UPDATE
+       SET roles = ARRAY['admin']::text[],
+           is_active = 'active',
+           updated_at = NOW()`,
+    ["Claire Proudlove", "claire.proudlove@highfieldps.co.uk"],
+  );
+  logger.info("Production administrator record is ready");
 }
 
 export async function seedDemoProgressV2IfMissing(): Promise<void> {

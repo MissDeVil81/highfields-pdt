@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import {
   ensureSchemaExists,
+  bootstrapProductionAdmin,
   seedIfEmpty,
   seedDemoProgressIfMissing,
   seedDemoProgressV2IfMissing,
@@ -35,10 +36,9 @@ app.listen(port, (err) => {
   logger.info({ port, appEnv: RESOLVED_APP_ENV }, "Server listening");
 });
 
-// In production (Cloud Run / autoscale), apply schema but skip demo seeding —
-// live data is managed outside the container lifecycle.
-// NODE_ENV is set to "production" by artifact.toml, so it is the reliable signal.
-const isProductionRuntime = process.env["NODE_ENV"] === "production";
+// APP_ENV is the database isolation boundary and must be the sole source of
+// truth for lifecycle decisions. NODE_ENV is only a build/runtime setting.
+const isProductionRuntime = RESOLVED_APP_ENV === "production";
 
 // Run schema + seed in the background.
 //
@@ -54,7 +54,7 @@ const isProductionRuntime = process.env["NODE_ENV"] === "production";
 // In development: seed failures are non-fatal — a transient DB hiccup on first
 // boot shouldn't kill the dev server, but schema failure still exits.
 const startupChain = isProductionRuntime
-  ? ensureSchemaExists().then(() => {
+  ? ensureSchemaExists().then(() => bootstrapProductionAdmin()).then(() => {
       setSchemaReady();
       logger.info("Schema ready — health check will now return 200");
     })

@@ -1,14 +1,19 @@
 import { Router } from "express";
-import { db, pool, managerLoginsTable, managerViewedEntriesTable } from "@workspace/db";
+import { db, pool, RESOLVED_APP_ENV, managerLoginsTable, managerViewedEntriesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { canAccessProductionUser, hasAnyRole } from "../middlewares/productionAuth";
 
 const router = Router();
+const actorId = (req: Parameters<typeof router.get>[1] extends (req: infer T, ...args: never[]) => unknown ? T : never, suppliedId = Number.NaN): number =>
+  RESOLVED_APP_ENV === "production" ? req.appUser!.id : suppliedId;
+const canSeeEveryone = (req: Parameters<typeof router.get>[1] extends (req: infer T, ...args: never[]) => unknown ? T : never) =>
+  RESOLVED_APP_ENV !== "production" || Boolean(req.appUser && hasAnyRole(req.appUser, ["ld", "admin"]));
 
 // POST /api/manager-ld/login — upsert last login, return previous login time
 router.post("/login", async (req, res) => {
   const { userId } = req.body;
   if (!userId) return res.status(400).json({ error: "userId required" });
-  const uid = parseInt(userId);
+  const uid = actorId(req, parseInt(userId));
 
   // Get current record first
   const existing = await db.select().from(managerLoginsTable).where(eq(managerLoginsTable.userId, uid));
@@ -27,7 +32,7 @@ router.post("/login", async (req, res) => {
 
 // GET /api/manager-ld/hierarchy?managerId=X&role=manager|director — full flat list of reportees
 router.get("/hierarchy", async (req, res) => {
-  const managerId = parseInt(req.query.managerId as string);
+  const managerId = actorId(req, parseInt(req.query.managerId as string));
   const role = req.query.role as string;
   if (isNaN(managerId)) return res.status(400).json({ error: "managerId required" });
 
@@ -66,7 +71,7 @@ router.get("/hierarchy", async (req, res) => {
 
 // GET /api/manager-ld/team-members?managerId=X — direct reports + their learning stats
 router.get("/team-members", async (req, res) => {
-  const managerId = parseInt(req.query.managerId as string);
+  const managerId = actorId(req, parseInt(req.query.managerId as string));
   if (isNaN(managerId)) return res.status(400).json({ error: "managerId required" });
 
   const rows = await pool.query<{
@@ -95,7 +100,7 @@ router.get("/team-members", async (req, res) => {
 // GET /api/manager-ld/team-by-team?teamId=X&directorId=Y — team members for director
 router.get("/team-by-team", async (req, res) => {
   const teamId = parseInt(req.query.teamId as string);
-  const directorId = parseInt(req.query.directorId as string);
+  const directorId = actorId(req, parseInt(req.query.directorId as string));
   if (isNaN(teamId) || isNaN(directorId)) return res.status(400).json({ error: "teamId and directorId required" });
 
   const rows = await pool.query<{
@@ -124,7 +129,7 @@ router.get("/team-by-team", async (req, res) => {
 
 // GET /api/manager-ld/user-teams?userId=X — teams a director belongs to
 router.get("/user-teams", async (req, res) => {
-  const userId = parseInt(req.query.userId as string);
+  const userId = actorId(req, parseInt(req.query.userId as string));
   if (isNaN(userId)) return res.status(400).json({ error: "userId required" });
 
   const rows = await pool.query<{ id: number; name: string }>(`
@@ -140,7 +145,7 @@ router.get("/user-teams", async (req, res) => {
 
 // GET /api/manager-ld/whats-new?managerId=X — new entries since last login, not yet viewed
 router.get("/whats-new", async (req, res) => {
-  const managerId = parseInt(req.query.managerId as string);
+  const managerId = actorId(req, parseInt(req.query.managerId as string));
   if (isNaN(managerId)) return res.status(400).json({ error: "managerId required" });
 
   const rows = await pool.query<{
@@ -182,12 +187,13 @@ router.get("/whats-new", async (req, res) => {
 router.post("/viewed", async (req, res) => {
   const { managerId, entryId } = req.body;
   if (!managerId || !entryId) return res.status(400).json({ error: "managerId and entryId required" });
+  const effectiveManagerId = actorId(req, Number(managerId));
 
   await pool.query(`
     INSERT INTO manager_viewed_entries (manager_id, entry_id)
     VALUES ($1, $2)
     ON CONFLICT DO NOTHING
-  `, [managerId, entryId]);
+  `, [effectiveManagerId, entryId]);
 
   return res.status(204).send();
 });
@@ -196,6 +202,10 @@ router.post("/viewed", async (req, res) => {
 router.get("/employee/:id/entries", async (req, res) => {
   const employeeId = parseInt(req.params.id);
   if (isNaN(employeeId)) return res.status(400).json({ error: "Invalid employee id" });
+  if (!(await canAccessProductionUser(req, employeeId))) {
+    res.status(403).json({ error: "You do not have permission to view this employee." });
+    return;
+  }
 
   const rows = await pool.query<{
     id: number; user_id: number; date_of_learning: string;
@@ -228,6 +238,10 @@ router.get("/employee/:id/entries", async (req, res) => {
 
 // GET /api/manager-ld/all-employees — all employees across all teams (for L&D role)
 router.get("/all-employees", async (req, res) => {
+  if (!canSeeEveryone(req)) {
+    res.status(403).json({ error: "L&D access is required." });
+    return;
+  }
   const rows = await pool.query<{
     id: number; name: string; job_title: string | null;
     department: string | null; entry_count: string; last_entry: Date | null;
@@ -254,8 +268,12 @@ router.get("/all-employees", async (req, res) => {
 
 // GET /api/manager-ld/whats-new-all?ldUserId=X — new entries (all employees) for L&D user
 router.get("/whats-new-all", async (req, res) => {
-  const ldUserId = parseInt(req.query.ldUserId as string);
+  const ldUserId = actorId(req, parseInt(req.query.ldUserId as string));
   if (isNaN(ldUserId)) return res.status(400).json({ error: "ldUserId required" });
+  if (!canSeeEveryone(req)) {
+    res.status(403).json({ error: "L&D access is required." });
+    return;
+  }
 
   const rows = await pool.query<{
     id: number; user_id: number; date_of_learning: string;
