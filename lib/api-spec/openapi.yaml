@@ -779,7 +779,41 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/ProvisionedUser"
+
+  /users/{id}/reset-password:
+    post:
+      operationId: resetUserPassword
+      tags: [users]
+      summary: Issue a new temporary password for a live user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Temporary password issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporaryPassword"
+
+  /auth/change-temporary-password:
+    post:
+      operationId: changeTemporaryPassword
+      tags: [auth]
+      summary: Replace a temporary password with a private password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemporaryPasswordChangeInput"
+      responses:
+        "204":
+          description: Password changed
 
   /users/{id}:
     get:
@@ -1910,6 +1944,8 @@ components:
           type: ["integer", "null"]
         isActive:
           type: string
+        mustChangePassword:
+          type: boolean
         teamIds:
           type: array
           items:
@@ -1929,6 +1965,7 @@ components:
         - name
         - roles
         - isActive
+        - mustChangePassword
         - createdAt
         - updatedAt
 
@@ -1963,6 +2000,37 @@ components:
             type: integer
       required:
         - name
+
+    ProvisionedUser:
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - type: object
+          properties:
+            temporaryPassword:
+              type: string
+
+    TemporaryPassword:
+      type: object
+      properties:
+        userId:
+          type: integer
+        temporaryPassword:
+          type: string
+      required:
+        - userId
+        - temporaryPassword
+
+    TemporaryPasswordChangeInput:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 8
+      required:
+        - currentPassword
+        - newPassword
 
     UserUpdate:
       type: object

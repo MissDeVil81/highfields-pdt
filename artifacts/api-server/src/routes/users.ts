@@ -2,11 +2,29 @@ import { Router } from "express";
 import { db, RESOLVED_APP_ENV, usersTable, userTeamsTable, teamsTable, additionalUserPermissionsTable, additionalTeamPermissionsTable, auditLogTable } from "@workspace/db";
 import { eq, and, sql, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
+import { randomBytes } from "node:crypto";
+import { clerkClient } from "@clerk/express";
 import { isAdmin, wouldCreateCycle, buildAccessSummary } from "../lib/permissions";
 import { canAccessProductionUser, hasAnyRole } from "../middlewares/productionAuth";
 
 const router = Router();
 const isProduction = () => RESOLVED_APP_ENV === "production";
+
+function generateTemporaryPassword(): string {
+  const pick = (characters: string) => characters[randomBytes(1)[0] % characters.length];
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnopqrstuvwxyz";
+  const digits = "23456789";
+  const symbols = "!@#$%&*";
+  const all = `${upper}${lower}${digits}${symbols}`;
+  return [
+    pick(upper),
+    pick(lower),
+    pick(digits),
+    pick(symbols),
+    ...Array.from({ length: 14 }, () => pick(all)),
+  ].sort(() => randomBytes(1)[0] - 128).join("");
+}
 
 function currentAdmin(req: Parameters<typeof router.get>[1] extends (req: infer T, ...args: never[]) => unknown ? T : never): boolean {
   return !isProduction() || Boolean(req.appUser && hasAnyRole(req.appUser, ["admin"]));
@@ -90,6 +108,39 @@ async function syncTeams(userId: number, teamIds: number[]) {
   }
 }
 
+async function issueTemporaryPassword(user: typeof usersTable.$inferSelect): Promise<string> {
+  if (!user.email) {
+    throw new Error("A work email address is required before issuing a login.");
+  }
+
+  const temporaryPassword = generateTemporaryPassword();
+  let clerkUserId = user.clerkUserId;
+
+  if (clerkUserId) {
+    await clerkClient.users.updateUser(clerkUserId, {
+      password: temporaryPassword,
+      signOutOfOtherSessions: true,
+    });
+  } else {
+    const [firstName, ...lastName] = user.name.trim().split(/\s+/);
+    const clerkUser = await clerkClient.users.createUser({
+      emailAddress: [user.email],
+      password: temporaryPassword,
+      firstName,
+      lastName: lastName.join(" ") || undefined,
+      skipLegalChecks: true,
+    });
+    clerkUserId = clerkUser.id;
+  }
+
+  await db
+    .update(usersTable)
+    .set({ clerkUserId, mustChangePassword: true, updatedAt: new Date() })
+    .where(eq(usersTable.id, user.id));
+
+  return temporaryPassword;
+}
+
 // GET /users
 router.get("/", async (req, res) => {
   const managerId = req.query.managerId ? Number(req.query.managerId) : undefined;
@@ -135,7 +186,12 @@ router.post("/", async (req, res) => {
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
   const { teamIds, ...userData } = result.data;
-  const [created] = await db.insert(usersTable).values(userData).returning();
+  const email = userData.email?.trim().toLowerCase();
+  if (isProduction() && !email) {
+    return res.status(400).json({ error: "A work email address is required to issue a live login." });
+  }
+
+  const [created] = await db.insert(usersTable).values({ ...userData, email }).returning();
 
   if (teamIds && teamIds.length > 0) {
     await syncTeams(created.id, teamIds);
@@ -151,8 +207,16 @@ router.post("/", async (req, res) => {
     });
   }
 
-  const enriched = await enrichWithTeams([created]);
-  return res.status(201).json(enriched[0]);
+  try {
+    const temporaryPassword = isProduction() ? await issueTemporaryPassword(created) : undefined;
+    const [provisioned] = await db.select().from(usersTable).where(eq(usersTable.id, created.id));
+    const enriched = await enrichWithTeams([provisioned ?? created]);
+    return res.status(201).json({ ...enriched[0], temporaryPassword });
+  } catch (error) {
+    await db.delete(usersTable).where(eq(usersTable.id, created.id));
+    req.log?.error({ err: error, userId: created.id }, "Unable to issue a temporary password for new user");
+    return res.status(502).json({ error: "The user could not be provisioned with a login. No user was created." });
+  }
 });
 
 // GET /users/:id
@@ -265,6 +329,42 @@ router.delete("/:id", async (req, res) => {
 
   await db.delete(usersTable).where(eq(usersTable.id, id));
   return res.status(204).send();
+});
+
+// POST /users/:id/reset-password
+router.post("/:id/reset-password", async (req, res) => {
+  if (!currentAdmin(req)) {
+    return res.status(403).json({ error: "Administrator access is required to reset passwords." });
+  }
+  if (!isProduction()) {
+    return res.status(404).json({ error: "Password resets are only available for live accounts." });
+  }
+
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, id));
+  if (!user) return res.status(404).json({ error: "Not found" });
+  if (!user.clerkUserId) {
+    return res.status(400).json({ error: "This user does not have an issued login yet." });
+  }
+
+  try {
+    const temporaryPassword = await issueTemporaryPassword(user);
+    const adminId = req.appUser?.id ?? Number(req.headers["x-requesting-user-id"]);
+    if (Number.isInteger(adminId)) {
+      await db.insert(auditLogTable).values({
+        adminUserId: adminId,
+        affectedUserId: id,
+        action: "temporary_password_issued",
+        newValue: "Password reset issued",
+      });
+    }
+    return res.json({ userId: id, temporaryPassword });
+  } catch (error) {
+    req.log?.error({ err: error, userId: id }, "Unable to reset user password");
+    return res.status(502).json({ error: "The password could not be reset. Please try again." });
+  }
 });
 
 // GET /users/:id/permissions

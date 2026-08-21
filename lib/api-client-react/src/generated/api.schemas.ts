@@ -384,6 +384,7 @@ export interface User {
   /** @nullable */
   targetRoleId?: number | null;
   isActive: string;
+  mustChangePassword: boolean;
   teamIds?: number[];
   teamNames?: string[];
   createdAt: string;
@@ -402,6 +403,21 @@ export interface UserInput {
   targetRoleId?: number;
   isActive?: string;
   teamIds?: number[];
+}
+
+export type ProvisionedUser = User & {
+  temporaryPassword?: string;
+};
+
+export interface TemporaryPassword {
+  userId: number;
+  temporaryPassword: string;
+}
+
+export interface TemporaryPasswordChangeInput {
+  currentPassword: string;
+  /** @minLength 8 */
+  newPassword: string;
 }
 
 export interface UserUpdate {

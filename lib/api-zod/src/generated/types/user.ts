@@ -25,6 +25,7 @@ export interface User {
   /** @nullable */
   targetRoleId?: number | null;
   isActive: string;
+  mustChangePassword: boolean;
   teamIds?: number[];
   teamNames?: string[];
   createdAt: Date;

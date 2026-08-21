@@ -61,6 +61,7 @@ import type {
   ProbationItem,
   ProbationManagerReview,
   ProbationReflection,
+  ProvisionedUser,
   PublishProbationReviewInput,
   ReadinessSummary,
   Role,
@@ -69,6 +70,8 @@ import type {
   Team,
   TeamInput,
   TeamUpdate,
+  TemporaryPassword,
+  TemporaryPasswordChangeInput,
   UpdateEvidenceBody,
   UpdateProbationActionBody,
   UpsertAssessmentBody,
@@ -3275,8 +3278,8 @@ export const getCreateUserUrl = () => {
 export const createUser = async (
   userInput: UserInput,
   options?: RequestInit,
-): Promise<User> => {
-  return customFetch<User>(getCreateUserUrl(), {
+): Promise<ProvisionedUser> => {
+  return customFetch<ProvisionedUser>(getCreateUserUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
@@ -3349,6 +3352,177 @@ export const useCreateUser = <
   TContext
 > => {
   return useMutation(getCreateUserMutationOptions(options));
+};
+
+/**
+ * @summary Issue a new temporary password for a live user
+ */
+export const getResetUserPasswordUrl = (id: number) => {
+  return `/api/users/${id}/reset-password`;
+};
+
+export const resetUserPassword = async (
+  id: number,
+  options?: RequestInit,
+): Promise<TemporaryPassword> => {
+  return customFetch<TemporaryPassword>(getResetUserPasswordUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getResetUserPasswordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resetUserPassword>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resetUserPassword>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["resetUserPassword"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resetUserPassword>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return resetUserPassword(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResetUserPasswordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resetUserPassword>>
+>;
+
+export type ResetUserPasswordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Issue a new temporary password for a live user
+ */
+export const useResetUserPassword = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resetUserPassword>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resetUserPassword>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getResetUserPasswordMutationOptions(options));
+};
+
+/**
+ * @summary Replace a temporary password with a private password
+ */
+export const getChangeTemporaryPasswordUrl = () => {
+  return `/api/auth/change-temporary-password`;
+};
+
+export const changeTemporaryPassword = async (
+  temporaryPasswordChangeInput: TemporaryPasswordChangeInput,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getChangeTemporaryPasswordUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(temporaryPasswordChangeInput),
+  });
+};
+
+export const getChangeTemporaryPasswordMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof changeTemporaryPassword>>,
+    TError,
+    { data: BodyType<TemporaryPasswordChangeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof changeTemporaryPassword>>,
+  TError,
+  { data: BodyType<TemporaryPasswordChangeInput> },
+  TContext
+> => {
+  const mutationKey = ["changeTemporaryPassword"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof changeTemporaryPassword>>,
+    { data: BodyType<TemporaryPasswordChangeInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return changeTemporaryPassword(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ChangeTemporaryPasswordMutationResult = NonNullable<
+  Awaited<ReturnType<typeof changeTemporaryPassword>>
+>;
+export type ChangeTemporaryPasswordMutationBody =
+  BodyType<TemporaryPasswordChangeInput>;
+export type ChangeTemporaryPasswordMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Replace a temporary password with a private password
+ */
+export const useChangeTemporaryPassword = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof changeTemporaryPassword>>,
+    TError,
+    { data: BodyType<TemporaryPasswordChangeInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof changeTemporaryPassword>>,
+  TError,
+  { data: BodyType<TemporaryPasswordChangeInput> },
+  TContext
+> => {
+  return useMutation(getChangeTemporaryPasswordMutationOptions(options));
 };
 
 /**

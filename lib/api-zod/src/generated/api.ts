@@ -33,6 +33,7 @@ export const IdentifyUserResponse = zod.object({
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),
   isActive: zod.string(),
+  mustChangePassword: zod.boolean(),
   teamIds: zod.array(zod.number()).optional(),
   teamNames: zod.array(zod.string()).optional(),
   createdAt: zod.coerce.date(),
@@ -690,6 +691,7 @@ export const ListUsersResponseItem = zod.object({
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),
   isActive: zod.string(),
+  mustChangePassword: zod.boolean(),
   teamIds: zod.array(zod.number()).optional(),
   teamNames: zod.array(zod.string()).optional(),
   createdAt: zod.coerce.date(),
@@ -715,6 +717,28 @@ export const CreateUserBody = zod.object({
 });
 
 /**
+ * @summary Issue a new temporary password for a live user
+ */
+export const ResetUserPasswordParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ResetUserPasswordResponse = zod.object({
+  userId: zod.number(),
+  temporaryPassword: zod.string(),
+});
+
+/**
+ * @summary Replace a temporary password with a private password
+ */
+export const changeTemporaryPasswordBodyNewPasswordMin = 8;
+
+export const ChangeTemporaryPasswordBody = zod.object({
+  currentPassword: zod.string(),
+  newPassword: zod.string().min(changeTemporaryPasswordBodyNewPasswordMin),
+});
+
+/**
  * @summary Get a user by ID
  */
 export const GetUserParams = zod.object({
@@ -733,6 +757,7 @@ export const GetUserResponse = zod.object({
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),
   isActive: zod.string(),
+  mustChangePassword: zod.boolean(),
   teamIds: zod.array(zod.number()).optional(),
   teamNames: zod.array(zod.string()).optional(),
   createdAt: zod.coerce.date(),
@@ -772,6 +797,7 @@ export const UpdateUserResponse = zod.object({
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),
   isActive: zod.string(),
+  mustChangePassword: zod.boolean(),
   teamIds: zod.array(zod.number()).optional(),
   teamNames: zod.array(zod.string()).optional(),
   createdAt: zod.coerce.date(),
@@ -869,6 +895,7 @@ export const ListTeamMembersResponseItem = zod.object({
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),
   isActive: zod.string(),
+  mustChangePassword: zod.boolean(),
   teamIds: zod.array(zod.number()).optional(),
   teamNames: zod.array(zod.string()).optional(),
   createdAt: zod.coerce.date(),

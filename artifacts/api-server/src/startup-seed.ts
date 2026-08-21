@@ -1,4 +1,5 @@
 import { pool } from "@workspace/db";
+import { clerkClient } from "@clerk/express";
 import { logger } from "./lib/logger";
 
 /**
@@ -33,11 +34,13 @@ export async function ensureSchemaExists(): Promise<void> {
         probation_status TEXT,
         target_role_id   INTEGER,
         is_active        TEXT NOT NULL DEFAULT 'active',
+        must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
         created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
       ALTER TABLE users ADD COLUMN IF NOT EXISTS clerk_user_id TEXT UNIQUE;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
 
       CREATE TABLE IF NOT EXISTS teams (
         id         SERIAL PRIMARY KEY,
@@ -1503,16 +1506,51 @@ export async function seedIfEmpty(): Promise<void> {
  * verified sign-in.
  */
 export async function bootstrapProductionAdmin(): Promise<void> {
-  await pool.query(
+  const { rows } = await pool.query(
     `INSERT INTO users (name, email, roles, is_active)
      VALUES ($1, $2, ARRAY['admin']::text[], 'active')
      ON CONFLICT (email) DO UPDATE
        SET roles = ARRAY['admin']::text[],
-           is_active = 'active',
-           updated_at = NOW()`,
+            is_active = 'active',
+            updated_at = NOW()
+      RETURNING id, name, email, clerk_user_id`,
     ["Claire Proudlove", "claire.proudlove@highfieldps.co.uk"],
   );
-  logger.info("Production administrator record is ready");
+  const admin = rows[0] as { id: number; name: string; email: string; clerk_user_id: string | null };
+  if (admin.clerk_user_id) {
+    logger.info("Production administrator record is ready");
+    return;
+  }
+
+  const temporaryPassword = process.env.INITIAL_ADMIN_TEMP_PASSWORD;
+  if (!temporaryPassword) {
+    logger.warn("Production administrator login is waiting for INITIAL_ADMIN_TEMP_PASSWORD");
+    return;
+  }
+
+  const existing = await clerkClient.users.getUserList({ emailAddress: [admin.email], limit: 1 });
+  const clerkUser = existing.data[0] ?? await clerkClient.users.createUser({
+    emailAddress: [admin.email],
+    password: temporaryPassword,
+    firstName: "Claire",
+    lastName: "Proudlove",
+    skipLegalChecks: true,
+  });
+
+  if (existing.data[0]) {
+    await clerkClient.users.updateUser(clerkUser.id, {
+      password: temporaryPassword,
+      signOutOfOtherSessions: true,
+    });
+  }
+
+  await pool.query(
+    `UPDATE users
+     SET clerk_user_id = $1, must_change_password = TRUE, updated_at = NOW()
+     WHERE id = $2`,
+    [clerkUser.id, admin.id],
+  );
+  logger.info("Production administrator temporary login is ready for private handover");
 }
 
 export async function seedDemoProgressV2IfMissing(): Promise<void> {
