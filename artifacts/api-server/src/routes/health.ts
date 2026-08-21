@@ -1,11 +1,11 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { pool } from "@workspace/db";
 import { getSeedState, isSchemaReady } from "../startup-state";
 import { HealthCheckResponse } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-const handleHealthCheck = async (_req: Parameters<IRouter["get"]>[1] extends (req: infer T, ...args: never[]) => unknown ? T : never, res: Parameters<IRouter["get"]>[1] extends (req: never, res: infer T, ...args: never[]) => unknown ? T : never) => {
+const handleHealthCheck = async (_req: Request, res: Response) => {
   const seedState = getSeedState();
 
   if (seedState.status === "failed" || seedState.status === "partial") {
