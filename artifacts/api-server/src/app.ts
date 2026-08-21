@@ -55,6 +55,13 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Keep the artifact-level liveness probe independent from Clerk and database
+// startup. Replit may call /api before an authenticated request context exists.
+app.get("/api", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
 app.use(clerkMiddleware());
 
 app.use("/api", router);

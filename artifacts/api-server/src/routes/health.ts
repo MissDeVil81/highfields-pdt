@@ -61,13 +61,5 @@ const handleHealthCheck = async (_req: Request, res: Response) => {
 };
 
 router.get("/healthz", handleHealthCheck);
-// Artifact deployments may probe the service mount root (/api) even when a
-// custom startup path is configured. The mount root is a liveness check:
-// Replit can probe it immediately after the process binds the port, before
-// the asynchronous schema/bootstrap chain has completed. Keep database and
-// seed readiness on the explicit /api/healthz endpoint.
-router.get("/", (_req, res) => {
-  res.json({ status: "ok" });
-});
 
 export default router;
