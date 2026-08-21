@@ -7,3 +7,4 @@
 - [Admin permission architecture](admin-permission-arch.md) — hierarchy/teams/permissions system; manager_id IS the reports-to field; circular check; drizzle-kit push requires direct psql for new tables.
 - [lib/db build requirement](lib-db-build.md) — after schema additions, run `pnpm --filter @workspace/db exec tsc -p tsconfig.json`; no "build" script exists, use raw tsc.
 - [Production seed chain guards](prod-seed-guards.md) — each seed function must guard on a table unique to itself; wrong guards cause silent skips leaving data missing.
+- [Controlled production logins](controlled-login-policy.md) — admins privately hand over one-time passwords; normal access waits for a password change.

@@ -88,8 +88,20 @@ export async function requireApprovedProductionUser(
     res.status(resolved.status).json({ error: resolved.error });
     return;
   }
+  const appUser = resolved.user;
+  if (!appUser) {
+    res.status(403).json({ error: "Your account could not be resolved." });
+    return;
+  }
+  if (appUser.mustChangePassword) {
+    res.status(403).json({
+      error: "You must choose a new password before using the system.",
+      code: "PASSWORD_CHANGE_REQUIRED",
+    });
+    return;
+  }
 
-  req.appUser = resolved.user;
+  req.appUser = appUser;
   next();
 }
 
