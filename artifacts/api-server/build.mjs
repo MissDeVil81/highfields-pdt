@@ -26,6 +26,7 @@ async function buildAll() {
     entryPoints: [
       path.resolve(artifactDir, "src/index.ts"),
       path.resolve(artifactDir, "src/middlewares/productionAuthorizationPolicy.test.ts"),
+      path.resolve(artifactDir, "src/routes/productionRouteIntegration.test.ts"),
     ],
     platform: "node",
     bundle: true,

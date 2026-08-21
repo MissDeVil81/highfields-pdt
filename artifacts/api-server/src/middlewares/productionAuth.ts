@@ -14,6 +14,12 @@ declare global {
   namespace Express {
     interface Request {
       appUser?: User;
+      /**
+       * A trusted user directory supplied by an authentication adapter.
+       * Production authentication leaves this unset and uses the database;
+       * the route integration harness supplies an isolated fixture directory.
+       */
+      productionAuthorizationUsers?: readonly User[];
     }
   }
 }
@@ -139,7 +145,9 @@ export async function canAccessProductionUser(
   const actor = req.appUser;
   if (!actor) return false;
 
-  const users = await db.select().from(usersTable);
+  const users = req.productionAuthorizationUsers
+    ? req.productionAuthorizationUsers
+    : await db.select().from(usersTable);
   const byId = new Map(users.map((user) => [user.id, user]));
   return permitsUserAccess(actor, targetUserId, byId);
 }
@@ -168,7 +176,9 @@ export async function canManageProductionUser(req: Request, targetUserId: number
   if (!isProductionEnvironment()) return true;
   const actor = req.appUser;
   if (!actor) return false;
-  const users = await db.select().from(usersTable);
+  const users = req.productionAuthorizationUsers
+    ? req.productionAuthorizationUsers
+    : await db.select().from(usersTable);
   const byId = new Map(users.map((user) => [user.id, user]));
   return permitsManagerAction(actor, targetUserId, byId);
 }

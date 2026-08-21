@@ -8,3 +8,4 @@
 - [lib/db build requirement](lib-db-build.md) — after schema additions, run `pnpm --filter @workspace/db exec tsc -p tsconfig.json`; no "build" script exists, use raw tsc.
 - [Startup seed resilience](prod-seed-guards.md) — completion sentinels, transactions, and serialized guard/write work prevent partial demo data.
 - [Controlled production logins](controlled-login-policy.md) — admins privately hand over one-time passwords; normal access waits for a password change.
+- [Production route-test isolation](production-route-test-isolation.md) — production-mode API tests must unset DATABASE_URL before using a closed local database URL.
