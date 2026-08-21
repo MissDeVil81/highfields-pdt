@@ -2,6 +2,10 @@ import { pool } from "@workspace/db";
 import { clerkClient } from "@clerk/express";
 import { logger } from "./lib/logger";
 import { needsInitialAdministratorProvisioning } from "./middlewares/productionAuthorizationPolicy";
+import { readFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import mammoth from "mammoth";
 
 /**
  * Creates every table in the schema using CREATE TABLE IF NOT EXISTS.
@@ -101,6 +105,11 @@ export async function ensureSchemaExists(): Promise<void> {
         trainer          TEXT NOT NULL DEFAULT '',
         description      TEXT NOT NULL DEFAULT '',
         created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS demo_seed_completions (
+        seed_name    TEXT PRIMARY KEY,
+        completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
       -- Tables depending on career_paths
@@ -276,6 +285,7 @@ export async function ensureSchemaExists(): Promise<void> {
 const SEED_SQL = `
 INSERT INTO public.career_paths VALUES (1, '360 Career Path', 'The full 360° recruitment career track. Manage the full recruitment lifecycle from client development through to placement. Click to view the full career path diagram.', '2026-04-16 14:30:07.063937');
 INSERT INTO public.career_paths VALUES (2, '180 Career Path', 'The 180° delivery recruitment track. Specialist recruiters focused on candidate sourcing, delivery and talent placement. Click to view the full career path diagram.', '2026-04-16 14:30:07.108624');
+INSERT INTO public.career_paths VALUES (3, 'Account Management Career Path', 'The account management track. Build and grow strategic client relationships within key accounts and expand revenue opportunities. Click to view the full career path diagram.', '2026-04-16 14:30:07.114164');
 INSERT INTO public.roles VALUES (50, 2, 'Team Leader Contract', 10, 'Team Leader – Delivery – Contract
 INSERT INTO public.roles VALUES (45, 2, 'Principal Consultant Perm', 5, 'Principal Delivery Consultant – Permanent
 INSERT INTO public.roles VALUES (58, 1, 'Senior Recruitment Consultant Perm', 4, '
@@ -1482,17 +1492,83 @@ SELECT pg_catalog.setval('public.roles_id_seq', 79, true);
 SELECT pg_catalog.setval('public.users_id_seq', 11, true);
 `;
 
+/**
+ * The historical role fixture contains truncated job-spec strings. Keep the
+ * valid role metadata (IDs, paths, titles, and levels) and rebuild that block
+ * with the schema defaults so an empty database can always be seeded.
+ */
+const ROLE_JOB_SPEC_FILES: Record<number, string> = {
+  41: "rc-180-perm.docx",
+  42: "rc-180-contract.docx",
+  43: "senior-rc-180-perm.docx",
+  44: "senior-rc-180-contract.docx",
+  45: "principal-180-perm.docx",
+  46: "principal-180-contract.docx",
+  47: "sector-lead-180-perm.docx",
+  48: "sector-lead-180-contract.docx",
+  49: "team-leader-180-perm.docx",
+  50: "team-leader-180-contract.docx",
+  51: "divisional-manager-180-perm.docx",
+  52: "divisional-manager-180-contract.docx",
+  53: "associate-director-180-perm.docx",
+  54: "associate-director-180-contract.docx",
+  55: "rc-360-contract.docx",
+  56: "rc-360-perm.docx",
+  57: "senior-rc-360-contract.docx",
+  58: "senior-rc-360-perm.docx",
+  59: "principal-360-contract.docx",
+  60: "principal-360-perm.docx",
+  61: "sector-lead-360-contract.docx",
+  62: "sector-lead-360-perm.docx",
+  63: "team-leader-360-contract.docx",
+  64: "team-leader-360-perm.docx",
+  65: "divisional-manager-360-contract.docx",
+  66: "divisional-manager-360-perm.docx",
+  67: "associate-director-360-contract.docx",
+  68: "associate-director-360-perm.docx",
+  69: "account-coordinator.docx",
+  70: "senior-account-coordinator.docx",
+  71: "delivery-consultant.docx",
+  72: "senior-delivery-consultant.docx",
+  73: "account-partner.docx",
+  74: "account-manager.docx",
+  75: "senior-account-manager.docx",
+  76: "account-partner-manager.docx",
+  77: "delivery-manager.docx",
+  78: "account-director.docx",
+  79: "business-director.docx",
+};
+type SeedClient = {
+  query(sql: string): Promise<unknown>;
+};
 export async function seedIfEmpty(): Promise<void> {
   const client = await pool.connect();
   try {
-    const { rows } = await client.query("SELECT COUNT(*) FROM career_paths");
-    if (parseInt(rows[0].count, 10) > 0) {
-      logger.info("Database already seeded, skipping.");
-      return;
-    }
-    logger.info("Seeding database with demo data...");
-    await client.query(SEED_SQL);
-    logger.info("Database seeded successfully.");
+    await withDemoSeedLock(client, async () => {
+      // The marker is written at the end of the core seed transaction, after
+      // every non-financial fixture statement (including assessments).
+      const { rows } = await client.query(
+        "SELECT EXISTS (SELECT 1 FROM demo_seed_completions WHERE seed_name = 'baseline-core-v1') AS present",
+      );
+      if (rows[0].present) {
+        logger.info("Database already seeded, skipping.");
+        return;
+      }
+      logger.info("Seeding database with demo data...");
+      // Older deployments ran the baseline without a transaction. Replaying
+      // its static fixture statements safely repairs any database they left
+      // partially seeded, while future deployments remain atomic.
+      const { core } = await getBaselineSeedSections();
+      await runSeedTransaction(
+        client,
+        `${core}
+        INSERT INTO demo_seed_completions (seed_name)
+        VALUES ('baseline-core-v1')
+        ON CONFLICT (seed_name) DO NOTHING;`,
+        { skipExistingRows: true },
+      );
+      logger.info("Database seeded successfully.");
+    });
   } catch (err) {
     logger.error({ err }, "Failed to seed database");
     throw err;
@@ -1501,6 +1577,33 @@ export async function seedIfEmpty(): Promise<void> {
   }
 }
 
+export async function seedBaselineFinancialProgressIfMissing(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await withDemoSeedLock(client, async () => {
+      const { rows } = await client.query(
+        "SELECT EXISTS (SELECT 1 FROM financial_progress WHERE user_id = 6 AND target_id = 16) AS present",
+      );
+      if (rows[0].present) {
+        logger.info("Baseline financial progress already present, skipping.");
+        return;
+      }
+
+      logger.info("Seeding baseline financial progress...");
+      const { financialProgress } = await getBaselineSeedSections();
+      await runSeedTransaction(client, financialProgress, {
+        skipExistingRows: true,
+      });
+      logger.info("Baseline financial progress seeded successfully.");
+    });
+  } catch (err) {
+    logger.error({ err }, "Failed to seed baseline financial progress");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+export type DemoSeedStatus = "seeded" | "partial" | "failed";
 /**
  * Creates the only initial production account. Other live users are added
  * through the authenticated Admin Dashboard and receive a Clerk identity when
@@ -1556,16 +1659,20 @@ export async function bootstrapProductionAdmin(): Promise<void> {
 export async function seedDemoProgressV2IfMissing(): Promise<void> {
   const client = await pool.connect();
   try {
-    const { rows } = await client.query(
-      "SELECT COUNT(*) FROM assessments WHERE user_id IN (3, 4)"
-    );
-    if (parseInt(rows[0].count, 10) > 0) {
-      logger.info("Demo assessment data v2 already present, skipping.");
-      return;
-    }
-    logger.info("Inserting demo career progress data v2 (Matt & Harry)...");
-    await client.query(`
-      INSERT INTO assessments (user_id, competency_id, role_id, rating, updated_at) VALUES
+    await withDemoSeedLock(client, async () => {
+      // The final V2 record is unique to this seed. Checking the shared
+      // assessments table would incorrectly treat an interrupted seed as done.
+      const { rows } = await client.query(
+        "SELECT EXISTS (SELECT 1 FROM financial_progress WHERE user_id = 4 AND target_id = 11) AS present",
+      );
+      if (rows[0].present) {
+        logger.info("Demo assessment data v2 already present, skipping.");
+        return;
+      }
+      logger.info("Inserting demo career progress data v2 (Matt & Harry)...");
+      await runSeedTransaction(client, `
+      INSERT INTO assessments (user_id, competency_id, role_id, rating, updated_at)
+      SELECT user_id, competency_id, role_id, rating, updated_at::timestamptz FROM (VALUES
       (4,1,56,'green','2026-07-06 05:29:47'),(4,2,56,'green','2026-07-06 05:29:43'),(4,3,56,'green','2026-07-06 05:29:44'),(4,4,56,'green','2026-07-06 05:29:43'),(4,5,56,'green','2026-07-06 05:29:46'),(4,6,56,'green','2026-07-06 05:29:45'),(4,7,56,'green','2026-07-06 05:29:49'),
       (4,9,56,'amber','2026-07-06 05:29:51'),(4,10,56,'green','2026-07-06 05:29:54'),(4,11,56,'green','2026-07-06 05:29:51'),(4,12,56,'green','2026-07-06 05:29:52'),(4,13,56,'green','2026-07-06 05:29:53'),(4,14,56,'green','2026-07-06 05:29:15'),(4,15,56,'green','2026-07-06 05:29:19'),
       (4,16,56,'green','2026-07-06 05:29:16'),(4,17,56,'green','2026-07-06 05:29:17'),(4,18,56,'green','2026-07-06 05:29:18'),(4,19,56,'amber','2026-07-06 05:29:27'),(4,20,56,'amber','2026-07-06 05:29:25'),(4,21,56,'green','2026-07-06 05:29:22'),(4,22,56,'green','2026-07-06 05:29:22'),
@@ -1577,10 +1684,16 @@ export async function seedDemoProgressV2IfMissing(): Promise<void> {
       (4,94,58,'green','2026-07-06 05:30:18'),(4,95,58,'green','2026-07-06 05:30:21'),(4,96,58,'green','2026-07-06 05:30:24'),(4,97,58,'green','2026-07-06 05:30:25'),(4,98,58,'green','2026-07-06 05:30:16'),(4,99,58,'green','2026-07-06 05:30:20'),(4,100,58,'green','2026-07-06 05:30:23'),
       (4,101,58,'green','2026-07-06 05:30:26'),(4,102,58,'green','2026-07-06 05:30:16'),(4,103,58,'green','2026-07-06 05:30:19'),(4,104,58,'amber','2026-07-06 05:30:28'),(4,105,58,'green','2026-07-06 05:30:27'),(4,106,58,'amber','2026-07-06 05:30:29'),(4,107,58,'amber','2026-07-06 05:30:29'),
       (4,108,58,'green','2026-07-06 05:30:55'),(4,109,58,'green','2026-07-06 05:30:57'),(4,110,58,'amber','2026-07-06 05:30:59'),(4,111,58,'green','2026-07-06 05:30:56'),(4,112,58,'amber','2026-07-06 05:30:58'),
-      (3,727,41,'red','2026-06-15 19:37:13'),(3,728,41,'green','2026-06-15 19:37:16'),(3,729,41,'green','2026-06-15 19:37:12'),(3,730,41,'green','2026-06-15 19:37:14'),(3,731,41,'green','2026-06-15 19:37:15'),(3,733,41,'amber','2026-06-15 19:37:54'),(3,734,41,'red','2026-06-15 19:37:52'),(3,735,41,'amber','2026-06-15 19:37:53'),(3,736,41,'red','2026-06-15 19:37:56');
+      (3,727,41,'red','2026-06-15 19:37:13'),(3,728,41,'green','2026-06-15 19:37:16'),(3,729,41,'green','2026-06-15 19:37:12'),(3,730,41,'green','2026-06-15 19:37:14'),(3,731,41,'green','2026-06-15 19:37:15'),(3,733,41,'amber','2026-06-15 19:37:54'),(3,734,41,'red','2026-06-15 19:37:52'),(3,735,41,'amber','2026-06-15 19:37:53'),(3,736,41,'red','2026-06-15 19:37:56')
+      ) AS v(user_id, competency_id, role_id, rating, updated_at)
+      WHERE NOT EXISTS (
+        SELECT 1 FROM assessments
+        WHERE user_id = 3 AND competency_id = 736 AND role_id = 41
+      );
       INSERT INTO financial_progress (target_id, role_id, current_amount, user_id) VALUES (11, 58, 80000, 4);
-    `);
-    logger.info("Demo career progress data v2 inserted successfully.");
+      `);
+      logger.info("Demo career progress data v2 inserted successfully.");
+    });
   } catch (err) {
     logger.error({ err }, "Failed to insert demo progress data v2");
     throw err;
@@ -1592,15 +1705,18 @@ export async function seedDemoProgressV2IfMissing(): Promise<void> {
 export async function seedManagerPortalDataIfMissing(): Promise<void> {
   const client = await pool.connect();
   try {
-    // Guard on `teams` — unique to this seed function. Earlier seeds populate
-    // probation_items, so checking that table causes a false skip.
-    const { rows } = await client.query("SELECT COUNT(*) FROM teams");
-    if (parseInt(rows[0].count, 10) > 0) {
-      logger.info("Manager portal demo data already present, skipping.");
-      return;
-    }
-    logger.info("Seeding manager portal demo data...");
-    await client.query(`
+    await withDemoSeedLock(client, async () => {
+      // This final record is unique to this seed. A team can exist after an
+      // interrupted seed, so checking teams alone causes a false skip.
+      const { rows } = await client.query(
+        "SELECT EXISTS (SELECT 1 FROM probation_assessments WHERE id = 91) AS present",
+      );
+      if (rows[0].present) {
+        logger.info("Manager portal demo data already present, skipping.");
+        return;
+      }
+      logger.info("Seeding manager portal demo data...");
+      await runSeedTransaction(client, `
       -- Teams
       INSERT INTO teams (id, name, status) VALUES
       (1, 'US Perm', 'active')
@@ -1787,8 +1903,9 @@ export async function seedManagerPortalDataIfMissing(): Promise<void> {
       (91, 5, 24, 'most',        '', '', '', 'month1', '2026-06-15 20:26:34', '2026-06-15 20:26:34')
       ON CONFLICT (id) DO NOTHING;
       SELECT setval('probation_assessments_id_seq', GREATEST((SELECT MAX(id) FROM probation_assessments), 91));
-    `);
-    logger.info("Manager portal demo data seeded successfully.");
+      `);
+      logger.info("Manager portal demo data seeded successfully.");
+    });
   } catch (err) {
     logger.error({ err }, "Failed to seed manager portal demo data");
     throw err;
@@ -1800,13 +1917,18 @@ export async function seedManagerPortalDataIfMissing(): Promise<void> {
 export async function seedLdDemoDataIfMissing(): Promise<void> {
   const client = await pool.connect();
   try {
-    const { rows } = await client.query("SELECT COUNT(*) FROM learning_log_entries");
-    if (parseInt(rows[0].count, 10) > 0) {
-      logger.info("L&D demo data already present, skipping.");
-      return;
-    }
-    logger.info("Seeding L&D demo data...");
-    await client.query(`
+    await withDemoSeedLock(client, async () => {
+      // This final feedback record is unique to the L&D seed. Learning logs may
+      // already exist after an interrupted seed and must not cause a false skip.
+      const { rows } = await client.query(
+        "SELECT EXISTS (SELECT 1 FROM ld_feedback WHERE id = 7) AS present",
+      );
+      if (rows[0].present) {
+        logger.info("L&D demo data already present, skipping.");
+        return;
+      }
+      logger.info("Seeding L&D demo data...");
+      await runSeedTransaction(client, `
       -- L&D users (ids 12-15)
       INSERT INTO users (id, name, email, job_title, department, is_active, roles, manager_id) VALUES
       (12, 'Emily Amos',        NULL, 'Learning & Development Manager',     'People & Culture', 'active', ARRAY['ld','employee'], NULL),
@@ -1913,8 +2035,9 @@ export async function seedLdDemoDataIfMissing(): Promise<void> {
       ON CONFLICT (id) DO NOTHING;
 
       SELECT setval('ld_feedback_id_seq', GREATEST((SELECT MAX(id) FROM ld_feedback), 7));
-    `);
-    logger.info("L&D demo data seeded successfully.");
+      `);
+      logger.info("L&D demo data seeded successfully.");
+    });
   } catch (err) {
     logger.error({ err }, "Failed to seed L&D demo data");
     throw err;
@@ -1966,3 +2089,277 @@ export async function seedDemoProgressIfMissing(): Promise<void> {
     client.release();
   }
 }
+
+async function runSeedTransaction(
+  client: SeedClient,
+  seedSql: string,
+  options: { skipExistingRows?: boolean } = {},
+): Promise<void> {
+  await client.query("BEGIN");
+  try {
+    if (!options.skipExistingRows) {
+      await client.query(seedSql);
+    } else {
+      let skippedStatements = 0;
+      for (const statement of splitSqlStatements(seedSql)) {
+        await client.query("SAVEPOINT startup_seed_statement");
+        try {
+          await client.query(statement);
+        } catch (err) {
+          await client.query("ROLLBACK TO SAVEPOINT startup_seed_statement");
+          if (!isUniqueViolation(err)) {
+            throw err;
+          }
+          skippedStatements += 1;
+        } finally {
+          await client.query("RELEASE SAVEPOINT startup_seed_statement");
+        }
+      }
+
+      if (skippedStatements > 0) {
+        logger.info(
+          { skippedStatements },
+          "Recovered existing baseline fixture rows during startup seed",
+        );
+      }
+    }
+    await client.query("COMMIT");
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackErr) {
+      logger.error({ err: rollbackErr }, "Failed to roll back startup seed");
+    }
+    throw err;
+  }
+}
+
+const DEMO_SEED_LOCK_KEY = 741921;
+
+async function loadCanonicalRoleJobSpecs(): Promise<Record<number, string>> {
+  const jobSpecsDirectory = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "job-specs",
+  );
+  const entries = await Promise.all(
+    Object.entries(ROLE_JOB_SPEC_FILES).map(async ([roleId, fileName]) => {
+      const filePath = resolve(jobSpecsDirectory, fileName);
+      const { value } = await mammoth.extractRawText({
+        buffer: await readFile(filePath),
+      });
+      const jobSpec = value.trim();
+      if (!jobSpec) {
+        throw new Error(`Job specification is empty for role ${roleId}`);
+      }
+      return [Number(roleId), jobSpec] as const;
+    }),
+  );
+
+  return Object.fromEntries(entries);
+}
+
+/**
+ * Runs every independent demo-data seed, recording failures without allowing
+ * one failed step to stop later steps. The baseline data is required by the
+ * other steps, so a baseline failure is reported as a complete seed failure.
+ */
+export async function seedDemoData(): Promise<DemoSeedResult> {
+  const steps = [
+    ["baseline-data", seedIfEmpty],
+    ["manager-portal", seedManagerPortalDataIfMissing],
+    ["baseline-progress", seedBaselineFinancialProgressIfMissing],
+    ["career-progress-v2", seedDemoProgressV2IfMissing],
+    ["learning-and-development", seedLdDemoDataIfMissing],
+  ] as const;
+  const failedSteps: string[] = [];
+
+  for (const [name, seed] of steps) {
+    try {
+      await seed();
+    } catch (err) {
+      failedSteps.push(name);
+      logger.error(
+        { err, seedStep: name },
+        "Demo seed step failed; continuing with the remaining steps",
+      );
+    }
+  }
+
+  if (failedSteps.length === 0) {
+    return { status: "seeded", failedSteps };
+  }
+
+  return {
+    status:
+      failedSteps.includes("baseline-data") ||
+      failedSteps.includes("baseline-progress")
+        ? "failed"
+        : "partial",
+    failedSteps,
+  };
+}
+
+function splitSqlStatements(sql: string): string[] {
+  const statements: string[] = [];
+  let start = 0;
+  let inQuotedString = false;
+  let inLineComment = false;
+
+  for (let index = 0; index < sql.length; index += 1) {
+    const char = sql[index];
+    const next = sql[index + 1];
+
+    if (inLineComment) {
+      if (char === "\n") {
+        inLineComment = false;
+      }
+      continue;
+    }
+
+    if (!inQuotedString && char === "-" && next === "-") {
+      inLineComment = true;
+      index += 1;
+      continue;
+    }
+
+    if (char === "'") {
+      if (inQuotedString && next === "'") {
+        index += 1;
+        continue;
+      }
+      inQuotedString = !inQuotedString;
+      continue;
+    }
+
+    if (!inQuotedString && char === ";") {
+      const statement = sql.slice(start, index).trim();
+      if (statement) {
+        statements.push(statement);
+      }
+      start = index + 1;
+    }
+  }
+
+  const finalStatement = sql.slice(start).trim();
+  if (finalStatement) {
+    statements.push(finalStatement);
+  }
+
+  return statements;
+}
+
+function joinSqlStatements(statements: readonly string[]): string {
+  return `${statements.join(";\n")};`;
+}
+
+async function withDemoSeedLock<T>(
+  client: SeedClient,
+  run: () => Promise<T>,
+): Promise<T> {
+  await client.query(`SELECT pg_advisory_lock(${DEMO_SEED_LOCK_KEY})`);
+  try {
+    return await run();
+  } finally {
+    await client.query(`SELECT pg_advisory_unlock(${DEMO_SEED_LOCK_KEY})`);
+  }
+}
+
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    err.code === "23505"
+  );
+}
+
+export type DemoSeedResult = {
+  status: DemoSeedStatus;
+  failedSteps: string[];
+};
+
+async function normalizeBaselineRoleStatements(sql: string): Promise<string> {
+  const roleStart = sql.indexOf("INSERT INTO public.roles VALUES");
+  const competencyStart = sql.indexOf(
+    "INSERT INTO public.competencies VALUES",
+    roleStart,
+  );
+
+  if (roleStart === -1 || competencyStart === -1) {
+    throw new Error("Baseline seed is missing its roles or competencies block");
+  }
+
+  const malformedRoleBlock = sql.slice(roleStart, competencyStart);
+  const roles = [
+    ...malformedRoleBlock.matchAll(
+      /^INSERT INTO public\.roles VALUES \((\d+),\s*(\d+),\s*('(?:''|[^'])*'),\s*(\d+),.*$/gm,
+    ),
+  ];
+
+  if (roles.length === 0) {
+    throw new Error("Baseline seed does not contain any recoverable role records");
+  }
+
+  const jobSpecs = await loadCanonicalRoleJobSpecs();
+  const normalizedRoles = roles
+    .map(
+      ([, id, careerPathId, title, level]) => {
+        const jobSpec = jobSpecs[Number(id)];
+        if (!jobSpec) {
+          throw new Error(`Job specification is missing for role ${id}`);
+        }
+        return `INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (${id}, ${careerPathId}, ${title}, ${level}, '${jobSpec.replaceAll("'", "''")}') ON CONFLICT (id) DO UPDATE SET job_spec = EXCLUDED.job_spec WHERE roles.job_spec = '';`;
+      },
+    )
+    .join("\n");
+
+  const sqlWithNormalizedRoles =
+    `${sql.slice(0, roleStart)}${normalizedRoles}\n${sql.slice(competencyStart)}`;
+
+  // The legacy user rows predate clerk_user_id. Use an explicit column list so
+  // those values retain their intended meaning in a freshly created schema.
+  return sqlWithNormalizedRoles.replaceAll(
+    "INSERT INTO public.users VALUES",
+    `INSERT INTO public.users (
+      id, name, email, roles, manager_id, department, job_title, start_date,
+      probation_status, is_active, created_at, updated_at, target_role_id
+    ) VALUES`,
+  );
+}
+
+function getBaselineSeedSections(): Promise<BaselineSeedSections> {
+  baselineSeedSectionsPromise ??= (async () => {
+    const baselineSeedStatements = splitSqlStatements(
+      await normalizeBaselineRoleStatements(SEED_SQL),
+    );
+    const financialProgressStatements = baselineSeedStatements.filter(
+      (statement) =>
+        statement
+          .trimStart()
+          .startsWith("INSERT INTO public.financial_progress"),
+    );
+    if (financialProgressStatements.length === 0) {
+      throw new Error("Baseline seed is missing financial progress records");
+    }
+    return {
+      core: joinSqlStatements(
+        baselineSeedStatements.filter(
+          (statement) =>
+            !statement
+              .trimStart()
+              .startsWith("INSERT INTO public.financial_progress"),
+        ),
+      ),
+      financialProgress: joinSqlStatements(financialProgressStatements),
+    };
+  })();
+
+  return baselineSeedSectionsPromise;
+}
+
+type BaselineSeedSections = {
+  core: string;
+  financialProgress: string;
+};
+
+let baselineSeedSectionsPromise: Promise<BaselineSeedSections> | undefined;

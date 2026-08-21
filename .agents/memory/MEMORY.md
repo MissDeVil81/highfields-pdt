@@ -6,5 +6,5 @@
 - [Manager dashboard architecture](manager-dashboard-arch.md) — users table + manager identity in localStorage; publishedAt on probation_manager_reviews gates employee visibility.
 - [Admin permission architecture](admin-permission-arch.md) — hierarchy/teams/permissions system; manager_id IS the reports-to field; circular check; drizzle-kit push requires direct psql for new tables.
 - [lib/db build requirement](lib-db-build.md) — after schema additions, run `pnpm --filter @workspace/db exec tsc -p tsconfig.json`; no "build" script exists, use raw tsc.
-- [Production seed chain guards](prod-seed-guards.md) — each seed function must guard on a table unique to itself; wrong guards cause silent skips leaving data missing.
+- [Startup seed resilience](prod-seed-guards.md) — completion sentinels, transactions, and serialized guard/write work prevent partial demo data.
 - [Controlled production logins](controlled-login-policy.md) — admins privately hand over one-time passwords; normal access waits for a password change.

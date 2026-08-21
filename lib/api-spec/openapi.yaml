@@ -53,6 +53,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+        "503":
+          description: Starting, degraded, or unable to reach the database
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
 
   /auth/identify:
     get:
@@ -1181,8 +1187,19 @@ components:
       properties:
         status:
           type: string
+        reason:
+          type: string
+        seedStatus:
+          type: string
+          enum: [starting, seeded, partial, failed, not_applicable]
+        failedSeedSteps:
+          type: array
+          items:
+            type: string
       required:
         - status
+        - seedStatus
+        - failedSeedSteps
 
     CareerPath:
       type: object

@@ -12,6 +12,15 @@ import * as zod from "zod";
  */
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
+  reason: zod.string().optional(),
+  seedStatus: zod.enum([
+    "starting",
+    "seeded",
+    "partial",
+    "failed",
+    "not_applicable",
+  ]),
+  failedSeedSteps: zod.array(zod.string()),
 });
 
 /**

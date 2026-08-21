@@ -5,7 +5,11 @@
  * Career Progression Tracker API
  * OpenAPI spec version: 0.1.0
  */
+import type { HealthStatusSeedStatus } from "./healthStatusSeedStatus";
 
 export interface HealthStatus {
   status: string;
+  reason?: string;
+  seedStatus: HealthStatusSeedStatus;
+  failedSeedSteps: string[];
 }
