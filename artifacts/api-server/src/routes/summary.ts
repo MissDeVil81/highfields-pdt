@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, assessmentsTable, evidenceTable, rolesTable, competenciesTable, financialTargetsTable, financialProgressTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
+import { requireProductionUserAccess } from "../middlewares/productionAuth";
 
 const router = Router();
 
@@ -78,6 +79,7 @@ router.get("/readiness", async (req, res) => {
   const targetRoleId = req.query.targetRoleId ? parseInt(req.query.targetRoleId as string) : undefined;
 
   if (!userId) return res.status(400).json({ error: "userId is required" });
+  if (!(await requireProductionUserAccess(req, res, userId, "view this readiness summary"))) return;
 
   const currentRole = currentRoleId ? await getRoleSummary(userId, currentRoleId, false) : null;
   const targetRole = targetRoleId ? await getRoleSummary(userId, targetRoleId, true) : null;

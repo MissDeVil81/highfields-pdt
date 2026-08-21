@@ -1,7 +1,13 @@
 import { Router } from "express";
 import { db, pool, RESOLVED_APP_ENV, managerLoginsTable, managerViewedEntriesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { canAccessProductionUser, hasAnyRole } from "../middlewares/productionAuth";
+import {
+  canAccessProductionUser,
+  canManageProductionUser,
+  hasAnyRole,
+  isProductionEnvironment,
+} from "../middlewares/productionAuth";
+import { permitsTeamReporting } from "../middlewares/productionAuthorizationPolicy";
 
 const router = Router();
 const actorId = (req: Parameters<typeof router.get>[1] extends (req: infer T, ...args: never[]) => unknown ? T : never, suppliedId = Number.NaN): number =>
@@ -33,7 +39,9 @@ router.post("/login", async (req, res) => {
 // GET /api/manager-ld/hierarchy?managerId=X&role=manager|director — full flat list of reportees
 router.get("/hierarchy", async (req, res) => {
   const managerId = actorId(req, parseInt(req.query.managerId as string));
-  const role = req.query.role as string;
+  const role = isProductionEnvironment()
+    ? (hasAnyRole(req.appUser!, ["director"]) ? "director" : "manager")
+    : req.query.role as string;
   if (isNaN(managerId)) return res.status(400).json({ error: "managerId required" });
 
   let rows;
@@ -102,6 +110,9 @@ router.get("/team-by-team", async (req, res) => {
   const teamId = parseInt(req.query.teamId as string);
   const directorId = actorId(req, parseInt(req.query.directorId as string));
   if (isNaN(teamId) || isNaN(directorId)) return res.status(400).json({ error: "teamId and directorId required" });
+  if (isProductionEnvironment() && !permitsTeamReporting(req.appUser!)) {
+    return res.status(403).json({ error: "L&D access is required to view team-wide learning." });
+  }
 
   const rows = await pool.query<{
     id: number; name: string; job_title: string | null;
@@ -188,6 +199,14 @@ router.post("/viewed", async (req, res) => {
   const { managerId, entryId } = req.body;
   if (!managerId || !entryId) return res.status(400).json({ error: "managerId and entryId required" });
   const effectiveManagerId = actorId(req, Number(managerId));
+  const entry = await pool.query<{ user_id: number }>(
+    "SELECT user_id FROM learning_log_entries WHERE id = $1",
+    [entryId],
+  );
+  if (!entry.rows[0]) return res.status(404).json({ error: "Learning-log entry not found" });
+  if (!(await canManageProductionUser(req, entry.rows[0].user_id))) {
+    return res.status(403).json({ error: "You do not have permission to mark this entry as viewed." });
+  }
 
   await pool.query(`
     INSERT INTO manager_viewed_entries (manager_id, entry_id)

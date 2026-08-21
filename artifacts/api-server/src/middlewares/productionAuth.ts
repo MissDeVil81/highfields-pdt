@@ -2,6 +2,11 @@ import type { NextFunction, Request, Response } from "express";
 import { clerkClient, getAuth } from "@clerk/express";
 import { db, RESOLVED_APP_ENV, usersTable, type User } from "@workspace/db";
 import { and, eq, or } from "drizzle-orm";
+import {
+  permitsManagerAction,
+  permitsManagerDashboard,
+  permitsUserAccess,
+} from "./productionAuthorizationPolicy";
 
 declare global {
   namespace Express {
@@ -11,7 +16,7 @@ declare global {
   }
 }
 
-const isProduction = () => RESOLVED_APP_ENV === "production";
+export const isProductionEnvironment = () => RESOLVED_APP_ENV === "production";
 
 async function verifiedPrimaryEmail(clerkUserId: string): Promise<string | null> {
   const clerkUser = await clerkClient.users.getUser(clerkUserId);
@@ -73,7 +78,7 @@ export async function requireApprovedProductionUser(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  if (!isProduction()) {
+  if (!isProductionEnvironment()) {
     next();
     return;
   }
@@ -94,7 +99,7 @@ export function hasAnyRole(user: User, roles: readonly string[]): boolean {
 
 export function requireProductionRoles(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    if (!isProduction() || (req.appUser && hasAnyRole(req.appUser, roles))) {
+    if (!isProductionEnvironment() || (req.appUser && hasAnyRole(req.appUser, roles))) {
       next();
       return;
     }
@@ -105,7 +110,7 @@ export function requireProductionRoles(...roles: string[]) {
 export function requireProductionWriteRoles(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (
-      !isProduction() ||
+      !isProductionEnvironment() ||
       req.method === "GET" ||
       req.method === "HEAD" ||
       (req.appUser && hasAnyRole(req.appUser, roles))
@@ -121,20 +126,61 @@ export async function canAccessProductionUser(
   req: Request,
   targetUserId: number,
 ): Promise<boolean> {
-  if (!isProduction()) return true;
+  if (!isProductionEnvironment()) return true;
   const actor = req.appUser;
   if (!actor) return false;
-  if (actor.id === targetUserId || hasAnyRole(actor, ["admin", "ld"])) return true;
-  if (!hasAnyRole(actor, ["manager", "director"])) return false;
 
   const users = await db.select().from(usersTable);
   const byId = new Map(users.map((user) => [user.id, user]));
-  let current = byId.get(targetUserId);
-  const visited = new Set<number>();
-  while (current?.managerId && !visited.has(current.id)) {
-    if (current.managerId === actor.id) return true;
-    visited.add(current.id);
-    current = byId.get(current.managerId);
-  }
+  return permitsUserAccess(actor, targetUserId, byId);
+}
+
+/**
+ * Enforces user-scoped access at the route boundary. In production, a caller
+ * can access their own record, users in their reporting hierarchy (manager or
+ * director), or any user when they are L&D/admin.
+ */
+export async function requireProductionUserAccess(
+  req: Request,
+  res: Response,
+  targetUserId: number,
+  action = "access this person's information",
+): Promise<boolean> {
+  if (await canAccessProductionUser(req, targetUserId)) return true;
+  res.status(403).json({ error: `You do not have permission to ${action}.` });
   return false;
+}
+
+/**
+ * Manager-only changes such as probation reviews cannot be performed by the
+ * employee who is the subject of the review.
+ */
+export async function canManageProductionUser(req: Request, targetUserId: number): Promise<boolean> {
+  if (!isProductionEnvironment()) return true;
+  const actor = req.appUser;
+  if (!actor) return false;
+  const users = await db.select().from(usersTable);
+  const byId = new Map(users.map((user) => [user.id, user]));
+  return permitsManagerAction(actor, targetUserId, byId);
+}
+
+export async function requireProductionManagementAccess(
+  req: Request,
+  res: Response,
+  targetUserId: number,
+  action = "manage this person's review",
+): Promise<boolean> {
+  if (await canManageProductionUser(req, targetUserId)) return true;
+  res.status(403).json({ error: `You do not have permission to ${action}.` });
+  return false;
+}
+
+/**
+ * A manager dashboard is always scoped to the authenticated manager. L&D and
+ * admins have a deliberate broader reporting view.
+ */
+export function canAccessProductionManager(req: Request, managerId: number): boolean {
+  if (!isProductionEnvironment()) return true;
+  const actor = req.appUser;
+  return Boolean(actor && permitsManagerDashboard(actor, managerId));
 }

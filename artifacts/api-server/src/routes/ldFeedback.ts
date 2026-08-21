@@ -1,6 +1,11 @@
 import { Router } from "express";
 import { pool } from "@workspace/db";
 import { z } from "zod";
+import {
+  hasAnyRole,
+  isProductionEnvironment,
+  requireProductionUserAccess,
+} from "../middlewares/productionAuth";
 
 const router = Router();
 
@@ -10,6 +15,16 @@ router.get("/", async (req, res) => {
     if (req.query.userId) {
       const userId = parseInt(req.query.userId as string);
       if (isNaN(userId)) return res.status(400).json({ error: "Invalid userId" });
+      if (!(await requireProductionUserAccess(req, res, userId, "view this L&D feedback"))) return;
+
+      const isSelf = isProductionEnvironment() && req.appUser!.id === userId;
+      const isElevated = !isProductionEnvironment() || hasAnyRole(req.appUser!, ["ld", "admin"]);
+      const isManager = !isSelf && !isElevated;
+      const visibility = isSelf
+        ? " AND lf.send_to_individual = true"
+        : isManager
+          ? " AND lf.send_to_manager = true"
+          : "";
 
       const result = await pool.query(
         `SELECT lf.id, lf.user_id AS "userId", u.name AS "employeeName", u.job_title AS "employeeJobTitle",
@@ -20,13 +35,16 @@ router.get("/", async (req, res) => {
                 lf.created_at AS "createdAt"
          FROM ld_feedback lf
          JOIN users u ON u.id = lf.user_id
-         WHERE lf.user_id = $1
+         WHERE lf.user_id = $1${visibility}
          ORDER BY lf.created_at DESC`,
         [userId]
       );
       return res.json(result.rows);
     } else {
       // All feedback across all employees (L&D view)
+      if (isProductionEnvironment() && !hasAnyRole(req.appUser!, ["ld", "admin"])) {
+        return res.status(403).json({ error: "L&D access is required." });
+      }
       const result = await pool.query(
         `SELECT lf.id, lf.user_id AS "userId", u.name AS "employeeName", u.job_title AS "employeeJobTitle",
                 lf.title, lf.author_name AS "authorName",
@@ -62,6 +80,10 @@ router.post("/", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
 
   const { userId, authorName, title, content, feedbackDate, sendToManager, sendToIndividual } = parsed.data;
+  if (isProductionEnvironment() && !hasAnyRole(req.appUser!, ["ld", "admin"])) {
+    return res.status(403).json({ error: "L&D access is required to create feedback." });
+  }
+  const effectiveAuthorName = isProductionEnvironment() ? req.appUser!.name : authorName;
 
   try {
     // Always save to ld_feedback
@@ -72,7 +94,7 @@ router.post("/", async (req, res) => {
                  content, feedback_date AS "feedbackDate",
                  send_to_manager AS "sendToManager", send_to_individual AS "sendToIndividual",
                  created_at AS "createdAt"`,
-      [userId, authorName, title, content, feedbackDate, sendToManager, sendToIndividual]
+       [userId, effectiveAuthorName, title, content, feedbackDate, sendToManager, sendToIndividual]
     );
 
     // If sending to manager or individual, create a learning_log_entry so it surfaces
@@ -90,7 +112,7 @@ router.post("/", async (req, res) => {
           userId,
           dateStr,
           `L&D Feedback: ${title}`,
-          `${authorName} (L&D)`,
+           `${effectiveAuthorName} (L&D)`,
           content,
         ]
       );

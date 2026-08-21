@@ -54,7 +54,7 @@ router.use("/probation/manager-reviews", probationManagerReviewsRouter);
 router.use("/users", usersRouter);
 router.use("/manager", requireProductionRoles("manager", "director", "ld", "admin"), managerRouter);
 router.use("/teams", requireProductionWriteRoles("admin"), teamsRouter);
-router.use("/hierarchy", hierarchyRouter);
+  router.use("/hierarchy", requireProductionRoles("ld", "admin"), hierarchyRouter);
 router.use("/audit-log", requireProductionRoles("admin"), auditLogRouter);
 router.use("/learning-log", learningLogRouter);
 router.use("/manager-ld", requireProductionRoles("manager", "director", "ld", "admin"), managerLdRouter);

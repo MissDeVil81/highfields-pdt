@@ -8,8 +8,17 @@ import {
   CLERK_PROXY_PATH,
   clerkProxyMiddleware,
 } from "./middlewares/clerkProxyMiddleware";
+import { RESOLVED_APP_ENV } from "@workspace/db";
 
 const app: Express = express();
+const productionOrigins = new Set([
+  "https://career-path-planner-josiemhughes.replit.app",
+  ...(
+    process.env.PRODUCTION_ALLOWED_ORIGINS?.split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean) ?? []
+  ),
+]);
 
 app.use(
   pinoHttp({
@@ -31,7 +40,19 @@ app.use(
   }),
 );
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-app.use(cors({ credentials: true, origin: true }));
+app.use(
+  cors(
+    RESOLVED_APP_ENV === "production"
+      ? {
+          credentials: true,
+          origin(origin, callback) {
+            // Requests without an Origin header are same-origin/server-to-server.
+            callback(null, !origin || productionOrigins.has(origin));
+          },
+        }
+      : { credentials: true, origin: true },
+  ),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(clerkMiddleware());

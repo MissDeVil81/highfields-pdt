@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, assessmentsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
+import { requireProductionUserAccess } from "../middlewares/productionAuth";
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.get("/", async (req, res) => {
   const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
   const roleId = req.query.roleId ? parseInt(req.query.roleId as string) : undefined;
   if (!userId) return res.status(400).json({ error: "userId is required" });
+  if (!(await requireProductionUserAccess(req, res, userId, "view these assessments"))) return;
 
   const conditions = [eq(assessmentsTable.userId, userId)];
   if (roleId) conditions.push(eq(assessmentsTable.roleId, roleId));
@@ -30,6 +32,7 @@ router.post("/", async (req, res) => {
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
   const { userId, competencyId, roleId, rating, notes } = result.data;
+  if (!(await requireProductionUserAccess(req, res, userId, "update these assessments"))) return;
 
   const existing = await db.select().from(assessmentsTable).where(
     and(

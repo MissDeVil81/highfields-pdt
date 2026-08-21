@@ -10,6 +10,7 @@ import {
   financialProgressTable,
 } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
+import { canAccessProductionManager } from "../middlewares/productionAuth";
 
 const router = Router();
 
@@ -115,6 +116,9 @@ async function buildDevMap(memberIds: number[], targetRoleByUser: Map<number, nu
 router.get("/team", async (req, res) => {
   const managerId = Number(req.query.managerId);
   if (isNaN(managerId)) return res.status(400).json({ error: "managerId is required" });
+  if (!canAccessProductionManager(req, managerId)) {
+    return res.status(403).json({ error: "You do not have permission to view this manager's team." });
+  }
 
   const members = await db.select().from(usersTable).where(eq(usersTable.managerId, managerId));
 
@@ -199,6 +203,9 @@ router.get("/team", async (req, res) => {
 router.get("/dashboard-stats", async (req, res) => {
   const managerId = Number(req.query.managerId);
   if (isNaN(managerId)) return res.status(400).json({ error: "managerId is required" });
+  if (!canAccessProductionManager(req, managerId)) {
+    return res.status(403).json({ error: "You do not have permission to view this manager's dashboard." });
+  }
 
   const members = await db.select().from(usersTable).where(eq(usersTable.managerId, managerId));
 

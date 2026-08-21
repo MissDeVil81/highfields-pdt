@@ -2,6 +2,11 @@ import { Router } from "express";
 import { db, probationAssessmentsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
+import {
+  requireProductionManagementAccess,
+  requireProductionUserAccess,
+} from "../middlewares/productionAuth";
+import { managerAssessmentFields } from "../middlewares/productionAuthorizationPolicy";
 
 const router = Router();
 
@@ -19,6 +24,7 @@ router.get("/", async (req, res) => {
   const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
   const reviewPeriod = req.query.reviewPeriod as string | undefined;
   if (!userId) return res.status(400).json({ error: "userId is required" });
+  if (!(await requireProductionUserAccess(req, res, userId, "view this probation assessment"))) return;
 
   const conditions = [eq(probationAssessmentsTable.userId, userId)];
   if (reviewPeriod) {
@@ -34,6 +40,11 @@ router.post("/", async (req, res) => {
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
   const { userId, itemId, reviewPeriod, rating, note, managerRating, managerComment } = result.data;
+  const includesManagerFields = managerRating !== undefined || managerComment !== undefined;
+  const canUpdate = includesManagerFields
+    ? await requireProductionManagementAccess(req, res, userId, "update this manager assessment")
+    : await requireProductionUserAccess(req, res, userId, "update this probation assessment");
+  if (!canUpdate) return;
 
   const existing = await db
     .select()
@@ -47,13 +58,17 @@ router.post("/", async (req, res) => {
     );
 
   if (existing.length > 0) {
+    const managerFields = managerAssessmentFields(
+      existing[0],
+      { managerRating, managerComment },
+      includesManagerFields,
+    );
     const [updated] = await db
       .update(probationAssessmentsTable)
       .set({
         rating: rating ?? null,
         note: note ?? null,
-        managerRating: managerRating ?? null,
-        managerComment: managerComment ?? null,
+        ...managerFields,
         updatedAt: new Date(),
       })
       .where(eq(probationAssessmentsTable.id, existing[0].id))
