@@ -9,3 +9,4 @@
 - [Startup seed resilience](prod-seed-guards.md) — completion sentinels, transactions, and serialized guard/write work prevent partial demo data.
 - [Controlled production logins](controlled-login-policy.md) — admins privately hand over one-time passwords; normal access waits for a password change.
 - [Production route-test isolation](production-route-test-isolation.md) — production-mode API tests must unset DATABASE_URL before using a closed local database URL.
+- [Artifact API health probe](artifact-api-health-probe.md) — publishing may probe `/api` even with `/api/healthz` configured, so both must be ready.
