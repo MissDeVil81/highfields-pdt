@@ -72,7 +72,6 @@ const emptyDates = (): ProbationDates => ({
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  email: z.string().email("Enter a valid work email").optional().or(z.literal("")),
   role: z.enum(["employee", "manager", "director", "admin", "ld"]),
   managerId: z.number().optional(),
   isActive: z.boolean(),
@@ -114,7 +113,6 @@ export default function UserFormPage() {
   const [probationDates, setProbationDates] = useState<ProbationDates>(emptyDates());
   const [draftDates, setDraftDates] = useState<ProbationDates>(emptyDates());
   const [probationDialogOpen, setProbationDialogOpen] = useState(false);
-  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
 
   // ── Main form data ─────────────────────────────────────────────────────
   const { data: user, isLoading: userLoading } = useGetUser(id!, {
@@ -156,7 +154,6 @@ export default function UserFormPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      email: "",
       role: "employee",
       managerId: undefined,
       isActive: true,
@@ -178,7 +175,6 @@ export default function UserFormPage() {
 
       reset({
         name: user.name,
-        email: user.email ?? "",
         role: primaryRole(user.roles),
         managerId: user.managerId ?? undefined,
         isActive: user.isActive === "active",
@@ -264,7 +260,6 @@ export default function UserFormPage() {
             id: id!,
             data: {
               name: values.name,
-              email: values.email || undefined,
               roles,
               managerId: values.managerId ?? null,
               isActive: values.isActive ? "active" : "inactive",
@@ -295,7 +290,6 @@ export default function UserFormPage() {
         const created = await createUser.mutateAsync({
           data: {
             name: values.name,
-            email: values.email || undefined,
             roles,
             managerId: values.managerId,
             isActive: values.isActive ? "active" : "inactive",
@@ -310,11 +304,7 @@ export default function UserFormPage() {
 
         queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
         toast({ title: "User created successfully" });
-        if (created?.temporaryPassword) {
-          setTemporaryPassword(created.temporaryPassword);
-        } else {
-          navigate("/");
-        }
+        navigate("/");
       }
     } catch (err) {
       toast({ title: "Operation failed", variant: "destructive" });
@@ -358,15 +348,6 @@ export default function UserFormPage() {
                 <Input id="name" placeholder="Jane Smith" {...register("name")} />
                 {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
               </div>
-
-              {!isEdit && (
-                <div className="space-y-2">
-                  <Label htmlFor="email">Work email</Label>
-                  <Input id="email" type="email" placeholder="jane.smith@highfieldps.co.uk" {...register("email")} />
-                  <p className="text-xs text-muted-foreground">Required when issuing a live login. A temporary password will be shown once after creation.</p>
-                  {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-                </div>
-              )}
 
               {/* Role */}
               <div className="space-y-2">
@@ -622,25 +603,6 @@ export default function UserFormPage() {
             <Button type="button" onClick={saveProbationDates}>
               Save dates
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={temporaryPassword !== null} onOpenChange={(open) => {
-        if (!open) {
-          setTemporaryPassword(null);
-          navigate("/");
-        }
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Temporary password issued</DialogTitle>
-            <p className="text-sm text-muted-foreground pt-1">Give this password to the user privately. It is shown only now and is not stored in the Admin Portal.</p>
-          </DialogHeader>
-          <div className="rounded-md border bg-muted/40 px-4 py-3 font-mono text-lg tracking-wide break-all">{temporaryPassword}</div>
-          <p className="text-xs text-muted-foreground">The user must choose a new password after their first sign-in.</p>
-          <DialogFooter>
-            <Button type="button" onClick={() => { setTemporaryPassword(null); navigate("/"); }}>I have shared it privately</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

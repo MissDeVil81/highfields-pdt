@@ -1,17 +1,17 @@
 ---
-name: Startup seed resilience
-description: Completion sentinels, atomic writes, and serialized seed ownership prevent incomplete demo data after a restart.
+name: Production seed chain guard conditions
+description: Each seed function must guard on a table unique to itself — shared tables cause false skips that leave some data missing.
 ---
 
 ## Rule
-Startup fixture seeds must use a completion sentinel written at the end of their own dataset, run their writes in a transaction, and serialize the sentinel check with the write.
+Each `seed*IfMissing` function must check a table that ONLY it populates as its guard condition. Checking a shared table causes the function to skip if an earlier seed already wrote to that table.
 
-**Why:** A non-empty shared table can be left behind by an earlier or interrupted seed, making a later seed falsely appear complete. Separate instances can also pass an unlocked check simultaneously. Historic partial baseline data must be replayable without duplicate-key failures.
+**Why:** `seedManagerPortalDataIfMissing` previously checked `probation_items`, but the base `SEED_SQL` (run by `seedIfEmpty`) also inserts probation_items. This caused `seedManagerPortalDataIfMissing` to skip entirely on a clean production DB, leaving the `teams` table empty.
 
 **How to apply:** When adding or reviewing a seed guard:
-- Guard on a record only written after that seed's complete fixture set, not a table row count.
-- Put the guard and write work behind the same PostgreSQL advisory lock.
-- Roll back the entire seed on non-recoverable errors; fixture replays for legacy partial state may skip only duplicate-key statements behind savepoints.
-- Order seed phases so records with foreign keys run only after the fixtures they reference are committed.
-- When a staged seed uses a final completion record, make every preceding atomic batch replay-safe so a legacy interruption can still reach that record.
-- Surface any failed seed step in health/readiness state rather than silently serving incomplete data.
+- Pick a table that is ONLY written by that function, not by any earlier seed
+- `seedManagerPortalDataIfMissing` → check `teams` (fixed)
+- `seedLdDemoDataIfMissing` → check `learning_log_entries` (correct — unique to L&D seed)
+- `seedDemoProgressV2IfMissing` → check `assessments WHERE user_id IN (3, 4)` (correct)
+
+**Recovery:** If seed data is missing from production, run the seed SQL directly via `psql "$PRODUCTION_DATABASE_URL"` — all seed inserts use `ON CONFLICT DO NOTHING` so they are safe to re-run.

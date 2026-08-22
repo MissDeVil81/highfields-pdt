@@ -47,7 +47,3 @@ Thumbs.db
 # Replit
 .cache/
 .local/
-
-# Database backups can contain production data and must never be committed.
-/backups/
-*.dump

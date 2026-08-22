@@ -2,7 +2,6 @@ import { Router } from "express";
 import { db, probationReflectionsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
-import { requireProductionUserAccess } from "../middlewares/productionAuth";
 
 const router = Router();
 
@@ -24,7 +23,6 @@ router.get("/", async (req, res) => {
   const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
   const reviewPeriod = req.query.reviewPeriod as string | undefined;
   if (!userId) return res.status(400).json({ error: "userId is required" });
-  if (!(await requireProductionUserAccess(req, res, userId, "view this probation reflection"))) return;
 
   const conditions = [eq(probationReflectionsTable.userId, userId)];
   if (reviewPeriod) {
@@ -40,7 +38,6 @@ router.post("/", async (req, res) => {
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
   const { userId, reviewPeriod, ...fields } = result.data;
-  if (!(await requireProductionUserAccess(req, res, userId, "update this probation reflection"))) return;
 
   const existing = await db
     .select()

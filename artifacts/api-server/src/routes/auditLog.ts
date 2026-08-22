@@ -9,13 +9,11 @@ const router = Router();
 router.get("/", async (req, res) => {
   // Require admin
   const rawId = req.headers["x-requesting-user-id"] ?? req.query.requestingUserId;
-  const requestingId = req.appUser?.id ?? Number(rawId);
-  if (!Number.isInteger(requestingId)) {
-    res.status(401).json({ error: "Administrator identity is required" });
-    return;
-  }
+  if (!rawId) return res.status(401).json({ error: "x-requesting-user-id header is required" });
+  const requestingId = Number(rawId);
+  if (isNaN(requestingId)) return res.status(400).json({ error: "Invalid requesting user id" });
 
-  const requestingUser = req.appUser ?? (await db.select().from(usersTable).where(eq(usersTable.id, requestingId)))[0];
+  const [requestingUser] = await db.select().from(usersTable).where(eq(usersTable.id, requestingId));
   if (!requestingUser) return res.status(401).json({ error: "Requesting user not found" });
   if (!isAdmin(requestingUser)) return res.status(403).json({ error: "Admin access required" });
 

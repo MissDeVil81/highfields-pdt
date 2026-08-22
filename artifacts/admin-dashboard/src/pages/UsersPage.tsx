@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import {
   useListUsers,
   useDeleteUser,
-  useResetUserPassword,
   getListUsersQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -38,7 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { PlusIcon, PencilIcon, TrashIcon, KeyRoundIcon } from "lucide-react";
+import { PlusIcon, PencilIcon, TrashIcon } from "lucide-react";
 
 const ROLE_LABELS: Record<string, string> = {
   employee: "Employee",
@@ -74,17 +73,9 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [resetId, setResetId] = useState<number | null>(null);
-  const [temporaryPassword, setTemporaryPassword] = useState<{ name: string; password: string } | null>(null);
-  const [isLive, setIsLive] = useState(false);
 
   const { data: users, isLoading } = useListUsers();
   const deleteUser = useDeleteUser({ request: { headers: { 'x-requesting-user-id': String(adminUserId) } } });
-  const resetUserPassword = useResetUserPassword({ request: { headers: { 'x-requesting-user-id': String(adminUserId) } } });
-
-  useEffect(() => {
-    fetch("/api/env").then((response) => response.json()).then((data) => setIsLive(data.appEnv === "production")).catch(() => setIsLive(false));
-  }, []);
 
   const filtered = (users ?? []).filter((u) => {
     const role = primaryRole(u.roles);
@@ -118,24 +109,6 @@ export default function UsersPage() {
   }
 
   const userToDelete = (users ?? []).find((u) => u.id === deleteId);
-  const userToReset = (users ?? []).find((u) => u.id === resetId);
-
-  function handlePasswordReset() {
-    if (resetId === null || !userToReset) return;
-    resetUserPassword.mutate(
-      { id: resetId },
-      {
-        onSuccess: (result) => {
-          setResetId(null);
-          setTemporaryPassword({ name: userToReset.name, password: result.temporaryPassword });
-        },
-        onError: () => {
-          toast({ title: "Password could not be reset", description: "Please try again.", variant: "destructive" });
-          setResetId(null);
-        },
-      },
-    );
-  }
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto">
@@ -283,18 +256,6 @@ export default function UsersPage() {
                         >
                           <PencilIcon className="h-4 w-4" />
                         </Button>
-                        {isLive && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                            onClick={() => setResetId(user.id)}
-                            aria-label={`Issue a temporary password for ${user.name}`}
-                            title="Issue temporary password"
-                          >
-                            <KeyRoundIcon className="h-4 w-4" />
-                          </Button>
-                        )}
                         <Button
                           size="icon"
                           variant="ghost"
@@ -340,39 +301,6 @@ export default function UsersPage() {
             >
               Delete
             </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={resetId !== null} onOpenChange={(open) => { if (!open) setResetId(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Issue a temporary password?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This creates the user's first live login, or replaces their existing password and signs them out of other sessions. Give the temporary password to <strong className="text-foreground">{userToReset?.name}</strong> privately; they will have to choose a new password before they can use the system.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={resetUserPassword.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handlePasswordReset} disabled={resetUserPassword.isPending}>
-              {resetUserPassword.isPending ? "Issuing…" : "Generate temporary password"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={temporaryPassword !== null} onOpenChange={(open) => { if (!open) setTemporaryPassword(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Temporary password for {temporaryPassword?.name}</AlertDialogTitle>
-            <AlertDialogDescription>
-              Share this password privately. It is displayed only now and is never stored in the Admin Portal.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="rounded-md border bg-muted/40 px-4 py-3 font-mono text-lg tracking-wide break-all">{temporaryPassword?.password}</div>
-          <p className="text-sm text-muted-foreground">The user will be prompted to choose a new password at their next sign-in.</p>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setTemporaryPassword(null)}>I have shared it privately</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

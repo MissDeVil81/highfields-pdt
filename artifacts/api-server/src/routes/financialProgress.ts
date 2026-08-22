@@ -2,7 +2,6 @@ import { Router } from "express";
 import { db, financialProgressTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
-import { requireProductionUserAccess } from "../middlewares/productionAuth";
 
 const router = Router();
 
@@ -18,7 +17,6 @@ router.get("/", async (req, res) => {
   const roleId = req.query.roleId ? parseInt(req.query.roleId as string) : undefined;
   if (!userId) return res.status(400).json({ error: "userId is required" });
   if (!roleId) return res.status(400).json({ error: "roleId is required" });
-  if (!(await requireProductionUserAccess(req, res, userId, "view this financial progress"))) return;
 
   const rows = await db
     .select()
@@ -33,7 +31,6 @@ router.post("/", async (req, res) => {
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
   const { userId, targetId, roleId, currentAmount } = result.data;
-  if (!(await requireProductionUserAccess(req, res, userId, "update this financial progress"))) return;
 
   const existing = await db
     .select()

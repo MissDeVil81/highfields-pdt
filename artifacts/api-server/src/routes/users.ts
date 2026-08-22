@@ -1,51 +1,10 @@
 import { Router } from "express";
-import { db, RESOLVED_APP_ENV, usersTable, userTeamsTable, teamsTable, additionalUserPermissionsTable, additionalTeamPermissionsTable, auditLogTable } from "@workspace/db";
+import { db, usersTable, userTeamsTable, teamsTable, additionalUserPermissionsTable, additionalTeamPermissionsTable, auditLogTable } from "@workspace/db";
 import { eq, and, sql, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
-import { randomBytes } from "node:crypto";
-import { clerkClient } from "@clerk/express";
 import { isAdmin, wouldCreateCycle, buildAccessSummary } from "../lib/permissions";
-import { canAccessProductionUser, hasAnyRole } from "../middlewares/productionAuth";
 
 const router = Router();
-const isProduction = () => RESOLVED_APP_ENV === "production";
-
-class ClerkIdentityConflictError extends Error {
-  constructor() {
-    super("A separate Clerk account already uses this work email.");
-  }
-}
-
-function isClerkIdentityConflict(error: unknown): boolean {
-  if (!error || typeof error !== "object" || !("errors" in error)) return false;
-  const errors = (error as { errors?: unknown }).errors;
-  return Array.isArray(errors) && errors.some((item) => {
-    const code = typeof item === "object" && item && "code" in item
-      ? String((item as { code?: unknown }).code)
-      : "";
-    return code === "form_identifier_exists" || code === "identifier_exists";
-  });
-}
-
-function generateTemporaryPassword(): string {
-  const pick = (characters: string) => characters[randomBytes(1)[0] % characters.length];
-  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-  const lower = "abcdefghijkmnopqrstuvwxyz";
-  const digits = "23456789";
-  const symbols = "!@#$%&*";
-  const all = `${upper}${lower}${digits}${symbols}`;
-  return [
-    pick(upper),
-    pick(lower),
-    pick(digits),
-    pick(symbols),
-    ...Array.from({ length: 14 }, () => pick(all)),
-  ].sort(() => randomBytes(1)[0] - 128).join("");
-}
-
-function currentAdmin(req: Parameters<typeof router.get>[1] extends (req: infer T, ...args: never[]) => unknown ? T : never): boolean {
-  return !isProduction() || Boolean(req.appUser && hasAnyRole(req.appUser, ["admin"]));
-}
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -125,45 +84,6 @@ async function syncTeams(userId: number, teamIds: number[]) {
   }
 }
 
-async function issueTemporaryPassword(user: typeof usersTable.$inferSelect): Promise<string> {
-  if (!user.email) {
-    throw new Error("A work email address is required before issuing a login.");
-  }
-
-  const temporaryPassword = generateTemporaryPassword();
-  let clerkUserId = user.clerkUserId;
-
-  if (clerkUserId) {
-    await clerkClient.users.updateUser(clerkUserId, {
-      password: temporaryPassword,
-      signOutOfOtherSessions: true,
-    });
-  } else {
-    const [firstName, ...lastName] = user.name.trim().split(/\s+/);
-    let clerkUser;
-    try {
-      clerkUser = await clerkClient.users.createUser({
-        emailAddress: [user.email],
-        password: temporaryPassword,
-        firstName,
-        lastName: lastName.join(" ") || undefined,
-        skipLegalChecks: true,
-      });
-    } catch (error) {
-      if (isClerkIdentityConflict(error)) throw new ClerkIdentityConflictError();
-      throw error;
-    }
-    clerkUserId = clerkUser.id;
-  }
-
-  await db
-    .update(usersTable)
-    .set({ clerkUserId, mustChangePassword: true, updatedAt: new Date() })
-    .where(eq(usersTable.id, user.id));
-
-  return temporaryPassword;
-}
-
 // GET /users
 router.get("/", async (req, res) => {
   const managerId = req.query.managerId ? Number(req.query.managerId) : undefined;
@@ -187,59 +107,38 @@ router.get("/", async (req, res) => {
     users = users.filter((u) => memberIds.has(u.id));
   }
 
-  if (isProduction() && !currentAdmin(req)) {
-    const actor = req.appUser!;
-    users = users.filter((user) =>
-      user.id === actor.id ||
-      (hasAnyRole(actor, ["manager", "director", "ld"]) && user.managerId === actor.id),
-    );
-  }
-
   const enriched = await enrichWithTeams(users);
-  res.json(enriched);
+  return res.json(enriched);
 });
 
 // POST /users
 router.post("/", async (req, res) => {
-  if (!currentAdmin(req)) {
-    res.status(403).json({ error: "Administrator access is required to create users." });
-    return;
-  }
   const result = createSchema.safeParse(req.body);
   if (!result.success) return res.status(400).json({ error: result.error.message });
 
   const { teamIds, ...userData } = result.data;
-  const email = userData.email?.trim().toLowerCase();
-  if (isProduction() && !email) {
-    return res.status(400).json({ error: "A work email address is required to issue a live login." });
-  }
-
-  const [created] = await db.insert(usersTable).values({ ...userData, email }).returning();
+  const [created] = await db.insert(usersTable).values(userData).returning();
 
   if (teamIds && teamIds.length > 0) {
     await syncTeams(created.id, teamIds);
   }
 
-  const adminId = req.appUser?.id ?? Number(req.headers["x-requesting-user-id"]);
-  if (Number.isInteger(adminId)) {
-    await db.insert(auditLogTable).values({
-      adminUserId: adminId,
-      affectedUserId: created.id,
-      action: "user_created",
-      newValue: created.name,
-    });
+  // Audit log (if requesting user info is present)
+  const rawRequestingId = req.headers["x-requesting-user-id"];
+  if (rawRequestingId) {
+    const adminId = Number(rawRequestingId);
+    if (!isNaN(adminId)) {
+      await db.insert(auditLogTable).values({
+        adminUserId: adminId,
+        affectedUserId: created.id,
+        action: "user_created",
+        newValue: created.name,
+      });
+    }
   }
 
-  try {
-    const temporaryPassword = isProduction() ? await issueTemporaryPassword(created) : undefined;
-    const [provisioned] = await db.select().from(usersTable).where(eq(usersTable.id, created.id));
-    const enriched = await enrichWithTeams([provisioned ?? created]);
-    return res.status(201).json({ ...enriched[0], temporaryPassword });
-  } catch (error) {
-    await db.delete(usersTable).where(eq(usersTable.id, created.id));
-    req.log?.error({ err: error, userId: created.id }, "Unable to issue a temporary password for new user");
-    return res.status(502).json({ error: "The user could not be provisioned with a login. No user was created." });
-  }
+  const enriched = await enrichWithTeams([created]);
+  return res.status(201).json(enriched[0]);
 });
 
 // GET /users/:id
@@ -249,10 +148,6 @@ router.get("/:id", async (req, res) => {
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, id));
   if (!user) return res.status(404).json({ error: "Not found" });
-  if (!(await canAccessProductionUser(req, id))) {
-    res.status(403).json({ error: "You do not have permission to view this user." });
-    return;
-  }
 
   const enriched = await enrichWithTeams([user]);
   return res.json(enriched[0]);
@@ -260,10 +155,6 @@ router.get("/:id", async (req, res) => {
 
 // PUT /users/:id
 router.put("/:id", async (req, res) => {
-  if (!currentAdmin(req)) {
-    res.status(403).json({ error: "Administrator access is required to update users." });
-    return;
-  }
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -303,8 +194,11 @@ router.put("/:id", async (req, res) => {
   }
 
   // Audit log
-  const adminId = req.appUser?.id ?? Number(req.headers["x-requesting-user-id"]);
-  if (Number.isInteger(adminId)) {
+  const rawRequestingId = req.headers["x-requesting-user-id"];
+  if (rawRequestingId) {
+    const adminId = Number(rawRequestingId);
+    if (!isNaN(adminId)) {
+      const auditEntries: Parameters<typeof db.insert>[0] extends any ? any[] : never = [];
 
       if (before.roles.join(",") !== (updateData.roles ?? before.roles).join(",")) {
         await db.insert(auditLogTable).values({
@@ -335,6 +229,7 @@ router.put("/:id", async (req, res) => {
           newValue: updateData.isActive,
         });
       }
+    }
   }
 
   const enriched = await enrichWithTeams([updated]);
@@ -343,10 +238,6 @@ router.put("/:id", async (req, res) => {
 
 // DELETE /users/:id
 router.delete("/:id", async (req, res) => {
-  if (!currentAdmin(req)) {
-    res.status(403).json({ error: "Administrator access is required to delete users." });
-    return;
-  }
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -354,53 +245,8 @@ router.delete("/:id", async (req, res) => {
   return res.status(204).send();
 });
 
-// POST /users/:id/reset-password — issues a first login when one has not yet been provisioned.
-router.post("/:id/reset-password", async (req, res) => {
-  if (!currentAdmin(req)) {
-    return res.status(403).json({ error: "Administrator access is required to reset passwords." });
-  }
-  if (!isProduction()) {
-    return res.status(404).json({ error: "Password resets are only available for live accounts." });
-  }
-
-  const id = Number(req.params.id);
-  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
-
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, id));
-  if (!user) return res.status(404).json({ error: "Not found" });
-  if (!user.email) {
-    return res.status(400).json({ error: "Add a work email to this user before issuing a live login." });
-  }
-
-  try {
-    const temporaryPassword = await issueTemporaryPassword(user);
-    const adminId = req.appUser?.id ?? Number(req.headers["x-requesting-user-id"]);
-    if (Number.isInteger(adminId)) {
-      await db.insert(auditLogTable).values({
-        adminUserId: adminId,
-        affectedUserId: id,
-        action: "temporary_password_issued",
-        newValue: user.clerkUserId ? "Password reset issued" : "Initial login issued",
-      });
-    }
-    return res.json({ userId: id, temporaryPassword });
-  } catch (error) {
-    if (error instanceof ClerkIdentityConflictError) {
-      return res.status(409).json({
-        error: "A separate Clerk account already uses this work email. It must be resolved before a controlled login can be issued.",
-      });
-    }
-    req.log?.error({ err: error, userId: id }, "Unable to reset user password");
-    return res.status(502).json({ error: "The password could not be reset. Please try again." });
-  }
-});
-
 // GET /users/:id/permissions
 router.get("/:id/permissions", async (req, res) => {
-  if (!currentAdmin(req)) {
-    res.status(403).json({ error: "Administrator access is required." });
-    return;
-  }
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -414,8 +260,10 @@ router.get("/:id/permissions", async (req, res) => {
 
 // PUT /users/:id/permissions
 router.put("/:id/permissions", async (req, res) => {
-  const adminId = req.appUser?.id ?? Number(req.headers["x-requesting-user-id"]);
-  if (!Number.isInteger(adminId)) return res.status(401).json({ error: "Administrator identity is required" });
+  const rawRequestingId = req.headers["x-requesting-user-id"];
+  if (!rawRequestingId) return res.status(401).json({ error: "x-requesting-user-id header is required" });
+  const adminId = Number(rawRequestingId);
+  if (isNaN(adminId)) return res.status(400).json({ error: "Invalid requesting user id" });
 
   const [adminUser] = await db.select().from(usersTable).where(eq(usersTable.id, adminId));
   if (!adminUser || !isAdmin(adminUser)) return res.status(403).json({ error: "Admin access required" });
@@ -474,10 +322,6 @@ router.put("/:id/permissions", async (req, res) => {
 
 // GET /users/:id/access-summary
 router.get("/:id/access-summary", async (req, res) => {
-  if (!currentAdmin(req)) {
-    res.status(403).json({ error: "Administrator access is required." });
-    return;
-  }
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 

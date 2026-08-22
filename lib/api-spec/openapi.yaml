@@ -53,12 +53,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
-        "503":
-          description: Starting, degraded, or unable to reach the database
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HealthStatus"
 
   /auth/identify:
     get:
@@ -785,41 +779,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProvisionedUser"
-
-  /users/{id}/reset-password:
-    post:
-      operationId: resetUserPassword
-      tags: [users]
-      summary: Issue a new temporary password for a live user
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Temporary password issued
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TemporaryPassword"
-
-  /auth/change-temporary-password:
-    post:
-      operationId: changeTemporaryPassword
-      tags: [auth]
-      summary: Replace a temporary password with a private password
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/TemporaryPasswordChangeInput"
-      responses:
-        "204":
-          description: Password changed
+                $ref: "#/components/schemas/User"
 
   /users/{id}:
     get:
@@ -1187,19 +1147,8 @@ components:
       properties:
         status:
           type: string
-        reason:
-          type: string
-        seedStatus:
-          type: string
-          enum: [starting, seeded, partial, failed, not_applicable]
-        failedSeedSteps:
-          type: array
-          items:
-            type: string
       required:
         - status
-        - seedStatus
-        - failedSeedSteps
 
     CareerPath:
       type: object
@@ -1961,8 +1910,6 @@ components:
           type: ["integer", "null"]
         isActive:
           type: string
-        mustChangePassword:
-          type: boolean
         teamIds:
           type: array
           items:
@@ -1982,7 +1929,6 @@ components:
         - name
         - roles
         - isActive
-        - mustChangePassword
         - createdAt
         - updatedAt
 
@@ -2017,37 +1963,6 @@ components:
             type: integer
       required:
         - name
-
-    ProvisionedUser:
-      allOf:
-        - $ref: "#/components/schemas/User"
-        - type: object
-          properties:
-            temporaryPassword:
-              type: string
-
-    TemporaryPassword:
-      type: object
-      properties:
-        userId:
-          type: integer
-        temporaryPassword:
-          type: string
-      required:
-        - userId
-        - temporaryPassword
-
-    TemporaryPasswordChangeInput:
-      type: object
-      properties:
-        currentPassword:
-          type: string
-        newPassword:
-          type: string
-          minLength: 8
-      required:
-        - currentPassword
-        - newPassword
 
     UserUpdate:
       type: object

@@ -8,7 +8,7 @@ The Personal Development Tool runs on three separate environments:
 |-------------|---------|--------|----------|
 | **Development** | Building and testing new features | Red — "DEVELOPMENT ENVIRONMENT" | `DEVELOPMENT_DATABASE_URL` |
 | **Demo** | Polished demonstration and training | Amber — "DEMO ENVIRONMENT" | `DEMO_DATABASE_URL` |
-| **Live** | Real employee use | None (small "LIVE" pill in admin) | Replit `DATABASE_URL` (or `PRODUCTION_DATABASE_URL` fallback) |
+| **Live** | Real employee use | None (small "LIVE" pill in admin) | `PRODUCTION_DATABASE_URL` |
 
 Each environment runs the **same codebase** from the same GitHub repository. They differ only in their secrets and which database they connect to.
 
@@ -16,41 +16,34 @@ Each environment runs the **same codebase** from the same GitHub repository. The
 
 ## Environment Variables Required Per Environment
 
-### How database isolation works
+Replit automatically injects `DATABASE_URL` for every repl's built-in Postgres database. In a normal fork-based setup **you only need to set `APP_ENV`** — each forked repl already has its own isolated database.
 
-The API server (`lib/db/src/index.ts`) enforces strict isolation: each environment **must** have its own explicit database secret set. If the required secret is absent the server refuses to start, preventing accidental cross-environment writes.
-
-| APP_ENV | Required secret | Production fallback |
-|---------|----------------|---------------------|
-| `development` | `DEVELOPMENT_DATABASE_URL` | — (none) |
-| `demo` | `DEMO_DATABASE_URL` | — (none) |
-| `production` | `DATABASE_URL` (runtime-injected by Replit) | `PRODUCTION_DATABASE_URL` |
-
-> **Isolation comes from forking, not from copying secrets.** Each Replit repl provisions its own completely separate Postgres database. Fork the repl for each environment, then set `APP_ENV` and the matching `*_DATABASE_URL` secret to that repl's own `DATABASE_URL` value. The databases are then physically separate and there is no risk of cross-environment writes.
->
-> **How to find your DATABASE_URL value**: run `echo $DATABASE_URL` in the repl's Shell tab.
+The env-specific secrets (`DEVELOPMENT_DATABASE_URL`, `DEMO_DATABASE_URL`, `PRODUCTION_DATABASE_URL`) are optional overrides, useful only if you want to point a repl at an external or shared database.
 
 ### Development repl
 ```
-APP_ENV=development                        ← required
-DEVELOPMENT_DATABASE_URL=<this repl's DB>  ← required (copy from echo $DATABASE_URL)
-SESSION_SECRET=<random>                    ← required
+APP_ENV=development          ← required
+# DATABASE_URL               ← auto-injected by Replit
+SESSION_SECRET=<random>      ← required
 ```
 
 ### Demo repl
 ```
-APP_ENV=demo                               ← required
-DEMO_DATABASE_URL=<demo repl's own DB>     ← required (copy from echo $DATABASE_URL in the demo repl)
-SESSION_SECRET=<random>                    ← required
+APP_ENV=demo                 ← required
+# DATABASE_URL               ← auto-injected by Replit (fresh DB in the fork)
+SESSION_SECRET=<random>      ← required
 ```
 
 ### Live repl
 ```
-APP_ENV=production                         ← required
-# DATABASE_URL is auto-injected by Replit in the production container (Cloud Run)
-PRODUCTION_DATABASE_URL=<live repl's DB>   ← required for non-Cloud-Run startup
-SESSION_SECRET=<random>                    ← required
+APP_ENV=production           ← required
+# DATABASE_URL               ← auto-injected by Replit (fresh DB in the fork)
+SESSION_SECRET=<random>      ← required
 ```
+
+> **Isolation comes from forking, not from copying secrets.** Each Replit repl provisions its own completely separate Postgres database — the `DATABASE_URL` in the Demo repl will never be the same value as the one in the Dev repl. No manual copying of connection strings is needed.
+
+> **How to find your DATABASE_URL value** (needed only if you want to set the override): run `echo $DATABASE_URL` in the repl's Shell tab.
 
 ---
 
