@@ -1,0 +1,72 @@
+I am working in the DEVELOPMENT Replit.
+
+This is not the Live application.
+
+Please treat the environment separation below as the source of truth:
+
+DEVELOPMENT
+
+* Preview should contain extensive synthetic/test data.
+* The published Development deployment should ALSO contain extensive synthetic/test data.
+* It is safe and desirable to seed the Development deployment database with test data.
+
+DEMO
+
+* Should contain extensive synthetic/demo data.
+
+LIVE
+
+* Must remain clean.
+* Live must NEVER be seeded with Development or Demo test data.
+* Do not access, modify, seed, migrate or reset the Live Replit/database as part of this work.
+
+I have rolled Development back to a previously working version because recent deployment/authentication work became confused with the requirements for Live.
+
+Before making changes or publishing, diagnose THIS Development Replit only.
+
+Please confirm:
+
+1. Which database the Development preview is currently using.
+2. Which database the published Development deployment uses.
+3. Why the test data visible in Development preview is not currently appearing in the published Development site.
+4. Whether the preview database and published Development database are separate.
+5. What seed script/configuration currently supplies the Development test data.
+6. Whether that same seed data can safely be applied to the published DEVELOPMENT database.
+7. What database migration, if any, will run when Development is published.
+8. Confirm that publishing Development will have absolutely no effect on the separate Live Replit or Live database.
+
+The required outcome is:
+
+Development preview
+→ test data
+
+Published Development site
+→ same type of extensive synthetic/test data
+
+Demo
+→ test/demo data
+
+Live
+→ clean, real environment with no test data
+
+If the published Development database is empty because it has not been seeded, configure the DEVELOPMENT deployment so its own database can be safely seeded with synthetic test data.
+
+Important safeguards:
+
+* Never use the Live database connection.
+* Never copy Development test data into Live.
+* Never delete or reset Live data.
+* Do not introduce Clerk or change authentication architecture.
+* Do not make unrelated security changes.
+* Do not perform destructive migrations unless you explain them first.
+* Do not publish automatically yet.
+
+First report back with:
+
+* the Development preview database
+* the Development deployment database
+* why their data currently differs
+* exactly how you propose to make the published Development site contain test data
+* any migration or seed operation that would occur on publish
+
+Then stop and wait for approval before implementing or publishing.
