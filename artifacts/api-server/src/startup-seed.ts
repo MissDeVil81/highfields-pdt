@@ -269,45 +269,46 @@ export async function ensureSchemaExists(): Promise<void> {
 const SEED_SQL = `
 INSERT INTO public.career_paths VALUES (1, '360 Career Path', 'The full 360° recruitment career track. Manage the full recruitment lifecycle from client development through to placement. Click to view the full career path diagram.', '2026-04-16 14:30:07.063937');
 INSERT INTO public.career_paths VALUES (2, '180 Career Path', 'The 180° delivery recruitment track. Specialist recruiters focused on candidate sourcing, delivery and talent placement. Click to view the full career path diagram.', '2026-04-16 14:30:07.108624');
-INSERT INTO public.roles VALUES (50, 2, 'Team Leader Contract', 10, 'Team Leader – Delivery – Contract
-INSERT INTO public.roles VALUES (45, 2, 'Principal Consultant Perm', 5, 'Principal Delivery Consultant – Permanent
-INSERT INTO public.roles VALUES (58, 1, 'Senior Recruitment Consultant Perm', 4, '
-INSERT INTO public.roles VALUES (56, 1, 'Recruitment Consultant Perm', 2, '
-INSERT INTO public.roles VALUES (60, 1, 'Principal Consultant Perm', 6, '
-INSERT INTO public.roles VALUES (61, 1, 'Sector Lead Contract', 7, '
-INSERT INTO public.roles VALUES (63, 1, 'Team Leader Contract', 9, '
-INSERT INTO public.roles VALUES (72, 3, 'Senior Delivery Consultant', 4, '
-INSERT INTO public.roles VALUES (78, 3, 'Account Director', 10, '
-INSERT INTO public.roles VALUES (79, 3, 'Business Director', 11, '
-INSERT INTO public.roles VALUES (43, 2, 'Senior Recruitment Consultant Perm', 3, 'Senior Delivery Consultant – Permanent
-INSERT INTO public.roles VALUES (44, 2, 'Senior Recruitment Consultant Contract', 4, 'Senior Delivery Consultant – Contract
-INSERT INTO public.roles VALUES (47, 2, 'Sector Lead Perm', 7, 'Sector Lead – Delivery – Permanent
-INSERT INTO public.roles VALUES (68, 1, 'Associate Director Perm', 14, '
-INSERT INTO public.roles VALUES (70, 3, 'Senior Account Coordinator', 2, '
-INSERT INTO public.roles VALUES (71, 3, 'Delivery Consultant', 3, '
-INSERT INTO public.roles VALUES (73, 3, 'Account Partner', 5, '
-INSERT INTO public.roles VALUES (74, 3, 'Account Manager', 6, '
-INSERT INTO public.roles VALUES (75, 3, 'Senior Account Manager', 7, '
-INSERT INTO public.roles VALUES (76, 3, 'Account Partner Manager', 8, '
-INSERT INTO public.roles VALUES (77, 3, 'Delivery Manager', 9, '
-INSERT INTO public.roles VALUES (59, 1, 'Principal Consultant Contract', 5, '
-INSERT INTO public.roles VALUES (46, 2, 'Principal Consultant Contract', 6, 'Principal Delivery Consultant – Contract
-INSERT INTO public.roles VALUES (49, 2, 'Team Leader Perm', 9, 'Team Leader – Delivery – Permanent
-INSERT INTO public.roles VALUES (53, 2, 'Associate Director Perm', 13, 'Associate Director Delivery – Permanent
-INSERT INTO public.roles VALUES (62, 1, 'Sector Lead Perm', 8, '
-INSERT INTO public.roles VALUES (64, 1, 'Team Leader Perm', 10, '
-INSERT INTO public.roles VALUES (65, 1, 'Divisional Manager Contract', 11, '
-INSERT INTO public.roles VALUES (67, 1, 'Associate Director Contract', 13, '
-INSERT INTO public.roles VALUES (66, 1, 'Divisional Manager Perm', 12, '
-INSERT INTO public.roles VALUES (69, 3, 'Account Coordinator', 1, '
-INSERT INTO public.roles VALUES (48, 2, 'Sector Lead Contract', 8, 'Sector Lead – Delivery – Contract
-INSERT INTO public.roles VALUES (52, 2, 'Divisional Manager Contract', 12, 'Divisional Manager Delivery – Contract
-INSERT INTO public.roles VALUES (54, 2, 'Associate Director Contract', 14, 'Associate Director – Delivery Contract
-INSERT INTO public.roles VALUES (42, 2, 'Recruitment Consultant Contract', 2, '
-INSERT INTO public.roles VALUES (57, 1, 'Senior Recruitment Consultant Contract', 3, '
-INSERT INTO public.roles VALUES (55, 1, 'Recruitment Consultant Contract', 1, '
-INSERT INTO public.roles VALUES (41, 2, 'Recruitment Consultant Perm', 1, '
-INSERT INTO public.roles VALUES (51, 2, 'Divisional Manager Perm', 11, 'Divisional Manager Delivery – Permanent
+INSERT INTO public.career_paths VALUES (3, 'Account Management Career Path', 'The account management track. Build and grow strategic client relationships within key accounts and expand revenue opportunities.', '2026-04-16 14:30:07.114164');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (50, 2, 'Team Leader Contract', 10, 'Team Leader – Delivery – Contract');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (45, 2, 'Principal Consultant Perm', 5, 'Principal Delivery Consultant – Permanent');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (58, 1, 'Senior Recruitment Consultant Perm', 4, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (56, 1, 'Recruitment Consultant Perm', 2, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (60, 1, 'Principal Consultant Perm', 6, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (61, 1, 'Sector Lead Contract', 7, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (63, 1, 'Team Leader Contract', 9, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (72, 3, 'Senior Delivery Consultant', 4, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (78, 3, 'Account Director', 10, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (79, 3, 'Business Director', 11, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (43, 2, 'Senior Recruitment Consultant Perm', 3, 'Senior Delivery Consultant – Permanent');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (44, 2, 'Senior Recruitment Consultant Contract', 4, 'Senior Delivery Consultant – Contract');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (47, 2, 'Sector Lead Perm', 7, 'Sector Lead – Delivery – Permanent');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (68, 1, 'Associate Director Perm', 14, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (70, 3, 'Senior Account Coordinator', 2, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (71, 3, 'Delivery Consultant', 3, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (73, 3, 'Account Partner', 5, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (74, 3, 'Account Manager', 6, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (75, 3, 'Senior Account Manager', 7, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (76, 3, 'Account Partner Manager', 8, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (77, 3, 'Delivery Manager', 9, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (59, 1, 'Principal Consultant Contract', 5, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (46, 2, 'Principal Consultant Contract', 6, 'Principal Delivery Consultant – Contract');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (49, 2, 'Team Leader Perm', 9, 'Team Leader – Delivery – Permanent');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (53, 2, 'Associate Director Perm', 13, 'Associate Director Delivery – Permanent');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (62, 1, 'Sector Lead Perm', 8, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (64, 1, 'Team Leader Perm', 10, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (65, 1, 'Divisional Manager Contract', 11, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (67, 1, 'Associate Director Contract', 13, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (66, 1, 'Divisional Manager Perm', 12, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (69, 3, 'Account Coordinator', 1, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (48, 2, 'Sector Lead Contract', 8, 'Sector Lead – Delivery – Contract');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (52, 2, 'Divisional Manager Contract', 12, 'Divisional Manager Delivery – Contract');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (54, 2, 'Associate Director Contract', 14, 'Associate Director – Delivery Contract');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (42, 2, 'Recruitment Consultant Contract', 2, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (57, 1, 'Senior Recruitment Consultant Contract', 3, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (55, 1, 'Recruitment Consultant Contract', 1, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (41, 2, 'Recruitment Consultant Perm', 1, '');
+INSERT INTO public.roles (id, career_path_id, title, level, job_spec) VALUES (51, 2, 'Divisional Manager Perm', 11, 'Divisional Manager Delivery – Permanent');
 INSERT INTO public.competencies VALUES (1, 56, 'Recruitment Consultant 360', 'Most of the time', 'Core Competencies', '2026-04-17 10:29:49.486912');
 INSERT INTO public.competencies VALUES (21, 56, 'Communication', 'I communicate well by listening effectively and building rapport', 'Candidate Management', '2026-04-17 10:29:49.552692');
 INSERT INTO public.competencies VALUES (36, 55, 'Recruitment Consultant 360', 'Most of the time', 'Core Competencies', '2026-04-17 10:29:49.728662');
