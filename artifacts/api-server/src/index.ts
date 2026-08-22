@@ -46,8 +46,8 @@ const startupChain = isProductionRuntime
   : ensureSchemaExists()
       .then(() => seedIfEmpty())
       .then(() => seedDemoProgressIfMissing())
-      .then(() => seedDemoProgressV2IfMissing())
       .then(() => seedManagerPortalDataIfMissing())
+      .then(() => seedDemoProgressV2IfMissing())
       .then(() => seedLdDemoDataIfMissing());
 
 startupChain.catch((err) => {

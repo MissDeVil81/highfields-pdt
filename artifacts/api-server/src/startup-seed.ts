@@ -1441,14 +1441,14 @@ INSERT INTO public.competencies VALUES (1144, 46, 'Credibility', 'I proactively 
 INSERT INTO public.competencies VALUES (1145, 46, 'Reliability', 'I provide a consistently good recruitment process', 'Core Competencies', '2026-04-17 10:30:29.771137');
 INSERT INTO public.competencies VALUES (1146, 46, 'Intimacy', 'I act as a trusted advisor and make connections on a personal level', 'Core Competencies', '2026-04-17 10:30:29.773326');
 INSERT INTO public.competencies VALUES (1147, 46, 'Self Orientation', 'I always act in the customer''s best interests', 'Core Competencies', '2026-04-17 10:30:29.775343');
-INSERT INTO public.users VALUES (1, 'Josie Hughes', 'josie.hughes@highfieldps.co.uk', '{admin,manager,employee}', NULL, 'Management', 'Head of People & Performance', NULL, NULL, 'active', '2026-06-15 19:22:57.402757', '2026-06-15 19:22:57.402757', NULL);
-INSERT INTO public.users VALUES (2, 'Andrew Collins', 'andrew.collins@highfieldps.co.uk', '{manager,employee}', NULL, 'Data Centre Recruitment', 'Sales Manager', NULL, NULL, 'active', '2026-06-15 19:22:57.416174', '2026-06-15 19:22:57.416174', NULL);
-INSERT INTO public.users VALUES (3, 'Harry Mann', 'harry.mann@highfieldps.co.uk', '{employee}', 2, 'Data Centre Recruitment', 'Talent Acquisition Consultant', '2026-04-01', 'in_progress', 'active', '2026-06-15 19:22:57.420602', '2026-06-15 19:22:57.420602', NULL);
-INSERT INTO public.users VALUES (4, 'Matt Gilham', 'matt.gilham@highfieldps.co.uk', '{employee}', 2, 'Data Centre Recruitment', 'Recruitment Consultant', NULL, NULL, 'active', '2026-06-15 19:22:57.4262', '2026-06-15 19:22:57.4262', 58);
-INSERT INTO public.users VALUES (7, 'Chloe Bennett', 'chloe.bennett@highfieldps.co.uk', '{employee}', 2, 'Data Centre Recruitment', 'Recruitment Consultant', NULL, NULL, 'active', '2026-06-15 20:26:34.088212', '2026-06-15 20:26:34.088212', NULL);
-INSERT INTO public.users VALUES (8, 'Tom Westwood', 'tom.westwood@highfieldps.co.uk', '{employee}', 2, 'Technology Recruitment', 'Senior Recruitment Consultant', NULL, NULL, 'active', '2026-06-15 20:26:34.093273', '2026-06-15 20:26:34.093273', 58);
-INSERT INTO public.users VALUES (6, 'Jamie Thornton', 'jamie.thornton@highfieldps.co.uk', '{employee}', 2, 'Data Centre Recruitment', 'Trainee Recruitment Consultant', '2026-06-02', NULL, 'active', '2026-06-15 20:26:34.082863', '2026-06-15 20:26:34.082863', 60);
-INSERT INTO public.users VALUES (5, 'Kirsty Rossell', 'kirsty.rossell@highfieldps.co.uk', '{employee}', 2, 'Data Centre Recruitment', 'Recruitment Consultant', '2026-04-15', 'in_progress', 'active', '2026-06-15 19:22:57.430355', '2026-06-16 06:56:41.752', NULL);
+INSERT INTO public.users VALUES (1, 'Josie Hughes', 'josie.hughes@highfieldps.co.uk', '{admin,manager,employee}', NULL, 'Management', 'Head of People & Performance', NULL, NULL, 'active', '2026-06-15 19:22:57.402757', '2026-06-15 19:22:57.402757', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.users VALUES (2, 'Andrew Collins', 'andrew.collins@highfieldps.co.uk', '{manager,employee}', NULL, 'Data Centre Recruitment', 'Sales Manager', NULL, NULL, 'active', '2026-06-15 19:22:57.416174', '2026-06-15 19:22:57.416174', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.users VALUES (3, 'Harry Mann', 'harry.mann@highfieldps.co.uk', '{employee}', 2, 'Data Centre Recruitment', 'Talent Acquisition Consultant', '2026-04-01', 'in_progress', 'active', '2026-06-15 19:22:57.420602', '2026-06-15 19:22:57.420602', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.users VALUES (4, 'Matt Gilham', 'matt.gilham@highfieldps.co.uk', '{employee}', 2, 'Data Centre Recruitment', 'Recruitment Consultant', NULL, NULL, 'active', '2026-06-15 19:22:57.4262', '2026-06-15 19:22:57.4262', 58) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.users VALUES (7, 'Chloe Bennett', 'chloe.bennett@highfieldps.co.uk', '{employee}', 2, 'Data Centre Recruitment', 'Recruitment Consultant', NULL, NULL, 'active', '2026-06-15 20:26:34.088212', '2026-06-15 20:26:34.088212', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.users VALUES (8, 'Tom Westwood', 'tom.westwood@highfieldps.co.uk', '{employee}', 2, 'Technology Recruitment', 'Senior Recruitment Consultant', NULL, NULL, 'active', '2026-06-15 20:26:34.093273', '2026-06-15 20:26:34.093273', 58) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.users VALUES (6, 'Jamie Thornton', 'jamie.thornton@highfieldps.co.uk', '{employee}', 2, 'Data Centre Recruitment', 'Trainee Recruitment Consultant', '2026-06-02', NULL, 'active', '2026-06-15 20:26:34.082863', '2026-06-15 20:26:34.082863', 60) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.users VALUES (5, 'Kirsty Rossell', 'kirsty.rossell@highfieldps.co.uk', '{employee}', 2, 'Data Centre Recruitment', 'Recruitment Consultant', '2026-04-15', 'in_progress', 'active', '2026-06-15 19:22:57.430355', '2026-06-16 06:56:41.752', NULL) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.assessments (user_id, competency_id, role_id, rating, updated_at) VALUES
 (6,71,58,'green','2026-07-06 11:00:00'),(6,72,58,'green','2026-07-06 11:00:00'),(6,73,58,'green','2026-07-06 11:00:00'),(6,74,58,'green','2026-07-06 11:00:00'),(6,75,58,'green','2026-07-06 11:00:00'),(6,76,58,'green','2026-07-06 11:00:00'),(6,77,58,'green','2026-07-06 11:00:00'),
 (6,80,58,'green','2026-07-06 11:00:00'),(6,81,58,'green','2026-07-06 11:00:00'),(6,82,58,'green','2026-07-06 11:00:00'),(6,83,58,'green','2026-07-06 11:00:00'),(6,84,58,'green','2026-07-06 11:00:00'),(6,85,58,'green','2026-07-06 11:00:00'),(6,86,58,'green','2026-07-06 11:00:00'),
@@ -1467,6 +1467,9 @@ INSERT INTO public.assessments (user_id, competency_id, role_id, rating, updated
 (8,16,56,'green','2026-07-06 11:00:00'),(8,17,56,'green','2026-07-06 11:00:00'),(8,18,56,'green','2026-07-06 11:00:00'),
 (8,71,58,'green','2026-07-06 10:00:00'),(8,72,58,'green','2026-07-06 10:00:00'),(8,73,58,'green','2026-07-06 10:00:00'),(8,74,58,'green','2026-07-06 10:00:00'),(8,75,58,'green','2026-07-06 10:00:00'),(8,76,58,'green','2026-07-06 10:00:00'),(8,77,58,'green','2026-07-06 10:00:00'),
 (8,80,58,'green','2026-07-06 10:00:00'),(8,81,58,'green','2026-07-06 10:00:00');
+INSERT INTO public.financial_targets (id, role_id, label, target_amount, period_label, option_group, sort_order) VALUES
+(15, 60, 'Total billed in 6 months', 120000, '6 months', '1', 0),
+(16, 60, 'Total billed in 12 months', 220000, '12 months', '1', 1);
 INSERT INTO public.financial_progress (target_id, role_id, current_amount, user_id) VALUES
 (15, 60, 108000, 6),
 (16, 60, 198000, 6);
@@ -1551,14 +1554,14 @@ export async function seedManagerPortalDataIfMissing(): Promise<void> {
 
       -- Financial targets (for role-level billing benchmarks used in career tracker)
       INSERT INTO financial_targets (id, role_id, label, target_amount, period_label, option_group, sort_order) VALUES
-      (1,  44, 'Average weekly billings over 8 weeks',   3000,  '8-week average',  '',  0),
-      (2,  57, 'Average weekly billings over 8 weeks',   3000,  '8-week average',  '',  0),
-      (3,  46, 'Average weekly billings over 13 weeks',  5000,  '13-week average', '',  0),
-      (4,  59, 'Average weekly billings over 13 weeks',  5000,  '13-week average', '',  0),
-      (5,  48, 'Average weekly billings over 13 weeks',  7000,  '13-week average', '',  0),
-      (6,  61, 'Average weekly billings over 13 weeks',  7000,  '13-week average', '',  0),
-      (7,  54, 'Average weekly billings over 13 weeks',  10000, '13-week average', '',  0),
-      (8,  67, 'Average weekly billings over 13 weeks',  10000, '13-week average', '',  0),
+      (1,  44, 'Average weekly billings over 8 weeks',   3000,  '8-week average',  NULL, 0),
+      (2,  57, 'Average weekly billings over 8 weeks',   3000,  '8-week average',  NULL, 0),
+      (3,  46, 'Average weekly billings over 13 weeks',  5000,  '13-week average', NULL, 0),
+      (4,  59, 'Average weekly billings over 13 weeks',  5000,  '13-week average', NULL, 0),
+      (5,  48, 'Average weekly billings over 13 weeks',  7000,  '13-week average', NULL, 0),
+      (6,  61, 'Average weekly billings over 13 weeks',  7000,  '13-week average', NULL, 0),
+      (7,  54, 'Average weekly billings over 13 weeks',  10000, '13-week average', NULL, 0),
+      (8,  67, 'Average weekly billings over 13 weeks',  10000, '13-week average', NULL, 0),
       (9,  43, 'Total billed in 6 months',               80000, '6 months',        '1', 0),
       (10, 43, 'Total billed in 12 months',              150000,'12 months',        '1', 1),
       (11, 58, 'Total billed in 6 months',               80000, '6 months',        '1', 0),
@@ -1567,10 +1570,10 @@ export async function seedManagerPortalDataIfMissing(): Promise<void> {
       (14, 45, 'Total billed in 12 months',              220000,'12 months',        '1', 1),
       (15, 60, 'Total billed in 6 months',               120000,'6 months',        '1', 0),
       (16, 60, 'Total billed in 12 months',              220000,'12 months',        '1', 1),
-      (17, 47, 'Total billed in 12 months',              250000,'12 months',        '',  0),
-      (18, 62, 'Total billed in 12 months',              250000,'12 months',        '',  0),
-      (19, 53, 'Total billed in 12 months',              400000,'12 months',        '',  0),
-      (20, 68, 'Total billed in 12 months',              400000,'12 months',        '',  0)
+      (17, 47, 'Total billed in 12 months',              250000,'12 months',        NULL, 0),
+      (18, 62, 'Total billed in 12 months',              250000,'12 months',        NULL, 0),
+      (19, 53, 'Total billed in 12 months',              400000,'12 months',        NULL, 0),
+      (20, 68, 'Total billed in 12 months',              400000,'12 months',        NULL, 0)
       ON CONFLICT (id) DO NOTHING;
       SELECT setval('financial_targets_id_seq', GREATEST((SELECT MAX(id) FROM financial_targets), 20));
 
