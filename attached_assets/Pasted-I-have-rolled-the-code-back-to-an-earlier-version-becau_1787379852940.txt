@@ -1,0 +1,76 @@
+I have rolled the code back to an earlier version because the later authentication work caused repeated production deployment failures.
+
+I believe Clerk authentication may have been introduced AFTER the version I have now rolled back to.
+
+The login system described below is the system I actually want. Treat this as the source of truth.
+
+Required Live login system
+
+1. An Admin creates a user.
+2. Every user has:
+    * Full name
+    * Work email address
+    * Role(s)
+    * Reports To
+    * Team membership
+    * Active/inactive status
+    * Probation status where applicable
+3. The user’s work email address is their login username.
+4. When a user is created, the system generates a temporary password which the Admin can give them.
+5. The user logs in with their email address and temporary password.
+6. On first login they MUST be forced to create their own password.
+7. Once changed, the Admin cannot see the user’s chosen password.
+8. If they forget their password, the Admin Portal has a Reset Password / Generate New Temporary Password function.
+9. This generates a new temporary password for the Admin to give the user and sets must_change_password to true.
+10. The user logs in with the new temporary password and is forced to create their own password again.
+11. Inactive users cannot log in.
+12. Users are deactivated rather than deleted so their historical records remain intact.
+
+Environments
+
+* Development: no login required.
+* Demo: no login required and we can switch between user types.
+* Live: authentication required using the process above.
+
+Initial Live Admin
+
+The existing Claire admin user must be retained.
+
+Email: claire.proudlove@highfieldps.co.uk
+
+Claire needs to be able to log in using a temporary password, be forced to create her own password, and then use the Admin Portal to create the remaining users.
+
+Before changing anything
+
+Please investigate the rolled-back code AND the current production database and report back:
+
+1. What authentication/login system exists in this rolled-back version?
+2. Does this version predate the introduction of Clerk?
+3. When was Clerk introduced relative to this rollback?
+4. Which Clerk-related code, dependencies, database fields and configuration currently remain because of the later work?
+5. Was must_change_password part of the original temporary-password login system, or was it introduced as part of the later Clerk work?
+6. Is clerk_user_id purely related to the later Clerk implementation?
+7. Does the rolled-back version already contain the email + temporary password + forced password change functionality described above?
+8. Does the existing Claire admin user still exist in the production database?
+9. Can that existing user be retained and given a new temporary password?
+10. Why is the current proposed migration trying to delete must_change_password and clerk_user_id?
+11. Which database changes, if any, are genuinely required for the rolled-back application to run?
+12. What is the MINIMUM work required to get the required login flow above working on Live?
+
+Do not make any changes yet.
+
+Specifically:
+
+* Do not modify the production database.
+* Do not delete Claire’s admin user.
+* Do not delete must_change_password yet.
+* Do not delete clerk_user_id yet.
+* Do not introduce or reintroduce Clerk.
+* Do not publish.
+* Do not run a destructive migration.
+* Do not redesign the authentication system.
+* Do not add additional security/account architecture.
+
+I want the diagnosis first.
+
+Once we understand which functionality belongs to the original temporary-password system and which was introduced later with Clerk, we can decide what should be kept or removed.
