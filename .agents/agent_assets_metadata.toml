@@ -7,3 +7,24 @@ uri = "file://admin-user-guide.docx"
 type = "word_document"
 title = "Admin User Guide"
 description = "System Administrator User Guide — L&D Platform (Word document, 11 sections)"
+
+[[outputs]]
+id = "JnTuClfHD7OqMnLSwRycc"
+uri = "file://exports/career-path-reference-extract.json"
+type = "unspecified"
+title = "Career-path reference data (exact JSON)"
+description = "Read-only Development extract containing only the 180 and 360 career paths, their roles, and linked competencies."
+
+[[outputs]]
+id = "SKTZCLiYNsCeFVNzwjWgE"
+uri = "file://exports/career-path-reference-upsert.sql"
+type = "unspecified"
+title = "Career-path reference data (guarded SQL upsert)"
+description = "Transactional, ID-preserving SQL for Live; aborts on conflicting reference IDs and includes no user or demo data."
+
+[[outputs]]
+id = "yZmrYLl1x5RD5_dAigrw8"
+uri = "file://exports/career-path-reference-report.md"
+type = "text"
+title = "Career-path reference extract report"
+description = "Summary of IDs, role-to-competency mapping, scope exclusions, and Live dependencies."
