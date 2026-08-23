@@ -1,11 +1,21 @@
-import { useGetRole, useListAssessments, useUpsertAssessment, getListAssessmentsQueryKey, getGetRoleQueryKey } from "@workspace/api-client-react";
+import {
+  useGetRole,
+  useListAssessments,
+  useUpsertAssessment,
+  useListEvidence,
+  useDeleteEvidence,
+  getListAssessmentsQueryKey,
+  getListEvidenceQueryKey,
+  getGetRoleQueryKey,
+} from "@workspace/api-client-react";
 import { useSessionStore } from "@/lib/session";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { RatingPicker, RatingBadge } from "@/components/RatingButton";
+import { EvidenceForm } from "@/components/EvidenceForm";
 import { JobSpecText } from "@/components/JobSpecText";
-import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, Plus, Pencil, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 
 type Rating = "red" | "amber" | "green";
 
@@ -44,6 +54,8 @@ export default function CurrentRole() {
   const queryClient = useQueryClient();
   const [jobSpecOpen, setJobSpecOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
+  const [addingEvidence, setAddingEvidence] = useState<number | null>(null);
+  const [editingEvidence, setEditingEvidence] = useState<number | null>(null);
 
   const { data: role, isLoading: roleLoading } = useGetRole(currentRoleId!, {
     query: { queryKey: getGetRoleQueryKey(currentRoleId!), enabled: !!currentRoleId },
@@ -55,10 +67,24 @@ export default function CurrentRole() {
     { query: { queryKey: getListAssessmentsQueryKey(assessmentsParams), enabled: !!currentRoleId && !!userId } }
   );
 
+  const evidenceParams = { userId: userId ?? 0, roleId: currentRoleId ?? undefined };
+  const { data: evidence = [] } = useListEvidence(
+    evidenceParams,
+    { query: { queryKey: getListEvidenceQueryKey(evidenceParams), enabled: !!currentRoleId && !!userId } }
+  );
+
   const upsert = useUpsertAssessment({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListAssessmentsQueryKey() });
+      },
+    },
+  });
+
+  const deleteEvidence = useDeleteEvidence({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListEvidenceQueryKey() });
       },
     },
   });
@@ -87,6 +113,11 @@ export default function CurrentRole() {
   if (!role) return null;
 
   const assessmentMap = new Map(assessments.map(a => [a.competencyId, a]));
+  const evidenceByComp = new Map<number, typeof evidence>();
+  for (const e of evidence) {
+    if (!evidenceByComp.has(e.competencyId)) evidenceByComp.set(e.competencyId, []);
+    evidenceByComp.get(e.competencyId)!.push(e);
+  }
   const categories = Array.from(new Set((role.competencies ?? []).map(c => c.category)))
     .sort((a, b) => {
       if (a === "Financials") return -1;
@@ -153,7 +184,16 @@ export default function CurrentRole() {
               >
                 <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{category}</span>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">{rated}/{comps.length} rated</span>
+                  <span className="text-xs text-muted-foreground">
+                    {rated}/{comps.length} rated
+                    {(() => {
+                      const categoryEvidence = comps.reduce(
+                        (total, comp) => total + (evidenceByComp.get(comp.id)?.length ?? 0),
+                        0,
+                      );
+                      return categoryEvidence > 0 ? ` · ${categoryEvidence} evidence` : "";
+                    })()}
+                  </span>
                   {isCatOpen
                     ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
                     : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
@@ -165,6 +205,8 @@ export default function CurrentRole() {
                   {comps.map(comp => {
                     const assessment = assessmentMap.get(comp.id);
                     const rating = assessment?.rating as Rating | undefined;
+                    const compEvidence = [...(evidenceByComp.get(comp.id) ?? [])].reverse();
+                    const isAdding = addingEvidence === comp.id;
                     return (
                       <div key={comp.id} className="px-5 py-4 bg-card">
                         <div className="flex items-start justify-between gap-4">
@@ -179,6 +221,69 @@ export default function CurrentRole() {
                         <div className="mt-3">
                           <RatingPicker value={rating ?? null} onChange={(r) => handleRate(comp.id, r)} />
                         </div>
+
+                        {/* Evidence entries */}
+                        {compEvidence.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            {compEvidence.map(ev => (
+                              <div key={ev.id}>
+                                {editingEvidence === ev.id ? (
+                                  <EvidenceForm
+                                    userId={userId ?? 0}
+                                    competencyId={comp.id}
+                                    roleId={currentRoleId}
+                                    onClose={() => setEditingEvidence(null)}
+                                    existing={{ id: ev.id, title: ev.title, description: ev.description, rating: ev.rating }}
+                                  />
+                                ) : (
+                                  <div className="p-3 rounded-lg bg-muted/40 border border-border/50">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-xs font-semibold text-foreground">{ev.title}</div>
+                                        <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{ev.description}</div>
+                                      </div>
+                                      <div className="flex items-center gap-1 flex-shrink-0">
+                                        <RatingBadge rating={ev.rating as Rating} />
+                                        <button
+                                          onClick={() => setEditingEvidence(ev.id)}
+                                          className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                                          aria-label={`Edit evidence: ${ev.title}`}
+                                        >
+                                          <Pencil className="h-3 w-3" />
+                                        </button>
+                                        <button
+                                          onClick={() => deleteEvidence.mutate({ id: ev.id })}
+                                          className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                                          aria-label={`Delete evidence: ${ev.title}`}
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Add evidence */}
+                        {isAdding ? (
+                          <EvidenceForm
+                            userId={userId ?? 0}
+                            competencyId={comp.id}
+                            roleId={currentRoleId}
+                            onClose={() => setAddingEvidence(null)}
+                          />
+                        ) : (
+                          <button
+                            onClick={() => setAddingEvidence(comp.id)}
+                            className="mt-3 flex items-center gap-1.5 text-xs text-primary font-medium hover:opacity-80 transition-opacity"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            Add evidence
+                          </button>
+                        )}
                       </div>
                     );
                   })}
