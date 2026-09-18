@@ -560,6 +560,8 @@ export default function LearningLog() {
 
       <p className="mb-3 text-sm text-muted-foreground">{activeTabDescription}</p>
 
+      <LearningFiltersBar filters={filters} onChange={setFilters} />
+
       {/* Tab bar */}
       <div className="flex gap-1 mb-6 border-b border-border">
         {TABS.map(({ key, label, icon: Icon }) => (
@@ -578,8 +580,6 @@ export default function LearningLog() {
           </button>
         ))}
       </div>
-
-      <LearningFiltersBar filters={filters} onChange={setFilters} />
 
       {/* Tab content */}
       {activeTab === "company-learning" && <CompanyLearningTab filters={filters} />}
