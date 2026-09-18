@@ -380,11 +380,11 @@ function AddEntryForm({ userId, onClose }: { userId: number; onClose: () => void
   );
 }
 
-function CompanyLearningTab({ filters }: { filters: LearningFilters }) {
+function CompanyLearningTab({ filters, userId }: { filters: LearningFilters; userId: number }) {
   const { data: entries = [], isLoading } = useQuery<CompanyLearningEntry[]>({
-    queryKey: ["company-learning"],
+    queryKey: ["company-learning", userId],
     queryFn: async () => {
-      const res = await fetch(`${BASE}/api/company-learning`);
+      const res = await fetch(`${BASE}/api/company-learning?userId=${userId}`);
       if (!res.ok) throw new Error("Failed to load");
       return res.json();
     },
@@ -588,7 +588,9 @@ export default function LearningLog() {
       </div>
 
       {/* Tab content */}
-      {activeTab === "company-learning" && <CompanyLearningTab filters={filters} />}
+      {activeTab === "company-learning" && userId != null && (
+        <CompanyLearningTab filters={filters} userId={userId} />
+      )}
 
       {activeTab === "my-learning" && userId != null && (
         <MyLearningTab userId={userId} filters={filters} />

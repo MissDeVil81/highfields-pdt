@@ -96,6 +96,13 @@ export async function ensureSchemaExists(): Promise<void> {
         created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS company_learning_recipients (
+        company_learning_id INTEGER NOT NULL REFERENCES company_learning_entries(id) ON DELETE CASCADE,
+        user_id             INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (company_learning_id, user_id)
+      );
+
       -- Tables depending on career_paths
       CREATE TABLE IF NOT EXISTS roles (
         id             SERIAL PRIMARY KEY,

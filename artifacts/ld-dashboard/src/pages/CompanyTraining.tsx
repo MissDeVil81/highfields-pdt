@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLdStore } from "@/hooks/useLdStore";
 import { Layout } from "@/components/Layout";
 import {
-  BookMarked, Plus, X, ChevronDown, ChevronUp, Loader2, CalendarDays, User
+  BookMarked, Plus, X, ChevronDown, ChevronUp, Loader2, CalendarDays, User, Users, Check
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,16 @@ type CompanyTrainingEntry = {
   trainer: string;
   description: string;
   createdAt: string;
+  recipientUserIds: number[];
+  recipientNames: string[];
+};
+
+type TrainingRecipient = {
+  id: number;
+  name: string;
+  jobTitle: string | null;
+  roles: string[];
+  isActive: string;
 };
 
 function useWhatsNewCount(ldUserId: number) {
@@ -49,16 +59,35 @@ function TrainingCard({ entry }: { entry: CompanyTrainingEntry }) {
               <User className="h-3 w-3" />
               {entry.trainer}
             </span>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Users className="h-3 w-3" />
+              {entry.recipientNames.length > 0
+                ? `${entry.recipientNames.length} ${entry.recipientNames.length === 1 ? "person" : "people"}`
+                : "All employees"}
+            </span>
           </div>
         </div>
         {expanded
           ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
           : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />}
       </button>
-      {expanded && entry.description && (
+      {expanded && (
         <div className="px-5 pb-5 pt-3 border-t border-border">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Description</p>
-          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{entry.description}</p>
+          {entry.description && (
+            <>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Description</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{entry.description}</p>
+            </>
+          )}
+          <p className={cn(
+            "text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2",
+            entry.description && "mt-4"
+          )}>
+            Applicable to
+          </p>
+          <p className="text-sm text-foreground">
+            {entry.recipientNames.length > 0 ? entry.recipientNames.join(", ") : "All employees"}
+          </p>
         </div>
       )}
     </div>
@@ -84,6 +113,21 @@ function AddTrainingPanel({
   const queryClient = useQueryClient();
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+  const [recipientError, setRecipientError] = useState("");
+  const [recipientPickerOpen, setRecipientPickerOpen] = useState(false);
+
+  const { data: recipients = [], isLoading: recipientsLoading } = useQuery<TrainingRecipient[]>({
+    queryKey: ["company-training-recipients"],
+    queryFn: async () => {
+      const res = await fetch("/api/users?status=active");
+      if (!res.ok) throw new Error("Failed to load people");
+      const users: TrainingRecipient[] = await res.json();
+      return users
+        .filter(user => user.isActive === "active" && user.roles.includes("employee"))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    },
+  });
 
   const set = (field: keyof FormData, value: string) => {
     setForm(f => ({ ...f, [field]: value }));
@@ -95,8 +139,18 @@ function AddTrainingPanel({
     if (!form.title.trim()) e.title = "Title is required";
     if (!form.dateOfLearning.trim()) e.dateOfLearning = "Date is required";
     if (!form.trainer.trim()) e.trainer = "Trainer is required";
+    if (selectedUserIds.length === 0) setRecipientError("Select at least one person");
     setErrors(e);
-    return Object.keys(e).length === 0;
+    return Object.keys(e).length === 0 && selectedUserIds.length > 0;
+  };
+
+  const toggleRecipient = (userId: number) => {
+    setSelectedUserIds(current =>
+      current.includes(userId)
+        ? current.filter(id => id !== userId)
+        : [...current, userId]
+    );
+    setRecipientError("");
   };
 
   const create = useMutation({
@@ -104,7 +158,7 @@ function AddTrainingPanel({
       const res = await fetch(`/api/company-learning`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, recipientUserIds: selectedUserIds }),
       });
       if (!res.ok) throw new Error("Failed to create");
       return res.json();
@@ -201,6 +255,96 @@ function AddTrainingPanel({
             />
           </div>
 
+          {/* Applicable people */}
+          <div className="relative">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">
+              Applicable to <span className="text-red-500">*</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => setRecipientPickerOpen(open => !open)}
+              className={cn(
+                "w-full rounded-lg border bg-background px-3 py-2.5 text-left text-sm focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-between gap-3",
+                recipientError ? "border-red-400" : "border-border"
+              )}
+            >
+              <span className={selectedUserIds.length > 0 ? "text-foreground" : "text-muted-foreground"}>
+                {selectedUserIds.length > 0
+                  ? `${selectedUserIds.length} ${selectedUserIds.length === 1 ? "person" : "people"} selected`
+                  : "Select people"}
+              </span>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", recipientPickerOpen && "rotate-180")} />
+            </button>
+
+            {recipientPickerOpen && (
+              <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-popover shadow-lg">
+                <div className="max-h-56 overflow-y-auto p-1.5">
+                  {recipientsLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : recipients.length === 0 ? (
+                    <p className="px-3 py-4 text-center text-xs text-muted-foreground">No active people found.</p>
+                  ) : (
+                    recipients.map(person => {
+                      const isSelected = selectedUserIds.includes(person.id);
+                      return (
+                        <button
+                          key={person.id}
+                          type="button"
+                          onClick={() => toggleRecipient(person.id)}
+                          className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-accent transition-colors"
+                        >
+                          <span className={cn(
+                            "h-4 w-4 rounded border flex items-center justify-center shrink-0",
+                            isSelected ? "bg-primary border-primary text-primary-foreground" : "border-border"
+                          )}>
+                            {isSelected && <Check className="h-3 w-3" />}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-medium text-foreground">{person.name}</span>
+                            {person.jobTitle && (
+                              <span className="block truncate text-xs text-muted-foreground">{person.jobTitle}</span>
+                            )}
+                          </span>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedUserIds(recipients.map(person => person.id));
+                      setRecipientError("");
+                    }}
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    Select all
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRecipientPickerOpen(false)}
+                    className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {recipientError && <p className="text-xs text-red-500 mt-1">{recipientError}</p>}
+            {selectedUserIds.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-1.5">
+                {recipients
+                  .filter(person => selectedUserIds.includes(person.id))
+                  .map(person => person.name)
+                  .join(", ")}
+              </p>
+            )}
+          </div>
+
           {create.isError && (
             <p className="text-sm text-red-500">Something went wrong. Please try again.</p>
           )}
@@ -216,7 +360,7 @@ function AddTrainingPanel({
             </button>
             <button
               type="submit"
-              disabled={create.isPending}
+              disabled={create.isPending || recipientsLoading}
               className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
             >
               {create.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
