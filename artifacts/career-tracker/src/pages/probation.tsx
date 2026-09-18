@@ -119,7 +119,7 @@ const CONFIDENCE_OPTIONS = [
 const REVIEW_STATUS_OPTIONS = [
   { value: "on_track", label: "On Track", active: "bg-green-500 text-white border-green-500", inactive: "border-border/50 text-muted-foreground/50" },
   { value: "needs_support", label: "Needs Support", active: "bg-amber-500 text-white border-amber-500", inactive: "border-border/50 text-muted-foreground/50" },
-  { value: "at_risk", label: "At Risk", active: "bg-red-500 text-white border-red-500", inactive: "border-border/50 text-muted-foreground/50" },
+  { value: "at_risk", label: "Not yet meeting expectations", active: "bg-red-500 text-white border-red-500", inactive: "border-border/50 text-muted-foreground/50" },
 ];
 
 // ─── Helper functions ─────────────────────────────────────────────────────────
