@@ -140,7 +140,7 @@ function hasMatchingManagerIdentity(userId: number | null) {
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { currentRoleId, userId, returnToManagerDashboard } = useSessionStore();
+  const { currentRoleId, userId, userName, returnToManagerDashboard } = useSessionStore();
   const showManagerDashboardLink =
     returnToManagerDashboard || hasMatchingManagerIdentity(userId);
   const managerDashboardUrl = `${window.location.origin}/manager/home`;
@@ -150,7 +150,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <aside className="w-60 shrink-0 bg-sidebar text-sidebar-foreground flex flex-col">
         <div className="px-4 py-5 border-b border-sidebar-border">
           <h1 className="font-script text-2xl text-sidebar-primary leading-tight">Career Progression</h1>
-          <p className="text-xs text-sidebar-foreground/50 mt-0.5">Your path to promotion</p>
+          {userName && (
+            <p className="text-xs text-sidebar-foreground/70 mt-1">Welcome, {userName}</p>
+          )}
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
           <ProbationNav />

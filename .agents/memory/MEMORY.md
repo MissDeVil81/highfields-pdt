@@ -6,5 +6,6 @@
 - [Manager dashboard architecture](manager-dashboard-arch.md) — users table + manager identity in localStorage; publishedAt on probation_manager_reviews gates employee visibility.
 - [Admin permission architecture](admin-permission-arch.md) — hierarchy/teams/permissions system; manager_id IS the reports-to field; circular check; drizzle-kit push requires direct psql for new tables.
 - [lib/db build requirement](lib-db-build.md) — after schema additions, run `pnpm --filter @workspace/db exec tsc -p tsconfig.json`; no "build" script exists, use raw tsc.
+- [Development schema sync](development-schema-sync.md) — API startup may report schema current while new columns are absent; apply additive Development DDL explicitly and verify through the API.
 - [Production seed chain guards](prod-seed-guards.md) — each seed function must guard on a table unique to itself; wrong guards cause silent skips leaving data missing.
 - [Development seed dependencies](development-seed-dependencies.md) — manager reference data must seed before V2 progress so target-linked test data loads cleanly.

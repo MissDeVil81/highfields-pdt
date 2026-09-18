@@ -9,4 +9,5 @@
 export interface PublishProbationReviewInput {
   userId: number;
   reviewPeriod: string;
+  managerEditable: boolean;
 }

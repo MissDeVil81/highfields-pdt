@@ -1838,6 +1838,13 @@ components:
         publishedAt:
           type: ["string", "null"]
           format: date-time
+        managerEditable:
+          type: boolean
+        publicationHistory:
+          type: array
+          items:
+            type: string
+            format: date-time
         createdAt:
           type: string
           format: date-time
@@ -1848,6 +1855,8 @@ components:
         - id
         - userId
         - reviewPeriod
+        - managerEditable
+        - publicationHistory
 
     UpsertProbationManagerReviewBody:
       type: object
@@ -1879,9 +1888,12 @@ components:
           type: integer
         reviewPeriod:
           type: string
+        managerEditable:
+          type: boolean
       required:
         - userId
         - reviewPeriod
+        - managerEditable
 
     User:
       type: object

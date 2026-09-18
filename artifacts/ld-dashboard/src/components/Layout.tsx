@@ -57,6 +57,9 @@ export function Layout({ children, whatsNewCount }: { children: React.ReactNode;
             Highfield Professional Solutions
           </p>
           <h1 className="font-script text-xl text-sidebar-primary leading-tight">L&amp;D Dashboard</h1>
+          {ldUser && (
+            <p className="text-xs text-sidebar-foreground/70 mt-1">Welcome, {ldUser.name}</p>
+          )}
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">

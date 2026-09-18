@@ -97,6 +97,9 @@ export function Layout({ children, whatsNewCount: _whatsNewCount }: LayoutProps)
             Highfield Professional Solutions
           </p>
           <h1 className="font-script text-xl text-sidebar-primary leading-tight">Manager Dashboard</h1>
+          {manager && (
+            <p className="text-xs text-sidebar-foreground/70 mt-1">Welcome, {manager.name}</p>
+          )}
         </div>
 
         {/* Nav */}

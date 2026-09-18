@@ -178,6 +178,7 @@ export default function EmployeeProbation() {
   const [developmentAreas, setDevelopmentAreas] = useState("");
   const [reviewDate, setReviewDate] = useState("");
   const [probationOutcome, setProbationOutcome] = useState("");
+  const [keepManagerEditable, setKeepManagerEditable] = useState(false);
   const [localManagerRatings, setLocalManagerRatings] = useState<Record<number, string>>({});
   const [localManagerComments, setLocalManagerComments] = useState<Record<number, string>>({});
   const [newActionText, setNewActionText] = useState("");
@@ -195,11 +196,13 @@ export default function EmployeeProbation() {
       setDevelopmentAreas(currentReview.developmentAreas ?? "");
       setReviewDate(currentReview.reviewDate ?? "");
       setProbationOutcome(currentReview.reviewStatus ?? "");
+      setKeepManagerEditable(currentReview.managerEditable ?? false);
     } else {
       setGoingWell("");
       setDevelopmentAreas("");
       setReviewDate("");
       setProbationOutcome("");
+      setKeepManagerEditable(false);
     }
     setLocalManagerRatings({});
     setLocalManagerComments({});
@@ -214,6 +217,13 @@ export default function EmployeeProbation() {
     localManagerRatings[itemId] ?? assessmentMap.get(itemId)?.managerRating ?? null;
   const getManagerComment = (itemId: number) =>
     localManagerComments[itemId] ?? assessmentMap.get(itemId)?.managerComment ?? "";
+  const isManagerEditable = !isPublished || keepManagerEditable;
+  const publicationHistory =
+    currentReview?.publicationHistory?.length
+      ? currentReview.publicationHistory
+      : currentReview?.publishedAt
+        ? [currentReview.publishedAt]
+        : [];
 
   const handleSave = async () => {
     if (!userId) return;
@@ -280,7 +290,9 @@ export default function EmployeeProbation() {
       return;
     }
     await handleSave();
-    await publishReview.mutateAsync({ data: { userId, reviewPeriod: activeTab } });
+    await publishReview.mutateAsync({
+      data: { userId, reviewPeriod: activeTab, managerEditable: keepManagerEditable },
+    });
     if (activeTab === "month6" && outcomeToPublish) {
       await updateUser.mutateAsync({
         id: userId,
@@ -291,7 +303,10 @@ export default function EmployeeProbation() {
     await queryClient.invalidateQueries({
       queryKey: getListProbationManagerReviewsQueryKey({ userId }),
     });
-    toast({ title: "Review finalised & submitted", description: "The employee can now see this review." });
+    toast({
+      title: "Review finalised and published",
+      description: "The individual can now see this review.",
+    });
   };
 
   const isSaving = upsertManagerReview.isPending || upsertAssessment.isPending;
@@ -332,21 +347,25 @@ export default function EmployeeProbation() {
           )}
         </div>
         <div className="flex gap-2 shrink-0">
-          <button
-            onClick={handleSave}
-            disabled={isSaving || !userId}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-sidebar-accent text-sidebar-accent-foreground hover:opacity-80 transition-opacity disabled:opacity-40"
-          >
-            {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            Save Draft
-          </button>
+          {!isPublished && (
+            <button
+              onClick={handleSave}
+              disabled={isSaving || !userId}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-sidebar-accent text-sidebar-accent-foreground hover:opacity-80 transition-opacity disabled:opacity-40"
+            >
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Save Draft
+            </button>
+          )}
           <button
             onClick={handlePublish}
-            disabled={isPublishing || !userId}
+            disabled={isPublishing || isSaving || !userId}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40"
           >
             {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-            {isPublished ? "Re-finalise & Submit" : "Finalise & Submit"}
+            {isPublished
+              ? "Re-finalise and publish to individual"
+              : "Finalise and publish to individual"}
           </button>
         </div>
       </header>
@@ -367,7 +386,7 @@ export default function EmployeeProbation() {
               {/* Status bar */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  {isPublished ? (
+                  {!isManagerEditable ? (
                     <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-100 text-green-700 border border-green-200">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       Published {new Date(currentReview!.publishedAt!).toLocaleDateString("en-GB")}
@@ -406,13 +425,13 @@ export default function EmployeeProbation() {
                       <button
                         key={option.value}
                         type="button"
-                        disabled={isPublished}
+                        disabled={!isManagerEditable}
                         onClick={() => setProbationOutcome(option.value)}
                         className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
                           probationOutcome === option.value
                             ? option.activeClass
                             : "bg-background text-muted-foreground border-border hover:border-foreground/30"
-                        } ${isPublished ? "cursor-default opacity-80" : ""}`}
+                        } ${!isManagerEditable ? "cursor-default opacity-80" : ""}`}
                       >
                         {option.label}
                       </button>
@@ -473,7 +492,7 @@ export default function EmployeeProbation() {
                                     )}
                                   </div>
                                   <div className="px-4 py-3 border-l border-border space-y-2">
-                                    {isPublished ? (
+                                    {!isManagerEditable ? (
                                       <>
                                         <RatingPill rating={getManagerRating(item.id) ?? undefined} />
                                         {getManagerComment(item.id) && (
@@ -573,7 +592,13 @@ export default function EmployeeProbation() {
                     <div className="px-5 py-3.5 border-b border-border bg-muted/50 flex items-center gap-2">
                       <h3 className="text-sm font-semibold text-foreground">Manager Summary</h3>
                       {isPublished && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Locked</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          isManagerEditable
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-muted text-muted-foreground"
+                        }`}>
+                          {isManagerEditable ? "Editable for manager" : "Locked"}
+                        </span>
                       )}
                     </div>
                     <div className="p-5 space-y-4">
@@ -581,7 +606,7 @@ export default function EmployeeProbation() {
                         <label className="text-xs font-medium text-muted-foreground block mb-1.5">
                           What's going well
                         </label>
-                        {isPublished ? (
+                        {!isManagerEditable ? (
                           <p className="text-sm px-3 py-2.5 rounded-xl border border-border bg-muted/30 min-h-[4rem] leading-relaxed text-foreground">
                             {goingWell || <span className="italic text-muted-foreground/50">Not recorded.</span>}
                           </p>
@@ -599,7 +624,7 @@ export default function EmployeeProbation() {
                         <label className="text-xs font-medium text-muted-foreground block mb-1.5">
                           Development areas
                         </label>
-                        {isPublished ? (
+                        {!isManagerEditable ? (
                           <p className="text-sm px-3 py-2.5 rounded-xl border border-border bg-muted/30 min-h-[4rem] leading-relaxed text-foreground">
                             {developmentAreas || <span className="italic text-muted-foreground/50">Not recorded.</span>}
                           </p>
@@ -624,7 +649,8 @@ export default function EmployeeProbation() {
                         Set and track development actions for this review period.
                       </p>
                     </div>
-                    <div className="p-5 space-y-4">
+                    <fieldset disabled={!isManagerEditable} className={!isManagerEditable ? "opacity-70" : ""}>
+                      <div className="p-5 space-y-4">
 
                       {/* Carried-forward actions */}
                       {prevPeriodId && carriedActions.length > 0 && (
@@ -754,7 +780,8 @@ export default function EmployeeProbation() {
                           </button>
                         </div>
                       </div>
-                    </div>
+                      </div>
+                    </fieldset>
                   </div>
                 </>
               )}
@@ -768,18 +795,42 @@ export default function EmployeeProbation() {
         <div className="max-w-6xl mx-auto flex items-center gap-4">
           <div className="flex-1 min-w-0">
             {isPublished ? (
-              <p className="text-xs text-green-700 font-medium flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                Finalised {new Date(currentReview!.publishedAt!).toLocaleDateString("en-GB")} — the employee can see this review.
-                Ratings and summary are locked. Actions remain editable.
-              </p>
+              <div className="space-y-1">
+                <p className="text-xs text-green-700 font-medium flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  Published to the individual {new Date(currentReview!.publishedAt!).toLocaleDateString("en-GB")}.
+                  {isManagerEditable ? " Manager editing is enabled." : " The review is locked."}
+                </p>
+                {publicationHistory.length > 0 && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Publication history: {publicationHistory.map((date) =>
+                      new Date(date).toLocaleString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    ).join(" · ")}
+                  </p>
+                )}
+              </div>
             ) : (
               <p className="text-xs text-muted-foreground">
                 <strong className="text-foreground">Save Draft</strong> to keep editing, or{" "}
-                <strong className="text-foreground">Finalise & Submit</strong> to share with the employee and lock ratings.
+                <strong className="text-foreground">Finalise and publish to individual</strong> to share the review.
               </p>
             )}
           </div>
+          <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground shrink-0">
+            <input
+              type="checkbox"
+              checked={keepManagerEditable}
+              onChange={(event) => setKeepManagerEditable(event.target.checked)}
+              className="h-4 w-4 rounded border-border accent-primary"
+            />
+            Keep editable for manager
+          </label>
           <div className="flex gap-2 shrink-0">
             {!isPublished && (
               <button
@@ -793,11 +844,13 @@ export default function EmployeeProbation() {
             )}
             <button
               onClick={handlePublish}
-              disabled={isPublishing || !userId}
+              disabled={isPublishing || isSaving || !userId}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40"
             >
               {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              {isPublished ? "Re-finalise & Submit" : "Finalise & Submit"}
+              {isPublished
+                ? "Re-finalise and publish to individual"
+                : "Finalise and publish to individual"}
             </button>
           </div>
         </div>

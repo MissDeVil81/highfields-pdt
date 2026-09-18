@@ -577,6 +577,8 @@ export const ListProbationManagerReviewsResponseItem = zod.object({
   reviewStatus: zod.string().nullish(),
   reviewDate: zod.string().nullish(),
   publishedAt: zod.coerce.date().nullish(),
+  managerEditable: zod.boolean(),
+  publicationHistory: zod.array(zod.coerce.date()),
   createdAt: zod.coerce.date().optional(),
   updatedAt: zod.coerce.date().optional(),
 });
@@ -605,6 +607,8 @@ export const UpsertProbationManagerReviewResponse = zod.object({
   reviewStatus: zod.string().nullish(),
   reviewDate: zod.string().nullish(),
   publishedAt: zod.coerce.date().nullish(),
+  managerEditable: zod.boolean(),
+  publicationHistory: zod.array(zod.coerce.date()),
   createdAt: zod.coerce.date().optional(),
   updatedAt: zod.coerce.date().optional(),
 });
@@ -615,6 +619,7 @@ export const UpsertProbationManagerReviewResponse = zod.object({
 export const PublishProbationManagerReviewBody = zod.object({
   userId: zod.number(),
   reviewPeriod: zod.string(),
+  managerEditable: zod.boolean(),
 });
 
 export const PublishProbationManagerReviewResponse = zod.object({
@@ -626,6 +631,8 @@ export const PublishProbationManagerReviewResponse = zod.object({
   reviewStatus: zod.string().nullish(),
   reviewDate: zod.string().nullish(),
   publishedAt: zod.coerce.date().nullish(),
+  managerEditable: zod.boolean(),
+  publicationHistory: zod.array(zod.coerce.date()),
   createdAt: zod.coerce.date().optional(),
   updatedAt: zod.coerce.date().optional(),
 });

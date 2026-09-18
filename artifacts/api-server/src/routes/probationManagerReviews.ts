@@ -14,6 +14,12 @@ const upsertSchema = z.object({
   reviewDate: z.string().nullable().optional(),
 });
 
+const publishSchema = z.object({
+  userId: z.number().int(),
+  reviewPeriod: z.string(),
+  managerEditable: z.boolean().default(false),
+});
+
 router.get("/", async (req, res) => {
   const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
   const reviewPeriod = req.query.reviewPeriod as string | undefined;
@@ -74,10 +80,9 @@ router.post("/", async (req, res) => {
 });
 
 router.post("/publish", async (req, res) => {
-  const { userId, reviewPeriod } = req.body as { userId?: number; reviewPeriod?: string };
-  if (!userId || !reviewPeriod) {
-    return res.status(400).json({ error: "userId and reviewPeriod are required" });
-  }
+  const result = publishSchema.safeParse(req.body);
+  if (!result.success) return res.status(400).json({ error: result.error.message });
+  const { userId, reviewPeriod, managerEditable } = result.data;
 
   const [existing] = await db
     .select()
@@ -91,9 +96,24 @@ router.post("/publish", async (req, res) => {
 
   if (!existing) return res.status(404).json({ error: "Review not found" });
 
+  const publishedAt = new Date();
+  const existingHistory = Array.isArray(existing.publicationHistory)
+    ? existing.publicationHistory
+    : [];
+  const publicationHistory =
+    existingHistory.length > 0
+      ? existingHistory
+      : existing.publishedAt
+        ? [existing.publishedAt.toISOString()]
+        : [];
   const [published] = await db
     .update(probationManagerReviewsTable)
-    .set({ publishedAt: new Date(), updatedAt: new Date() })
+    .set({
+      publishedAt,
+      managerEditable,
+      publicationHistory: [...publicationHistory, publishedAt.toISOString()],
+      updatedAt: publishedAt,
+    })
     .where(eq(probationManagerReviewsTable.id, existing.id))
     .returning();
 

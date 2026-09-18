@@ -347,6 +347,8 @@ export interface ProbationManagerReview {
   reviewDate?: string | null;
   /** @nullable */
   publishedAt?: string | null;
+  managerEditable: boolean;
+  publicationHistory: string[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -363,6 +365,7 @@ export interface UpsertProbationManagerReviewBody {
 export interface PublishProbationReviewInput {
   userId: number;
   reviewPeriod: string;
+  managerEditable: boolean;
 }
 
 export interface User {

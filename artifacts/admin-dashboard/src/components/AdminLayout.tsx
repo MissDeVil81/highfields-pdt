@@ -47,6 +47,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
   const activeUsers = (users || []).filter(u => u.isActive === "active");
   const viewAsUser = activeUsers.find(u => u.id === viewAsUserId);
+  const adminUser = activeUsers.find(u => u.id === adminUserId);
 
   return (
     <div className="min-h-[100dvh] flex flex-col md:flex-row bg-background">
@@ -58,6 +59,9 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             Highfield Admin
             <LiveBadge />
           </h2>
+          {adminUser && (
+            <p className="text-xs text-sidebar-foreground/70 mt-1">Welcome, {adminUser.name}</p>
+          )}
         </div>
         <nav className="flex-1 p-4 space-y-1">
           <NavLink href="/" icon={UsersIcon} current={location}>Users</NavLink>

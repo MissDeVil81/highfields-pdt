@@ -16,6 +16,8 @@ export interface ProbationManagerReview {
   reviewDate?: string | null;
   /** @nullable */
   publishedAt?: Date | null;
+  managerEditable: boolean;
+  publicationHistory: Date[];
   createdAt?: Date;
   updatedAt?: Date;
 }
