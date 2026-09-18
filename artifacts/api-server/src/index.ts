@@ -6,6 +6,7 @@ import {
   seedDemoProgressIfMissing,
   seedDemoProgressV2IfMissing,
   seedManagerPortalDataIfMissing,
+  seedHarryMonth6ProbationIfMissing,
   seedLdDemoDataIfMissing,
 } from "./startup-seed";
 import { RESOLVED_APP_ENV } from "@workspace/db";
@@ -47,6 +48,7 @@ const startupChain = isProductionRuntime
       .then(() => seedIfEmpty())
       .then(() => seedDemoProgressIfMissing())
       .then(() => seedManagerPortalDataIfMissing())
+      .then(() => seedHarryMonth6ProbationIfMissing())
       .then(() => seedDemoProgressV2IfMissing())
       .then(() => seedLdDemoDataIfMissing());
 

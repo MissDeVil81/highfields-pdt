@@ -162,8 +162,59 @@ function ReviewDateField({ userId, reviewPeriod }: { userId: number; reviewPerio
   return (
     <div className="flex items-center gap-2.5 mb-6 p-3 rounded-xl border border-border bg-muted/20">
       <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
-      <span className="text-sm font-medium text-foreground shrink-0">Date of Review</span>
+      <span className="text-sm font-medium text-foreground shrink-0">
+        {reviewPeriod === "month6" ? "Date of probation meeting" : "Date of Review"}
+      </span>
       <span className="text-sm text-muted-foreground">{displayDate}</span>
+    </div>
+  );
+}
+
+const PROBATION_OUTCOME_OPTIONS = [
+  { value: "passed", label: "Yes", activeClass: "bg-green-500 text-white border-green-500" },
+  { value: "failed", label: "No", activeClass: "bg-red-500 text-white border-red-500" },
+  { value: "extended", label: "Probation extended", activeClass: "bg-amber-500 text-white border-amber-500" },
+];
+
+function ProbationOutcomeField({
+  review,
+}: {
+  review?: { reviewStatus?: string | null; publishedAt?: Date | string | null };
+}) {
+  const isPublished = !!review?.publishedAt;
+  const selectedOutcome = isPublished ? review?.reviewStatus : null;
+
+  return (
+    <div className="mb-6 rounded-xl border border-primary/25 bg-primary/5 p-4">
+      <div className="flex items-start gap-3">
+        <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-semibold text-foreground">Passed probation</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Your manager will confirm one of these outcomes after your probation meeting.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {PROBATION_OUTCOME_OPTIONS.map((option) => (
+              <span
+                key={option.value}
+                className={cn(
+                  "rounded-lg border px-3 py-1.5 text-xs font-medium",
+                  selectedOutcome === option.value
+                    ? option.activeClass
+                    : "border-border/60 bg-background text-muted-foreground"
+                )}
+              >
+                {option.label}
+              </span>
+            ))}
+          </div>
+          <p className="mt-3 text-xs font-medium text-muted-foreground">
+            {selectedOutcome
+              ? `Result: ${PROBATION_OUTCOME_OPTIONS.find((option) => option.value === selectedOutcome)?.label ?? selectedOutcome}`
+              : "Result not yet recorded"}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -744,7 +795,10 @@ function ManagerReviewSummary({ userId, reviewPeriod }: {
   }, [reviews, isLoading, initialized]);
 
   const isPublished = !!reviews[0]?.publishedAt;
-  const hasAnyContent = state.goingWell || state.developmentAreas || state.reviewStatus;
+  const hasAnyContent =
+    state.goingWell ||
+    state.developmentAreas ||
+    (reviewPeriod !== "month6" && state.reviewStatus);
 
   return (
     <div className="rounded-xl border border-primary/25 bg-primary/5 p-6">
@@ -784,7 +838,7 @@ function ManagerReviewSummary({ userId, reviewPeriod }: {
               </p>
             </div>
           )}
-          {state.reviewStatus && (
+          {reviewPeriod !== "month6" && state.reviewStatus && (
             <div>
               <p className="text-sm font-semibold text-foreground mb-2">Overall Review Status</p>
               <div className="flex gap-2 flex-wrap">
@@ -892,6 +946,8 @@ function ReviewContent({ reviewPeriod, userId, items }: {
     <div>
       {/* Date of Review */}
       <ReviewDateField userId={userId} reviewPeriod={reviewPeriod} />
+
+      {reviewPeriod === "month6" && <ProbationOutcomeField review={managerReviews[0]} />}
 
       {isLocked && (
         <div className="flex items-center gap-2 mb-6 px-4 py-3 rounded-xl border border-primary/25 bg-primary/5 text-sm text-foreground">

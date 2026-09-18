@@ -1742,6 +1742,105 @@ export async function seedManagerPortalDataIfMissing(): Promise<void> {
   }
 }
 
+export async function seedHarryMonth6ProbationIfMissing(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    const { rows } = await client.query(
+      "SELECT COUNT(*) FROM probation_manager_reviews WHERE user_id = 3 AND review_period = 'month6'"
+    );
+    if (parseInt(rows[0].count, 10) > 0) {
+      logger.info("Harry Mann Month 6 probation data already present, skipping.");
+      return;
+    }
+
+    logger.info("Seeding Harry Mann Month 6 probation demo data...");
+    await client.query("BEGIN");
+    try {
+      await client.query(`
+        UPDATE users
+        SET probation_status = 'passed', updated_at = NOW()
+        WHERE id = 3;
+
+        INSERT INTO probation_manager_reviews
+          (id, user_id, review_period, going_well, development_areas, review_status, review_date, published_at, created_at, updated_at)
+        VALUES
+          (7, 3, 'month6',
+           'Harry has had an excellent first six months. He consistently delivered strong activity, built trusted relationships with candidates and clients, and made a confident contribution to the Data Centre team. He acted on feedback quickly, learned the market at pace, and regularly shared useful insight with the wider team.',
+           'Harry is ready to continue building on this strong foundation. His next focus is to deepen strategic client development and take on more complex briefs as his confidence grows.',
+           'passed', '2026-10-01', '2026-10-02 09:00:00', NOW(), NOW())
+        ON CONFLICT (id) DO NOTHING;
+
+        INSERT INTO probation_reflections
+          (id, user_id, review_period, went_well, learned, more_support, focus_next, confidence, biggest_achievements, most_proud_of, still_develop, ready_to_pass, created_at, updated_at)
+        VALUES
+          (7, 3, 'month6',
+           'I built strong relationships across the data centre market, consistently hit my activity goals, and converted my BD work into live opportunities. I feel like a confident and trusted member of the team.',
+           'I have learned how to manage the full recruitment lifecycle, tailor my approach to different clients, and use market knowledge to give candidates and clients better advice.',
+           'I would value continued coaching as I take on larger and more complex client briefs, but I feel well supported and ready for the next stage.',
+           'Keep developing strategic client relationships, take ownership of more complex searches, and support newer members of the team with the systems and market knowledge I have built.',
+           'very_confident',
+           'Converting my first retained opportunity and building a reliable network of candidates in my specialist market.',
+           'I am most proud of how quickly I turned feedback into action and how consistently I maintained a high standard for candidates and clients.',
+           'Developing more strategic commercial conversations with senior stakeholders.',
+           'yes', NOW(), NOW())
+        ON CONFLICT (id) DO NOTHING;
+
+        INSERT INTO probation_actions
+          (id, user_id, review_period, action_text, status, created_at, updated_at)
+        VALUES
+          (9, 3, 'month6', 'Convert a retained or PSL opportunity in the data centre market', 'complete', NOW(), NOW()),
+          (10, 3, 'month6', 'Build and maintain a specialist candidate network for the core market', 'complete', NOW(), NOW()),
+          (11, 3, 'month6', 'Share market insight with the wider recruitment team', 'complete', NOW(), NOW())
+        ON CONFLICT (id) DO NOTHING;
+
+        INSERT INTO probation_assessments
+          (id, user_id, item_id, rating, note, manager_rating, manager_comment, review_period, created_at, updated_at)
+        VALUES
+          (92, 3,  1, 'yes',  'Consistently delivers high-quality work and follows through on commitments.', 'yes',  'Excellent consistency and ownership.', 'month6', NOW(), NOW()),
+          (93, 3,  2, 'yes',  'Works confidently across the core systems and processes.', 'yes',  'Uses the systems efficiently and supports others when needed.', 'month6', NOW(), NOW()),
+          (94, 3,  3, 'yes',  'Has built strong confidence in complex recruitment conversations.', 'yes',  'A clear step forward from Month 3.', 'month6', NOW(), NOW()),
+          (95, 3,  4, 'yes',  '', 'yes', '', 'month6', NOW(), NOW()),
+          (96, 3,  5, 'yes',  '', 'yes', '', 'month6', NOW(), NOW()),
+          (97, 3,  6, 'yes',  'Maintains excellent candidate care throughout the process.', 'yes',  'A real strength in Harry''s work.', 'month6', NOW(), NOW()),
+          (98, 3,  7, 'yes',  '', 'yes', '', 'month6', NOW(), NOW()),
+          (99, 3,  8, 'yes',  '', 'yes', '', 'month6', NOW(), NOW()),
+          (100, 3, 9, 'yes',  'Shows a strong understanding of the full recruitment lifecycle.', 'yes', 'Ready to take ownership of more complex briefs.', 'month6', NOW(), NOW()),
+          (101, 3, 10, 'yes', 'Continues to build sector knowledge through research and market conversations.', 'yes', 'Strong market awareness and curiosity.', 'month6', NOW(), NOW()),
+          (102, 3, 11, 'yes', '', 'yes', '', 'month6', NOW(), NOW()),
+          (103, 3, 12, 'yes', '', 'yes', '', 'month6', NOW(), NOW()),
+          (104, 3, 13, 'yes', '', 'yes', '', 'month6', NOW(), NOW()),
+          (105, 3, 14, 'yes', '', 'yes', '', 'month6', NOW(), NOW()),
+          (106, 3, 15, 'yes', 'Takes ownership of development and actively applies feedback.', 'yes', 'Highly coachable and proactive.', 'month6', NOW(), NOW()),
+          (107, 3, 16, 'yes', '', 'yes', '', 'month6', NOW(), NOW()),
+          (108, 3, 17, 'yes', '', 'yes', '', 'month6', NOW(), NOW()),
+          (109, 3, 18, 'yes', '', 'yes', '', 'month6', NOW(), NOW()),
+          (110, 3, 19, 'most', '', 'most', 'Consistently demonstrates a driven and positive attitude.', 'month6', NOW(), NOW()),
+          (111, 3, 20, 'most', '', 'most', '', 'month6', NOW(), NOW()),
+          (112, 3, 21, 'most', '', 'most', '', 'month6', NOW(), NOW()),
+          (113, 3, 22, 'most', '', 'most', '', 'month6', NOW(), NOW()),
+          (114, 3, 23, 'most', '', 'most', '', 'month6', NOW(), NOW()),
+          (115, 3, 24, 'most', '', 'most', 'A strong cultural contribution and a positive influence on the team.', 'month6', NOW(), NOW())
+        ON CONFLICT (id) DO NOTHING;
+
+        SELECT setval('probation_manager_reviews_id_seq', GREATEST((SELECT MAX(id) FROM probation_manager_reviews), 7));
+        SELECT setval('probation_reflections_id_seq', GREATEST((SELECT MAX(id) FROM probation_reflections), 7));
+        SELECT setval('probation_actions_id_seq', GREATEST((SELECT MAX(id) FROM probation_actions), 11));
+        SELECT setval('probation_assessments_id_seq', GREATEST((SELECT MAX(id) FROM probation_assessments), 115));
+      `);
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    }
+    logger.info("Harry Mann Month 6 probation demo data seeded successfully.");
+  } catch (err) {
+    logger.error({ err }, "Failed to seed Harry Mann Month 6 probation data");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 export async function seedLdDemoDataIfMissing(): Promise<void> {
   const client = await pool.connect();
   try {

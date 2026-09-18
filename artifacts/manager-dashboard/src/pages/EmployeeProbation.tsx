@@ -9,6 +9,7 @@ import {
   useUpsertProbationManagerReview,
   useUpsertProbationAssessment,
   usePublishProbationManagerReview,
+  useUpdateUser,
   useListProbationActions,
   useCreateProbationAction,
   useUpdateProbationAction,
@@ -51,6 +52,18 @@ const MANAGER_RATING_OPTIONS = [
   { value: "in_progress", label: "In Progress", activeClass: "bg-amber-500 text-white border-amber-500" },
   { value: "not_yet", label: "Not Yet", activeClass: "bg-red-400 text-white border-red-400" },
 ];
+
+const PROBATION_OUTCOME_OPTIONS = [
+  { value: "passed", label: "Yes", activeClass: "bg-green-500 text-white border-green-500" },
+  { value: "failed", label: "No", activeClass: "bg-red-500 text-white border-red-500" },
+  { value: "extended", label: "Probation extended", activeClass: "bg-amber-500 text-white border-amber-500" },
+];
+
+const PROBATION_STATUS_BY_OUTCOME: Record<string, string> = {
+  passed: "passed",
+  failed: "failed",
+  extended: "extended",
+};
 
 function RatingPill({ rating }: { rating?: string | null }) {
   if (!rating) return <span className="text-xs text-muted-foreground">—</span>;
@@ -131,6 +144,7 @@ export default function EmployeeProbation() {
   const upsertManagerReview = useUpsertProbationManagerReview();
   const upsertAssessment = useUpsertProbationAssessment();
   const publishReview = usePublishProbationManagerReview();
+  const updateUser = useUpdateUser();
 
   const actionsParams = { userId, reviewPeriod: activeTab };
   const { data: currentActions = [] } = useListProbationActions(
@@ -163,6 +177,7 @@ export default function EmployeeProbation() {
   const [goingWell, setGoingWell] = useState("");
   const [developmentAreas, setDevelopmentAreas] = useState("");
   const [reviewDate, setReviewDate] = useState("");
+  const [probationOutcome, setProbationOutcome] = useState("");
   const [localManagerRatings, setLocalManagerRatings] = useState<Record<number, string>>({});
   const [localManagerComments, setLocalManagerComments] = useState<Record<number, string>>({});
   const [newActionText, setNewActionText] = useState("");
@@ -179,10 +194,12 @@ export default function EmployeeProbation() {
       setGoingWell(currentReview.goingWell ?? "");
       setDevelopmentAreas(currentReview.developmentAreas ?? "");
       setReviewDate(currentReview.reviewDate ?? "");
+      setProbationOutcome(currentReview.reviewStatus ?? "");
     } else {
       setGoingWell("");
       setDevelopmentAreas("");
       setReviewDate("");
+      setProbationOutcome("");
     }
     setLocalManagerRatings({});
     setLocalManagerComments({});
@@ -207,6 +224,9 @@ export default function EmployeeProbation() {
         reviewPeriod: activeTab,
         goingWell: goingWell || null,
         developmentAreas: developmentAreas || null,
+        reviewStatus: activeTab === "month6"
+          ? probationOutcome || null
+          : currentReview?.reviewStatus ?? null,
         reviewDate: reviewDate || null,
       },
     });
@@ -249,8 +269,25 @@ export default function EmployeeProbation() {
 
   const handlePublish = async () => {
     if (!userId) return;
+    const outcomeToPublish = activeTab === "month6"
+      ? probationOutcome || currentReview?.reviewStatus || ""
+      : "";
+    if (activeTab === "month6" && !outcomeToPublish) {
+      toast({
+        title: "Select a probation outcome",
+        description: "Choose Yes, No, or Probation extended before finalising this review.",
+      });
+      return;
+    }
     await handleSave();
     await publishReview.mutateAsync({ data: { userId, reviewPeriod: activeTab } });
+    if (activeTab === "month6" && outcomeToPublish) {
+      await updateUser.mutateAsync({
+        id: userId,
+        data: { probationStatus: PROBATION_STATUS_BY_OUTCOME[outcomeToPublish] ?? outcomeToPublish },
+      });
+      await queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(employeeId) });
+    }
     await queryClient.invalidateQueries({
       queryKey: getListProbationManagerReviewsQueryKey({ userId }),
     });
@@ -258,7 +295,7 @@ export default function EmployeeProbation() {
   };
 
   const isSaving = upsertManagerReview.isPending || upsertAssessment.isPending;
-  const isPublishing = publishReview.isPending;
+  const isPublishing = publishReview.isPending || updateUser.isPending;
 
   const sections = Array.from(new Set(items.map((i) => i.section)));
 
@@ -340,7 +377,9 @@ export default function EmployeeProbation() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="text-xs text-muted-foreground">Date of Review:</label>
+                  <label className="text-xs text-muted-foreground">
+                    {activeTab === "month6" ? "Date of probation meeting:" : "Date of Review:"}
+                  </label>
                   {isPublished ? (
                     <span className="text-xs border border-border rounded-lg px-2.5 py-1 bg-muted/40 text-foreground">
                       {reviewDate || "—"}
@@ -355,6 +394,37 @@ export default function EmployeeProbation() {
                   )}
                 </div>
               </div>
+
+              {activeTab === "month6" && (
+                <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
+                  <h3 className="text-sm font-semibold text-foreground">Passed probation</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Set the outcome after the probation meeting. The employee will see the selected result after you finalise and submit the review.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {PROBATION_OUTCOME_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        disabled={isPublished}
+                        onClick={() => setProbationOutcome(option.value)}
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
+                          probationOutcome === option.value
+                            ? option.activeClass
+                            : "bg-background text-muted-foreground border-border hover:border-foreground/30"
+                        } ${isPublished ? "cursor-default opacity-80" : ""}`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  {!probationOutcome && (
+                    <p className="mt-2 text-xs text-amber-700">
+                      Select an outcome before finalising the Month 6 review.
+                    </p>
+                  )}
+                </div>
+              )}
 
               {!userId ? (
                 <div className="bg-card border border-dashed border-border rounded-xl p-8 text-center">
