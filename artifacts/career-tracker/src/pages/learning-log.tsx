@@ -487,6 +487,9 @@ function MyLearningTab({ userId, filters }: { userId: number; filters: LearningF
 
   return (
     <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">
+        Add and keep track of all the self-learning you do. This can include webinars, podcasts, TRN training, etc.
+      </p>
       {!showForm && (
         <button
           onClick={() => setShowForm(true)}
