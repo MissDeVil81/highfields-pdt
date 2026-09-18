@@ -412,6 +412,9 @@ function CompanyLearningTab({ filters }: { filters: LearningFilters }) {
 
   return (
     <div className="space-y-3">
+      <p className="text-xs text-muted-foreground pb-1">
+        Company-wide training and development sessions, managed by the L&amp;D team.
+      </p>
       {filteredEntries.length === 0 ? (
         <EmptyReadOnly message="No company learning sessions match your search or date range." />
       ) : (
