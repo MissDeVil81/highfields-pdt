@@ -178,7 +178,6 @@ export default function EmployeeProbation() {
   const [developmentAreas, setDevelopmentAreas] = useState("");
   const [reviewDate, setReviewDate] = useState("");
   const [probationOutcome, setProbationOutcome] = useState("");
-  const [keepManagerEditable, setKeepManagerEditable] = useState(false);
   const [localManagerRatings, setLocalManagerRatings] = useState<Record<number, string>>({});
   const [localManagerComments, setLocalManagerComments] = useState<Record<number, string>>({});
   const [newActionText, setNewActionText] = useState("");
@@ -196,13 +195,11 @@ export default function EmployeeProbation() {
       setDevelopmentAreas(currentReview.developmentAreas ?? "");
       setReviewDate(currentReview.reviewDate ?? "");
       setProbationOutcome(currentReview.reviewStatus ?? "");
-      setKeepManagerEditable(currentReview.managerEditable ?? false);
     } else {
       setGoingWell("");
       setDevelopmentAreas("");
       setReviewDate("");
       setProbationOutcome("");
-      setKeepManagerEditable(false);
     }
     setLocalManagerRatings({});
     setLocalManagerComments({});
@@ -217,7 +214,7 @@ export default function EmployeeProbation() {
     localManagerRatings[itemId] ?? assessmentMap.get(itemId)?.managerRating ?? null;
   const getManagerComment = (itemId: number) =>
     localManagerComments[itemId] ?? assessmentMap.get(itemId)?.managerComment ?? "";
-  const isManagerEditable = !isPublished || keepManagerEditable;
+  const isManagerEditable = true;
   const publicationHistory =
     currentReview?.publicationHistory?.length
       ? currentReview.publicationHistory
@@ -291,7 +288,7 @@ export default function EmployeeProbation() {
     }
     await handleSave();
     await publishReview.mutateAsync({
-      data: { userId, reviewPeriod: activeTab, managerEditable: keepManagerEditable },
+      data: { userId, reviewPeriod: activeTab, managerEditable: true },
     });
     if (activeTab === "month6" && outcomeToPublish) {
       await updateUser.mutateAsync({
@@ -592,12 +589,8 @@ export default function EmployeeProbation() {
                     <div className="px-5 py-3.5 border-b border-border bg-muted/50 flex items-center gap-2">
                       <h3 className="text-sm font-semibold text-foreground">Manager Summary</h3>
                       {isPublished && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          isManagerEditable
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-muted text-muted-foreground"
-                        }`}>
-                          {isManagerEditable ? "Editable for manager" : "Locked"}
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-700">
+                          Editable for manager
                         </span>
                       )}
                     </div>
@@ -799,7 +792,7 @@ export default function EmployeeProbation() {
                 <p className="text-xs text-green-700 font-medium flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                   Published to the individual {new Date(currentReview!.publishedAt!).toLocaleDateString("en-GB")}.
-                  {isManagerEditable ? " Manager editing is enabled." : " The review is locked."}
+                  Manager editing is enabled.
                 </p>
                 {publicationHistory.length > 0 && (
                   <p className="text-[11px] text-muted-foreground">
@@ -822,15 +815,6 @@ export default function EmployeeProbation() {
               </p>
             )}
           </div>
-          <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground shrink-0">
-            <input
-              type="checkbox"
-              checked={keepManagerEditable}
-              onChange={(event) => setKeepManagerEditable(event.target.checked)}
-              className="h-4 w-4 rounded border-border accent-primary"
-            />
-            Keep editable for manager
-          </label>
           <div className="flex gap-2 shrink-0">
             {!isPublished && (
               <button
