@@ -18,6 +18,8 @@ export interface ManagerTeamMember {
   /** @nullable */
   startDate?: string | null;
   /** @nullable */
+  probationEndDate?: string | null;
+  /** @nullable */
   probationStatus?: string | null;
   isActive: string;
   /** @nullable */

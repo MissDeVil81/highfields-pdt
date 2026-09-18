@@ -80,7 +80,7 @@ export function Layout({ children, whatsNewCount: _whatsNewCount }: LayoutProps)
 
   // Career Tracker is the root web artifact. Pass the selected manager so it
   // opens their own career plan instead of starting a separate identity flow.
-  const careerTrackerUrl = `${window.location.origin}/setup?userId=${manager?.id ?? ""}`;
+  const careerTrackerUrl = `${window.location.origin}/setup?userId=${manager?.id ?? ""}&from=manager`;
 
   const handleLogout = () => {
     clearManager();
@@ -119,11 +119,11 @@ export function Layout({ children, whatsNewCount: _whatsNewCount }: LayoutProps)
         <div className="px-3 pb-2 border-t border-sidebar-border pt-3">
           <a
             href={careerTrackerUrl}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-sidebar-primary/50 bg-sidebar-primary text-sidebar-primary-foreground text-sm font-semibold shadow-sm hover:brightness-110 transition-all"
           >
-            <TrendingUp className="h-4 w-4 opacity-60 flex-shrink-0" />
+            <TrendingUp className="h-4 w-4 flex-shrink-0" />
             <span className="flex-1 truncate">My Career Plan</span>
-            <ExternalLink className="h-3.5 w-3.5 opacity-40 flex-shrink-0" />
+            <ExternalLink className="h-3.5 w-3.5 opacity-80 flex-shrink-0" />
           </a>
         </div>
 

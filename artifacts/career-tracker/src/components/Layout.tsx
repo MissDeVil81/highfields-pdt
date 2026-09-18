@@ -1,7 +1,7 @@
 import { Link, useLocation, useSearch } from "wouter";
 import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/lib/session";
-import { ChevronRight, LayoutDashboard, Briefcase, Target, BarChart3, ClipboardCheck, BookOpen } from "lucide-react";
+import { ChevronRight, LayoutDashboard, Briefcase, Target, BarChart3, ClipboardCheck, BookOpen, Users, ExternalLink } from "lucide-react";
 
 interface NavItemProps {
   href: string;
@@ -127,8 +127,23 @@ function ProbationNav() {
   );
 }
 
+function hasMatchingManagerIdentity(userId: number | null) {
+  if (userId == null) return false;
+  try {
+    const stored = localStorage.getItem("manager_identity");
+    if (!stored) return false;
+    const manager = JSON.parse(stored) as { id?: number };
+    return manager.id === userId;
+  } catch {
+    return false;
+  }
+}
+
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { currentRoleId } = useSessionStore();
+  const { currentRoleId, userId, returnToManagerDashboard } = useSessionStore();
+  const showManagerDashboardLink =
+    returnToManagerDashboard || hasMatchingManagerIdentity(userId);
+  const managerDashboardUrl = `${window.location.origin}/manager/home`;
 
   return (
     <div className="flex min-h-screen">
@@ -170,6 +185,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <LearningLogNav />
         </nav>
+        {showManagerDashboardLink && (
+          <div className="px-3 pb-3 border-t border-sidebar-border pt-3">
+            <a
+              href={managerDashboardUrl}
+              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-sidebar-primary/60 bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold shadow-sm hover:brightness-110 transition-all"
+            >
+              <Users className="h-4 w-4 flex-shrink-0" />
+              <span className="flex-1 whitespace-nowrap">Manager Dashboard</span>
+              <ExternalLink className="h-3.5 w-3.5 opacity-80 flex-shrink-0" />
+            </a>
+          </div>
+        )}
         <div className="px-4 py-4 border-t border-sidebar-border">
           <p className="text-xs text-sidebar-foreground/40 leading-relaxed">
             Rate your competencies and track evidence to prepare for your next role.

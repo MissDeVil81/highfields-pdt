@@ -1010,6 +1010,7 @@ export const GetManagerTeamResponseItem = zod.object({
   jobTitle: zod.string().nullish(),
   department: zod.string().nullish(),
   startDate: zod.string().nullish(),
+  probationEndDate: zod.string().nullish(),
   probationStatus: zod.string().nullish(),
   isActive: zod.string(),
   latestReviewPeriod: zod.string().nullish(),

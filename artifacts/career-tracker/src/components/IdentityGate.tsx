@@ -45,7 +45,15 @@ function getHandoffUserId(): number | null {
 }
 
 export default function IdentityGate({ children }: { children: React.ReactNode }) {
-  const { userId, setUser, setCurrentRoleId, setTargetRoleId, setCareerPathId, setTargetCareerPathId } =
+  const {
+    userId,
+    setUser,
+    setCurrentRoleId,
+    setTargetRoleId,
+    setCareerPathId,
+    setTargetCareerPathId,
+    setReturnToManagerDashboard,
+  } =
     useSessionStore();
   const [users, setUsers] = useState<ApiUser[]>([]);
   const handoffUserId = getHandoffUserId();
@@ -74,6 +82,9 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
         if (handoffUserId !== null) {
           const handoffUser = data.find((u) => u.id === handoffUserId);
           if (handoffUser && handoffUser.roles.includes("employee")) {
+            setReturnToManagerDashboard(
+              new URLSearchParams(window.location.search).get("from") === "manager"
+            );
             if (userId !== handoffUser.id) {
               setCurrentRoleId(null);
               setTargetRoleId(null);

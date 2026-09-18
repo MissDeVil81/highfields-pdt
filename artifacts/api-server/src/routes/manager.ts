@@ -141,6 +141,9 @@ router.get("/team", async (req, res) => {
       const latest = reviews.sort(
         (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       )[0];
+      const sixMonthReview =
+        reviews.find((review) => review.reviewPeriod === "6 Months") ??
+        reviews.find((review) => review.reviewPeriod === "month6");
 
       const dev = devMap.get(member.id);
       const currentRoleId = dev?.currentRoleId ?? null;
@@ -176,6 +179,7 @@ router.get("/team", async (req, res) => {
         jobTitle: member.jobTitle,
         department: member.department,
         startDate: member.startDate,
+        probationEndDate: sixMonthReview?.reviewDate ?? null,
         probationStatus: member.probationStatus,
         isActive: member.isActive,
         latestReviewPeriod: latest?.reviewPeriod ?? null,
