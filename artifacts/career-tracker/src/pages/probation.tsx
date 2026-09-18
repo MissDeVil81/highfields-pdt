@@ -171,9 +171,9 @@ function ReviewDateField({ userId, reviewPeriod }: { userId: number; reviewPerio
 }
 
 const PROBATION_OUTCOME_OPTIONS = [
-  { value: "passed", label: "Yes", activeClass: "bg-green-500 text-white border-green-500" },
-  { value: "failed", label: "No", activeClass: "bg-red-500 text-white border-red-500" },
-  { value: "extended", label: "Probation extended", activeClass: "bg-amber-500 text-white border-amber-500" },
+  { value: "passed", label: "Passed", activeClass: "bg-green-500 text-white border-green-500" },
+  { value: "failed", label: "Not passed", activeClass: "bg-red-500 text-white border-red-500" },
+  { value: "extended", label: "Extended", activeClass: "bg-amber-500 text-white border-amber-500" },
 ];
 
 function ProbationOutcomeField({
@@ -189,7 +189,7 @@ function ProbationOutcomeField({
       <div className="flex items-start gap-3">
         <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold text-foreground">Passed probation</h3>
+          <h3 className="text-sm font-semibold text-foreground">Probation Outcome</h3>
           <p className="mt-1 text-xs text-muted-foreground">
             Your manager will confirm one of these outcomes after your probation meeting.
           </p>
@@ -954,7 +954,7 @@ function ReviewContent({ reviewPeriod, userId, items }: {
           <Lock className="h-4 w-4 text-primary shrink-0" />
           <span>
             This review has been finalised. Your ratings and responses are now part of your official probation record.
-            Your actions remain active — continue updating status and adding evidence.
+            Your actions remain active.
           </span>
         </div>
       )}

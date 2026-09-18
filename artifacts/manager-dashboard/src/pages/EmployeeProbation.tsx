@@ -54,9 +54,9 @@ const MANAGER_RATING_OPTIONS = [
 ];
 
 const PROBATION_OUTCOME_OPTIONS = [
-  { value: "passed", label: "Yes", activeClass: "bg-green-500 text-white border-green-500" },
-  { value: "failed", label: "No", activeClass: "bg-red-500 text-white border-red-500" },
-  { value: "extended", label: "Probation extended", activeClass: "bg-amber-500 text-white border-amber-500" },
+  { value: "passed", label: "Passed", activeClass: "bg-green-500 text-white border-green-500" },
+  { value: "failed", label: "Not passed", activeClass: "bg-red-500 text-white border-red-500" },
+  { value: "extended", label: "Extended", activeClass: "bg-amber-500 text-white border-amber-500" },
 ];
 
 const PROBATION_STATUS_BY_OUTCOME: Record<string, string> = {
@@ -275,7 +275,7 @@ export default function EmployeeProbation() {
     if (activeTab === "month6" && !outcomeToPublish) {
       toast({
         title: "Select a probation outcome",
-        description: "Choose Yes, No, or Probation extended before finalising this review.",
+        description: "Choose Passed, Not passed, or Extended before finalising this review.",
       });
       return;
     }
@@ -397,7 +397,7 @@ export default function EmployeeProbation() {
 
               {activeTab === "month6" && (
                 <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
-                  <h3 className="text-sm font-semibold text-foreground">Passed probation</h3>
+                  <h3 className="text-sm font-semibold text-foreground">Probation Outcome</h3>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Set the outcome after the probation meeting. The employee will see the selected result after you finalise and submit the review.
                   </p>
