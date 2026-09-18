@@ -220,6 +220,7 @@ router.get("/dashboard-stats", async (req, res) => {
 
   for (const member of members) {
     if (member.probationStatus === "in_progress") inProbation++;
+    if (member.probationStatus !== "in_progress") continue;
 
     const reviews = await db
       .select()

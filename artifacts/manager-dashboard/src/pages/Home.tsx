@@ -29,6 +29,17 @@ function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 }
 
+function formatProbationDate(value: string | null | undefined) {
+  if (!value) return "Probation date not set";
+  const date = new Date(`${value.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return `Probation started: ${date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })}`;
+}
+
 function MetricCard({ label, value, icon: Icon, iconColor, tooltip }: {
   label: string; value: number | undefined; icon: React.ElementType;
   iconColor: string; tooltip: string;
@@ -211,6 +222,7 @@ export default function Home() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground">{member.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatProbationDate(member.startDate)}</p>
                         {member.jobTitle && <p className="text-xs text-muted-foreground">{member.jobTitle}</p>}
                       </div>
                       {member.reviewCount > 0 ? (
