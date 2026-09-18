@@ -7,8 +7,17 @@ const router = Router();
 // GET /api/company-learning
 router.get("/", async (req, res) => {
   const rawUserId = req.query.userId;
-  const userId = rawUserId ? parseInt(rawUserId as string) : undefined;
-  if (rawUserId && (userId === undefined || isNaN(userId))) {
+  const hasUserId = rawUserId !== undefined;
+  const userId =
+    typeof rawUserId === "string" && /^[1-9]\d*$/.test(rawUserId)
+      ? Number(rawUserId)
+      : undefined;
+  if (
+    hasUserId &&
+    (typeof rawUserId !== "string" ||
+      userId === undefined ||
+      !Number.isSafeInteger(userId))
+  ) {
     return res.status(400).json({ error: "Invalid userId" });
   }
 

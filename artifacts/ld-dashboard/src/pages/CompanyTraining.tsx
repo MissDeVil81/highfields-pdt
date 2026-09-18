@@ -139,9 +139,17 @@ function AddTrainingPanel({
     if (!form.title.trim()) e.title = "Title is required";
     if (!form.dateOfLearning.trim()) e.dateOfLearning = "Date is required";
     if (!form.trainer.trim()) e.trainer = "Trainer is required";
-    if (selectedUserIds.length === 0) setRecipientError("Select at least one person");
+    const activeRecipientIds = new Set(recipients.map(person => person.id));
+    const hasInactiveOrStaleSelection = selectedUserIds.some(id => !activeRecipientIds.has(id));
+    if (selectedUserIds.length === 0) {
+      setRecipientError("Select at least one person");
+    } else if (hasInactiveOrStaleSelection) {
+      setRecipientError("Refresh the people list and select active people only");
+    } else {
+      setRecipientError("");
+    }
     setErrors(e);
-    return Object.keys(e).length === 0 && selectedUserIds.length > 0;
+    return Object.keys(e).length === 0 && selectedUserIds.length > 0 && !hasInactiveOrStaleSelection;
   };
 
   const toggleRecipient = (userId: number) => {
