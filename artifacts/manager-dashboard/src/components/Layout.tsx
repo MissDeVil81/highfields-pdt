@@ -78,8 +78,9 @@ export function Layout({ children, whatsNewCount: _whatsNewCount }: LayoutProps)
   const [, navigate] = useLocation();
   const { manager, clearManager } = useManagerStore();
 
-  // Derive the career tracker base URL from the current origin
-  const careerTrackerUrl = `${window.location.origin}/career-tracker/`;
+  // Career Tracker is the root web artifact. Pass the selected manager so it
+  // opens their own career plan instead of starting a separate identity flow.
+  const careerTrackerUrl = `${window.location.origin}/setup?userId=${manager?.id ?? ""}`;
 
   const handleLogout = () => {
     clearManager();

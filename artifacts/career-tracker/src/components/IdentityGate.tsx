@@ -37,26 +37,22 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
+function getHandoffUserId(): number | null {
+  const rawUserId = new URLSearchParams(window.location.search).get("userId");
+  if (!rawUserId || !/^[1-9]\d*$/.test(rawUserId)) return null;
+  const userId = Number(rawUserId);
+  return Number.isSafeInteger(userId) ? userId : null;
+}
+
 export default function IdentityGate({ children }: { children: React.ReactNode }) {
   const { userId, setUser, setCurrentRoleId, setTargetRoleId, setCareerPathId, setTargetCareerPathId } =
     useSessionStore();
   const [users, setUsers] = useState<ApiUser[]>([]);
+  const handoffUserId = getHandoffUserId();
   const [loading, setLoading] = useState(true);
+  const [handoffLoading, setHandoffLoading] = useState(handoffUserId !== null);
 
-  useEffect(() => {
-    fetch("/api/users")
-      .then((r) => r.json())
-      .then((data: ApiUser[]) => {
-        setUsers(data.filter((u) => u.roles.includes("employee")));
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  if (userId) return <>{children}</>;
-
-  function handleSelect(user: ApiUser) {
-    setUser(user.id, user.name, user.email ?? "");
+  function applyCareerDefaults(user: ApiUser) {
     if (user.targetRoleId) {
       const overrides = CAREER_OVERRIDES[user.targetRoleId];
       if (overrides) {
@@ -68,6 +64,54 @@ export default function IdentityGate({ children }: { children: React.ReactNode }
         setTargetRoleId(user.targetRoleId);
       }
     }
+  }
+
+  useEffect(() => {
+    fetch("/api/users")
+      .then((r) => r.json())
+      .then((data: ApiUser[]) => {
+        setUsers(data.filter((u) => u.roles.includes("employee")));
+        if (handoffUserId !== null) {
+          const handoffUser = data.find((u) => u.id === handoffUserId);
+          if (handoffUser && handoffUser.roles.includes("employee")) {
+            if (userId !== handoffUser.id) {
+              setCurrentRoleId(null);
+              setTargetRoleId(null);
+              setCareerPathId(null);
+              setTargetCareerPathId(null);
+            }
+            setUser(handoffUser.id, handoffUser.name, handoffUser.email ?? "");
+            applyCareerDefaults(handoffUser);
+          }
+        }
+        setLoading(false);
+        setHandoffLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+        setHandoffLoading(false);
+      });
+  }, [handoffUserId]);
+
+  if (handoffLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-5 w-5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (userId) return <>{children}</>;
+
+  function handleSelect(user: ApiUser) {
+    if (userId !== user.id) {
+      setCurrentRoleId(null);
+      setTargetRoleId(null);
+      setCareerPathId(null);
+      setTargetCareerPathId(null);
+    }
+    setUser(user.id, user.name, user.email ?? "");
+    applyCareerDefaults(user);
   }
 
   return (
