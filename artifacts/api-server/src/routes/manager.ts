@@ -127,6 +127,8 @@ router.get("/team", async (req, res) => {
     compCountByRole.set(c.roleId, (compCountByRole.get(c.roleId) ?? 0) + 1);
   }
 
+  const now = new Date();
+  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const memberIds = members.map((m) => m.id);
   const targetRoleByUser = new Map(members.map((m) => [m.id, m.targetRoleId ?? null]));
   const devMap = await buildDevMap(memberIds, targetRoleByUser);
@@ -144,6 +146,26 @@ router.get("/team", async (req, res) => {
       const sixMonthReview =
         reviews.find((review) => review.reviewPeriod === "6 Months") ??
         reviews.find((review) => review.reviewPeriod === "month6");
+      const hasScheduledPending = reviews.some((review) => {
+        if (review.publishedAt !== null || !review.reviewDate) return false;
+        const reviewDate = new Date(review.reviewDate);
+        return !Number.isNaN(reviewDate.getTime()) &&
+          reviewDate >= now &&
+          reviewDate <= sevenDaysFromNow;
+      });
+      const hasNoProbationReview =
+        !reviews.length && member.probationStatus === "in_progress";
+      const isPendingReview =
+        member.probationStatus === "in_progress" &&
+        (hasScheduledPending || hasNoProbationReview);
+      const hasPublishedReview =
+        member.probationStatus === "in_progress" &&
+        reviews.some((review) => {
+          if (!review.publishedAt) return false;
+          if (!review.reviewDate) return true;
+          const reviewDate = new Date(review.reviewDate);
+          return Number.isNaN(reviewDate.getTime()) || reviewDate <= now;
+        });
 
       const dev = devMap.get(member.id);
       const currentRoleId = dev?.currentRoleId ?? null;
@@ -185,6 +207,8 @@ router.get("/team", async (req, res) => {
         latestReviewPeriod: latest?.reviewPeriod ?? null,
         latestReviewPublishedAt: latest?.publishedAt?.toISOString() ?? null,
         reviewCount: reviews.length,
+         isPendingReview,
+         hasPublishedReview,
         currentRoleId,
         currentRoleTitle,
         currentRoleCompletionPct,

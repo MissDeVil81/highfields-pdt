@@ -40,12 +40,33 @@ function formatDate(value: string | null | undefined) {
   });
 }
 
+type DashboardCategory = "inProbation" | "pendingReviews" | "publishedReviews";
+
 function MetricCard({ label, value, icon: Icon, iconColor, tooltip }: {
   label: string; value: number | undefined; icon: React.ElementType;
-  iconColor: string; tooltip: string;
+  iconColor: string; tooltip: string; active?: boolean; onClick?: () => void;
 }) {
+  const { active = false, onClick } = arguments[0] as {
+    active?: boolean;
+    onClick?: () => void;
+  };
+
   return (
-    <div className="bg-card border border-border rounded-xl p-4 flex items-start gap-3">
+    <div
+      role="button"
+      tabIndex={0}
+      aria-pressed={active}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick?.();
+        }
+      }}
+      className={`bg-card border rounded-xl p-4 flex items-start gap-3 text-left transition-colors ${
+        onClick ? "cursor-pointer hover:border-primary/50 hover:bg-muted/30" : ""
+      } ${active ? "border-primary ring-1 ring-primary/20" : "border-border"}`}
+    >
       <div className={`mt-0.5 flex-shrink-0 ${iconColor}`}>
         <Icon className="h-4 w-4" />
       </div>
@@ -55,7 +76,10 @@ function MetricCard({ label, value, icon: Icon, iconColor, tooltip }: {
       </div>
       <Tooltip>
         <TooltipTrigger asChild>
-          <button className="text-muted-foreground/40 hover:text-muted-foreground transition-colors mt-0.5">
+            <button
+              onClick={(event) => event.stopPropagation()}
+              className="text-muted-foreground/40 hover:text-muted-foreground transition-colors mt-0.5"
+            >
             <Info className="h-3.5 w-3.5" />
           </button>
         </TooltipTrigger>
@@ -72,6 +96,7 @@ export default function Home() {
   const { manager } = useManagerStore();
   const whatsNewCount = useWhatsNewCount();
   const [filteredId, setFilteredId] = useState<number | null>(null);
+  const [activeCategory, setActiveCategory] = useState<DashboardCategory>("inProbation");
 
   if (!manager) {
     navigate("/");
@@ -89,19 +114,38 @@ export default function Home() {
   );
 
   const inProbation = team.filter((m) => m.probationStatus === "in_progress");
-  const needingAttention = inProbation.filter((m) => m.reviewCount === 0);
+  const categoryMembers = activeCategory === "inProbation"
+    ? inProbation
+    : activeCategory === "pendingReviews"
+      ? team.filter((m) => m.isPendingReview)
+      : team.filter((m) => m.hasPublishedReview);
 
-  const visibleProbation = filteredId
-    ? inProbation.filter(m => m.id === filteredId)
-    : inProbation;
+  const visibleMembers = filteredId !== null
+    ? categoryMembers.filter((m) => m.id === filteredId)
+    : categoryMembers;
 
-  const visibleAttention = filteredId
-    ? needingAttention.filter(m => m.id === filteredId)
-    : needingAttention;
+  const visibleAttention = activeCategory === "publishedReviews"
+    ? []
+    : visibleMembers.filter((m) => m.reviewCount === 0);
 
-  const filteredNotInProbation = filteredId && inProbation.every(m => m.id !== filteredId)
+  const filteredNotInCategory = filteredId !== null && categoryMembers.every(m => m.id !== filteredId)
     ? team.find(m => m.id === filteredId)
     : null;
+  const categoryLabel = activeCategory === "inProbation"
+    ? "In Probation"
+    : activeCategory === "pendingReviews"
+      ? "Pending Reviews"
+      : "Published Reviews";
+  const emptyCategoryMessage = activeCategory === "inProbation"
+    ? "No one on probation"
+    : activeCategory === "pendingReviews"
+      ? "No pending reviews"
+      : "No published reviews";
+  const emptyCategoryDescription = activeCategory === "inProbation"
+    ? "All team members have completed probation."
+    : activeCategory === "pendingReviews"
+      ? "No team members currently have a pending probation review."
+      : "No team members currently have a published probation review.";
 
   return (
     <Layout whatsNewCount={whatsNewCount}>
@@ -109,7 +153,7 @@ export default function Home() {
 
         <div className="flex items-start justify-between gap-4 mb-8">
           <div>
-            <h2 className="font-script text-4xl text-foreground">In Probation</h2>
+             <h2 className="font-script text-4xl text-foreground">{categoryLabel}</h2>
             <p className="text-muted-foreground mt-2 text-sm">
               Track probation progress for your team.
             </p>
@@ -119,7 +163,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Metric cards — always show full team totals */}
         <div className="grid grid-cols-3 gap-3 mb-8">
           <MetricCard
             label="In Probation"
@@ -127,6 +170,11 @@ export default function Home() {
             icon={Clock}
             iconColor="text-primary"
             tooltip="Number of team members currently in their probation period."
+             active={activeCategory === "inProbation"}
+             onClick={() => {
+               setActiveCategory("inProbation");
+               setFilteredId(null);
+             }}
           />
           <MetricCard
             label="Pending Reviews"
@@ -134,6 +182,11 @@ export default function Home() {
             icon={AlertCircle}
             iconColor="text-amber-500"
             tooltip="People with a review due in the next 7 days not yet published."
+             active={activeCategory === "pendingReviews"}
+             onClick={() => {
+               setActiveCategory("pendingReviews");
+               setFilteredId(null);
+             }}
           />
           <MetricCard
             label="Published Reviews"
@@ -141,22 +194,30 @@ export default function Home() {
             icon={CheckCircle2}
             iconColor="text-green-600"
             tooltip="Individuals with at least one published review."
+             active={activeCategory === "publishedReviews"}
+             onClick={() => {
+               setActiveCategory("publishedReviews");
+               setFilteredId(null);
+             }}
           />
         </div>
 
-        {/* Person not in probation message */}
-        {filteredNotInProbation && (
+         {filteredNotInCategory && (
           <div className="bg-card border border-border rounded-xl p-6 text-center mb-4">
             <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-              <span className="text-sm font-bold text-muted-foreground">{getInitials(filteredNotInProbation.name)}</span>
+               <span className="text-sm font-bold text-muted-foreground">{getInitials(filteredNotInCategory.name)}</span>
             </div>
-            <p className="text-sm font-medium text-foreground">{filteredNotInProbation.name} is not currently on probation</p>
-            <p className="text-xs text-muted-foreground mt-1">Their probation period has been completed or hasn't started.</p>
+             <p className="text-sm font-medium text-foreground">
+               {filteredNotInCategory.name} is not in {categoryLabel.toLowerCase()}
+             </p>
+             <p className="text-xs text-muted-foreground mt-1">
+               Choose another team member or select a different category above.
+             </p>
           </div>
         )}
 
         {/* Needs Attention */}
-        {!filteredNotInProbation && visibleAttention.length > 0 && (
+         {!filteredNotInCategory && visibleAttention.length > 0 && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl overflow-hidden mb-4">
             <div className="px-4 pt-3.5 pb-2.5">
               <h3 className="text-sm font-semibold flex items-center gap-2 text-amber-800 mb-0.5">
@@ -197,21 +258,21 @@ export default function Home() {
         )}
 
         {/* Full probation list */}
-        {!filteredNotInProbation && (
+         {!filteredNotInCategory && (
           isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
-          ) : visibleProbation.length === 0 ? (
+           ) : visibleMembers.length === 0 ? (
             <div className="bg-card border border-dashed border-border rounded-xl p-10 text-center">
               <CheckCircle2 className="w-7 h-7 text-green-500 mx-auto mb-2" />
-              <p className="text-sm font-medium text-foreground">No one on probation</p>
-              <p className="text-xs text-muted-foreground mt-0.5">All team members have completed probation.</p>
+               <p className="text-sm font-medium text-foreground">{emptyCategoryMessage}</p>
+               <p className="text-xs text-muted-foreground mt-0.5">{emptyCategoryDescription}</p>
             </div>
           ) : (
             <div className="bg-card border border-border rounded-xl overflow-hidden">
               <ul className="divide-y divide-border">
-                {visibleProbation.map((member) => (
+                 {visibleMembers.map((member) => (
                   <li key={member.id}>
                     <button
                       onClick={() => navigate(`/employee/${member.id}/probation`)}

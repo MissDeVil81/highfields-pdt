@@ -2034,6 +2034,10 @@ components:
           format: date-time
         reviewCount:
           type: integer
+        isPendingReview:
+          type: boolean
+        hasPublishedReview:
+          type: boolean
         currentRoleId:
           type: ["integer", "null"]
         currentRoleTitle:
@@ -2056,6 +2060,8 @@ components:
         - name
         - isActive
         - reviewCount
+        - isPendingReview
+        - hasPublishedReview
 
     ManagerDashboardStats:
       type: object
