@@ -3,7 +3,24 @@ import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useLdStore } from "@/hooks/useLdStore";
 import { Layout } from "@/components/Layout";
-import { ArrowLeft, BookOpen, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  ArrowLeft,
+  BookOpen,
+  Building2,
+  CalendarDays,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  MessageSquare,
+  Search,
+} from "lucide-react";
+
+type Employee = {
+  id: number;
+  name: string;
+  jobTitle: string | null;
+};
 
 type LearningEntry = {
   id: number;
@@ -13,44 +30,210 @@ type LearningEntry = {
   whatDidILearn: string;
   furtherTrainingNeeded: string;
   createdAt: string;
-  employeeName: string;
-  employeeJobTitle: string | null;
 };
 
+type CompanyLearningEntry = {
+  id: number;
+  title: string;
+  dateOfLearning: string;
+  trainer: string;
+  description: string;
+  createdAt: string;
+};
+
+type LdFeedbackEntry = {
+  id: number;
+  userId: number;
+  title?: string;
+  authorName: string;
+  content: string;
+  feedbackDate: string;
+  createdAt: string;
+};
+
+type LearningFilters = {
+  search: string;
+  fromDate: string;
+  toDate: string;
+};
+
+const TABS = [
+  { key: "company-learning", label: "Company Learning", icon: Building2 },
+  { key: "individual-learning", label: "Individual Learning", icon: BookOpen },
+  { key: "ld-feedback", label: "L&D Feedback", icon: MessageSquare },
+] as const;
+
+type TabKey = typeof TABS[number]["key"];
+
 function getInitials(name: string) {
-  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+  return name.split(" ").map((part) => part[0]).join("").toUpperCase().slice(0, 2);
 }
 
-function EntryCard({ entry }: { entry: LearningEntry }) {
-  const [expanded, setExpanded] = useState(false);
+function normaliseDate(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+
+  const ukMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if (ukMatch) {
+    const year = ukMatch[3].length === 2 ? `20${ukMatch[3]}` : ukMatch[3];
+    return `${year}-${ukMatch[2].padStart(2, "0")}-${ukMatch[1].padStart(2, "0")}`;
+  }
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return [
+    parsed.getFullYear(),
+    String(parsed.getMonth() + 1).padStart(2, "0"),
+    String(parsed.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function matchesLearningFilters(
+  filters: LearningFilters,
+  searchableText: string,
+  dateValue: string | null | undefined,
+) {
+  const query = filters.search.trim().toLowerCase();
+  if (query && !searchableText.toLowerCase().includes(query)) return false;
+
+  const entryDate = normaliseDate(dateValue);
+  if (filters.fromDate && (!entryDate || entryDate < filters.fromDate)) return false;
+  if (filters.toDate && (!entryDate || entryDate > filters.toDate)) return false;
+  return true;
+}
+
+function LearningFiltersBar({
+  filters,
+  onChange,
+  resultCount,
+  totalCount,
+}: {
+  filters: LearningFilters;
+  onChange: (filters: LearningFilters) => void;
+  resultCount: number;
+  totalCount: number;
+}) {
+  const hasFilters = !!filters.search || !!filters.fromDate || !!filters.toDate;
+
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <button
-        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-accent/40 transition-colors"
-        onClick={() => setExpanded(v => !v)}
-      >
+    <div className="mb-7 rounded-xl border border-border bg-card p-5">
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px_220px] md:items-end">
         <div>
-          <p className="font-semibold text-sm text-foreground">{entry.training}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{entry.dateOfLearning} · {entry.deliveredBy}</p>
-        </div>
-        {expanded
-          ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
-      </button>
-      {expanded && (
-        <div className="px-5 pb-5 space-y-4 border-t border-border pt-4">
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">What did they learn?</p>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{entry.whatDidILearn}</p>
+          <label htmlFor="employee-learning-search" className="mb-2 block text-sm font-semibold text-foreground">
+            Search
+          </label>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              id="employee-learning-search"
+              type="search"
+              value={filters.search}
+              onChange={event => onChange({ ...filters, search: event.target.value })}
+              placeholder="Search by keyword, trainer or topic"
+              className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
-          {entry.furtherTrainingNeeded && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Further training needed</p>
-              <p className="text-sm text-foreground whitespace-pre-wrap">{entry.furtherTrainingNeeded}</p>
-            </div>
-          )}
+        </div>
+        <div>
+          <label htmlFor="employee-learning-from" className="mb-2 block text-sm font-semibold text-foreground">
+            From
+          </label>
+          <div className="relative">
+            <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              id="employee-learning-from"
+              type="date"
+              value={filters.fromDate}
+              onChange={event => onChange({ ...filters, fromDate: event.target.value })}
+              className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+        </div>
+        <div>
+          <label htmlFor="employee-learning-to" className="mb-2 block text-sm font-semibold text-foreground">
+            To
+          </label>
+          <div className="relative">
+            <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              id="employee-learning-to"
+              type="date"
+              value={filters.toDate}
+              onChange={event => onChange({ ...filters, toDate: event.target.value })}
+              className="w-full rounded-lg border border-border bg-background py-2.5 pl-9 pr-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+        </div>
+      </div>
+
+      {hasFilters && (
+        <div className="mt-4 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+          <span>Showing {resultCount} of {totalCount}</span>
+          <button
+            type="button"
+            onClick={() => onChange({ search: "", fromDate: "", toDate: "" })}
+            className="font-medium text-primary hover:underline"
+          >
+            Clear filters
+          </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function ExpandableCard({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  children?: React.ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-accent/40"
+        onClick={() => setExpanded(value => !value)}
+        aria-expanded={expanded}
+      >
+        <div>
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
+        </div>
+        {expanded
+          ? <ChevronUp className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          : <ChevronDown className="h-4 w-4 flex-shrink-0 text-muted-foreground" />}
+      </button>
+      {expanded && children && (
+        <div className="space-y-4 border-t border-border px-5 pb-5 pt-4">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+      {message}
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="flex items-center justify-center py-14">
+      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
     </div>
   );
 }
@@ -58,73 +241,260 @@ function EntryCard({ entry }: { entry: LearningEntry }) {
 export default function EmployeeLearning() {
   const [, navigate] = useLocation();
   const params = useParams<{ id: string }>();
-  const employeeId = parseInt(params.id ?? "");
+  const employeeId = Number.parseInt(params.id ?? "", 10);
+  const hasEmployeeId = Number.isFinite(employeeId);
   const { ldUser } = useLdStore();
+  const [activeTab, setActiveTab] = useState<TabKey>("company-learning");
+  const [filters, setFilters] = useState<LearningFilters>({
+    search: "",
+    fromDate: "",
+    toDate: "",
+  });
 
   const whatsNewQuery = useQuery<any[]>({
     queryKey: ["ld-whats-new", ldUser?.id],
     queryFn: async () => {
       if (!ldUser) return [];
-      const res = await fetch(`/api/manager-ld/whats-new-all?ldUserId=${ldUser.id}`);
-      if (!res.ok) return [];
-      return res.json();
+      const response = await fetch(`/api/manager-ld/whats-new-all?ldUserId=${ldUser.id}`);
+      if (!response.ok) return [];
+      return response.json();
     },
     enabled: !!ldUser,
   });
-  const whatsNewCount = whatsNewQuery.data?.length ?? 0;
 
-  if (!ldUser) { navigate("/"); return null; }
-
-  const { data: entries = [], isLoading } = useQuery<LearningEntry[]>({
-    queryKey: ["employee-entries", employeeId],
+  const employeesQuery = useQuery<Employee[]>({
+    queryKey: ["ld-all-employees"],
     queryFn: async () => {
-      const res = await fetch(`/api/manager-ld/employee/${employeeId}/entries`);
-      if (!res.ok) return [];
-      return res.json();
+      const response = await fetch("/api/manager-ld/all-employees");
+      if (!response.ok) throw new Error("Failed to load employee details");
+      return response.json();
     },
-    enabled: !isNaN(employeeId),
+    enabled: !!ldUser,
   });
 
-  const name = entries[0]?.employeeName ?? "Employee";
-  const jobTitle = entries[0]?.employeeJobTitle ?? null;
+  const companyLearningQuery = useQuery<CompanyLearningEntry[]>({
+    queryKey: ["company-learning", employeeId],
+    queryFn: async () => {
+      const response = await fetch(`/api/company-learning?userId=${employeeId}`);
+      if (!response.ok) throw new Error("Failed to load company learning");
+      return response.json();
+    },
+    enabled: !!ldUser && hasEmployeeId,
+  });
+
+  const individualLearningQuery = useQuery<LearningEntry[]>({
+    queryKey: ["learning-log", employeeId],
+    queryFn: async () => {
+      const response = await fetch(`/api/learning-log?userId=${employeeId}`);
+      if (!response.ok) throw new Error("Failed to load individual learning");
+      return response.json();
+    },
+    enabled: !!ldUser && hasEmployeeId,
+  });
+
+  const feedbackQuery = useQuery<LdFeedbackEntry[]>({
+    queryKey: ["ld-feedback", employeeId],
+    queryFn: async () => {
+      const response = await fetch(`/api/ld-feedback?userId=${employeeId}`);
+      if (!response.ok) throw new Error("Failed to load L&D feedback");
+      return response.json();
+    },
+    enabled: !!ldUser && hasEmployeeId,
+  });
+
+  if (!ldUser) {
+    navigate("/");
+    return null;
+  }
+
+  const employee = employeesQuery.data?.find(item => item.id === employeeId);
+  const name = employee?.name ?? "Employee";
+  const companyEntries = companyLearningQuery.data ?? [];
+  const individualEntries = individualLearningQuery.data ?? [];
+  const feedbackEntries = feedbackQuery.data ?? [];
+
+  const filteredCompanyEntries = companyEntries.filter(entry =>
+    matchesLearningFilters(
+      filters,
+      [entry.title, entry.trainer, entry.description, entry.dateOfLearning].join(" "),
+      entry.dateOfLearning,
+    )
+  );
+  const filteredIndividualEntries = individualEntries.filter(entry =>
+    matchesLearningFilters(
+      filters,
+      [entry.training, entry.deliveredBy, entry.whatDidILearn, entry.furtherTrainingNeeded, entry.dateOfLearning].join(" "),
+      entry.dateOfLearning,
+    )
+  );
+  const filteredFeedbackEntries = feedbackEntries.filter(entry =>
+    matchesLearningFilters(
+      filters,
+      [entry.title ?? "", entry.authorName, entry.content, entry.feedbackDate].join(" "),
+      entry.feedbackDate || entry.createdAt,
+    )
+  );
+
+  const activeResultCount = activeTab === "company-learning"
+    ? filteredCompanyEntries.length
+    : activeTab === "individual-learning"
+      ? filteredIndividualEntries.length
+      : filteredFeedbackEntries.length;
+  const activeTotalCount = activeTab === "company-learning"
+    ? companyEntries.length
+    : activeTab === "individual-learning"
+      ? individualEntries.length
+      : feedbackEntries.length;
+  const activeDescription = activeTab === "ld-feedback"
+    ? `Search through all feedback for ${name}.`
+    : `Search through all training for ${name}.`;
+  const activeLoading = activeTab === "company-learning"
+    ? companyLearningQuery.isLoading
+    : activeTab === "individual-learning"
+      ? individualLearningQuery.isLoading
+      : feedbackQuery.isLoading;
 
   return (
-    <Layout whatsNewCount={whatsNewCount}>
-      <div className="max-w-3xl mx-auto px-8 py-10">
+    <Layout whatsNewCount={whatsNewQuery.data?.length ?? 0}>
+      <div className="mx-auto max-w-5xl px-8 py-10">
         <button
+          type="button"
           onClick={() => navigate("/home")}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+          className="mb-6 flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to all employees
         </button>
 
-        <div className="flex items-center gap-4 mb-8">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+        <div className="mb-8 flex items-center gap-4">
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
             <span className="text-base font-bold text-primary">{getInitials(name)}</span>
           </div>
           <div>
-            <h2 className="font-script text-3xl text-foreground leading-tight">{name}</h2>
-            {jobTitle && <p className="text-muted-foreground text-sm mt-0.5">{jobTitle}</p>}
+            <h2 className="font-script text-4xl leading-tight text-foreground">{name}</h2>
+            {employee?.jobTitle && (
+              <p className="mt-0.5 text-sm text-muted-foreground">{employee.jobTitle}</p>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 mb-6 text-sm text-muted-foreground">
-          <BookOpen className="h-4 w-4" />
-          <span>{entries.length} training {entries.length === 1 ? "entry" : "entries"}</span>
+        <p className="mb-3 text-sm text-muted-foreground">{activeDescription}</p>
+        <LearningFiltersBar
+          filters={filters}
+          onChange={setFilters}
+          resultCount={activeResultCount}
+          totalCount={activeTotalCount}
+        />
+
+        <div className="mb-7 flex gap-1 overflow-x-auto border-b border-border">
+          {TABS.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={cn(
+                "-mb-px flex whitespace-nowrap items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors",
+                activeTab === key
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          ))}
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        {activeLoading ? (
+          <LoadingState />
+        ) : activeTab === "company-learning" ? (
+          <div className="space-y-3">
+            <p className="pb-1 text-sm text-muted-foreground">
+              Company-wide training and development sessions managed by the L&amp;D team.
+            </p>
+            {filteredCompanyEntries.length === 0 ? (
+              <EmptyState
+                message={companyEntries.length === 0
+                  ? "No company learning sessions have been recorded for this employee."
+                  : "No company learning sessions match your search or date range."}
+              />
+            ) : (
+              filteredCompanyEntries.map(entry => (
+                <ExpandableCard
+                  key={entry.id}
+                  title={entry.title}
+                  subtitle={`${entry.dateOfLearning} · ${entry.trainer}`}
+                >
+                  {entry.description && (
+                    <div>
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        About this session
+                      </p>
+                      <p className="whitespace-pre-wrap text-sm text-foreground">{entry.description}</p>
+                    </div>
+                  )}
+                </ExpandableCard>
+              ))
+            )}
           </div>
-        ) : entries.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            No learning entries recorded yet for this employee.
+        ) : activeTab === "individual-learning" ? (
+          <div className="space-y-3">
+            <p className="pb-1 text-sm text-muted-foreground">
+              Training and self-directed learning recorded by {name}.
+            </p>
+            {filteredIndividualEntries.length === 0 ? (
+              <EmptyState
+                message={individualEntries.length === 0
+                  ? "No individual learning entries have been recorded yet."
+                  : "No individual learning entries match your search or date range."}
+              />
+            ) : (
+              filteredIndividualEntries.map(entry => (
+                <ExpandableCard
+                  key={entry.id}
+                  title={entry.training}
+                  subtitle={`${entry.dateOfLearning} · ${entry.deliveredBy}`}
+                >
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      What did they learn?
+                    </p>
+                    <p className="whitespace-pre-wrap text-sm text-foreground">{entry.whatDidILearn}</p>
+                  </div>
+                  {entry.furtherTrainingNeeded && (
+                    <div>
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Further training needed
+                      </p>
+                      <p className="whitespace-pre-wrap text-sm text-foreground">{entry.furtherTrainingNeeded}</p>
+                    </div>
+                  )}
+                </ExpandableCard>
+              ))
+            )}
           </div>
         ) : (
           <div className="space-y-3">
-            {entries.map(entry => <EntryCard key={entry.id} entry={entry} />)}
+            <p className="pb-1 text-sm text-muted-foreground">
+              Feedback and development notes shared by the L&amp;D team.
+            </p>
+            {filteredFeedbackEntries.length === 0 ? (
+              <EmptyState
+                message={feedbackEntries.length === 0
+                  ? "No L&D feedback has been recorded for this employee."
+                  : "No L&D feedback matches your search or date range."}
+              />
+            ) : (
+              filteredFeedbackEntries.map(entry => (
+                <ExpandableCard
+                  key={entry.id}
+                  title={entry.title || `Note from ${entry.authorName}`}
+                  subtitle={`${entry.feedbackDate || new Date(entry.createdAt).toLocaleDateString("en-GB")} · ${entry.authorName}`}
+                >
+                  <p className="whitespace-pre-wrap text-sm text-foreground">{entry.content}</p>
+                </ExpandableCard>
+              ))
+            )}
           </div>
         )}
       </div>
