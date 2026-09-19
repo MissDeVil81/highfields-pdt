@@ -76,6 +76,7 @@ function EntryCard({ entry, ldUserId }: { entry: WhatsNewEntry; ldUserId: number
                   event.stopPropagation();
                   markViewed.mutate();
                 }}
+                onKeyDown={(event) => event.stopPropagation()}
                 disabled={markViewed.isPending}
                 title="Mark as viewed"
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-green-600 hover:bg-green-50 transition-colors"
