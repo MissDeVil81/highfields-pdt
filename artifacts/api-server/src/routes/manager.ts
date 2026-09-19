@@ -260,6 +260,8 @@ router.get("/dashboard-stats", async (req, res) => {
       reviews,
       now,
     );
+    if (isPendingReview) pendingReviews++;
+    if (hasPublishedReview) publishedReviews++;
     const dev = devMap.get(member.id);
     if (!dev || !dev.currentRoleId) {
       missingDevelopmentPlans++;
