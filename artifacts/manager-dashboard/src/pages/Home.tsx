@@ -20,7 +20,6 @@ import {
   UserCheck,
   Info,
   Loader2,
-  Users,
 } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { TeamFilter } from "@/components/TeamFilter";
@@ -41,7 +40,7 @@ function formatDate(value: string | null | undefined) {
   });
 }
 
-type DashboardCategory = "allEmployees" | "inProbation" | "pendingReviews" | "publishedReviews";
+type DashboardCategory = "inProbation" | "pendingReviews" | "publishedReviews";
 
 function MetricCard({ label, value, icon: Icon, iconColor, tooltip, active = false, onClick }: {
   label: string; value: number | undefined; icon: React.ElementType;
@@ -112,9 +111,7 @@ export default function Home() {
   const inProbation = team.filter((m) => m.probationStatus === "in_progress");
   const categoryMembers = activeCategory === "inProbation"
     ? inProbation
-    : activeCategory === "allEmployees"
-      ? team
-      : activeCategory === "pendingReviews"
+    : activeCategory === "pendingReviews"
       ? team.filter((m) => m.isPendingReview)
       : team.filter((m) => m.hasPublishedReview);
 
@@ -122,32 +119,26 @@ export default function Home() {
     ? categoryMembers.filter((m) => m.id === filteredId)
     : categoryMembers;
 
-  const visibleAttention = activeCategory === "publishedReviews" || activeCategory === "allEmployees"
+  const visibleAttention = activeCategory === "publishedReviews"
     ? []
     : visibleMembers.filter((m) => m.probationStatus === "in_progress" && m.reviewCount === 0);
 
   const filteredNotInCategory = filteredId !== null && categoryMembers.every(m => m.id !== filteredId)
     ? team.find(m => m.id === filteredId)
     : null;
-  const categoryLabel = activeCategory === "allEmployees"
-    ? "All Team Members"
-    : activeCategory === "inProbation"
-      ? "In Probation"
-      : activeCategory === "pendingReviews"
+  const categoryLabel = activeCategory === "inProbation"
+    ? "In Probation"
+    : activeCategory === "pendingReviews"
       ? "Pending Reviews"
       : "Published Reviews";
-  const emptyCategoryMessage = activeCategory === "allEmployees"
-    ? "No team members"
-    : activeCategory === "inProbation"
-      ? "No one on probation"
-      : activeCategory === "pendingReviews"
+  const emptyCategoryMessage = activeCategory === "inProbation"
+    ? "No one on probation"
+    : activeCategory === "pendingReviews"
       ? "No pending reviews"
       : "No published reviews";
-  const emptyCategoryDescription = activeCategory === "allEmployees"
-    ? "There are no employees assigned to your team."
-    : activeCategory === "inProbation"
-      ? "All team members have completed probation."
-      : activeCategory === "pendingReviews"
+  const emptyCategoryDescription = activeCategory === "inProbation"
+    ? "All team members have completed probation."
+    : activeCategory === "pendingReviews"
       ? "No team members currently have a pending probation review."
       : "No team members currently have a published probation review.";
 
@@ -167,19 +158,7 @@ export default function Home() {
           </div>
         </div>
 
-         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-           <MetricCard
-             label="View All"
-             value={stats?.totalTeam}
-             icon={Users}
-             iconColor="text-primary"
-             tooltip="Show all employees on your team."
-             active={activeCategory === "allEmployees"}
-             onClick={() => {
-               setActiveCategory("allEmployees");
-               setFilteredId(null);
-             }}
-           />
+         <div className="grid grid-cols-3 gap-3 mb-8">
           <MetricCard
             label="In Probation"
             value={stats?.inProbation}
