@@ -368,6 +368,18 @@ export interface PublishProbationReviewInput {
   managerEditable: boolean;
 }
 
+/**
+ * @nullable
+ */
+export type UserRecruitmentType =
+  | (typeof UserRecruitmentType)[keyof typeof UserRecruitmentType]
+  | null;
+
+export const UserRecruitmentType = {
+  contract: "contract",
+  perm: "perm",
+} as const;
+
 export interface User {
   id: number;
   name: string;
@@ -381,6 +393,8 @@ export interface User {
   /** @nullable */
   jobTitle?: string | null;
   /** @nullable */
+  recruitmentType?: UserRecruitmentType;
+  /** @nullable */
   startDate?: string | null;
   /** @nullable */
   probationStatus?: string | null;
@@ -393,6 +407,14 @@ export interface User {
   updatedAt: string;
 }
 
+export type UserInputRecruitmentType =
+  (typeof UserInputRecruitmentType)[keyof typeof UserInputRecruitmentType];
+
+export const UserInputRecruitmentType = {
+  contract: "contract",
+  perm: "perm",
+} as const;
+
 export interface UserInput {
   name: string;
   email?: string;
@@ -400,12 +422,25 @@ export interface UserInput {
   managerId?: number;
   department?: string;
   jobTitle?: string;
+  recruitmentType?: UserInputRecruitmentType;
   startDate?: string;
   probationStatus?: string;
   targetRoleId?: number;
   isActive?: string;
   teamIds?: number[];
 }
+
+/**
+ * @nullable
+ */
+export type UserUpdateRecruitmentType =
+  | (typeof UserUpdateRecruitmentType)[keyof typeof UserUpdateRecruitmentType]
+  | null;
+
+export const UserUpdateRecruitmentType = {
+  contract: "contract",
+  perm: "perm",
+} as const;
 
 export interface UserUpdate {
   name?: string;
@@ -415,6 +450,8 @@ export interface UserUpdate {
   managerId?: number | null;
   department?: string;
   jobTitle?: string;
+  /** @nullable */
+  recruitmentType?: UserUpdateRecruitmentType;
   startDate?: string;
   probationStatus?: string;
   /** @nullable */

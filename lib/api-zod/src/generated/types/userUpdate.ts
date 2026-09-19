@@ -5,6 +5,7 @@
  * Career Progression Tracker API
  * OpenAPI spec version: 0.1.0
  */
+import type { UserUpdateRecruitmentType } from "./userUpdateRecruitmentType";
 
 export interface UserUpdate {
   name?: string;
@@ -14,6 +15,8 @@ export interface UserUpdate {
   managerId?: number | null;
   department?: string;
   jobTitle?: string;
+  /** @nullable */
+  recruitmentType?: UserUpdateRecruitmentType;
   startDate?: string;
   probationStatus?: string;
   /** @nullable */

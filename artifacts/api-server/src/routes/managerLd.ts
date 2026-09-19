@@ -230,15 +230,16 @@ router.get("/employee/:id/entries", async (req, res) => {
 router.get("/all-employees", async (req, res) => {
   const rows = await pool.query<{
     id: number; name: string; job_title: string | null;
-    department: string | null; entry_count: string; last_entry: Date | null;
+    department: string | null; recruitment_type: string | null;
+    entry_count: string; last_entry: Date | null;
   }>(`
-    SELECT u.id, u.name, u.job_title, u.department,
+    SELECT u.id, u.name, u.job_title, u.department, u.recruitment_type,
       COUNT(lle.id)::text AS entry_count,
       MAX(lle.created_at) AS last_entry
     FROM users u
     LEFT JOIN learning_log_entries lle ON lle.user_id = u.id
     WHERE u.is_active = 'active' AND NOT (u.roles @> ARRAY['admin'])
-    GROUP BY u.id, u.name, u.job_title, u.department
+    GROUP BY u.id, u.name, u.job_title, u.department, u.recruitment_type
     ORDER BY u.name
   `);
 
@@ -247,6 +248,7 @@ router.get("/all-employees", async (req, res) => {
     name: r.name,
     jobTitle: r.job_title,
     department: r.department,
+    recruitmentType: r.recruitment_type,
     entryCount: parseInt(r.entry_count),
     lastEntry: r.last_entry,
   })));

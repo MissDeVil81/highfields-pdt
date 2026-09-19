@@ -29,6 +29,9 @@ export const IdentifyUserResponse = zod.object({
   managerId: zod.number().nullish(),
   department: zod.string().nullish(),
   jobTitle: zod.string().nullish(),
+  recruitmentType: zod
+    .union([zod.literal("contract"), zod.literal("perm"), zod.literal(null)])
+    .nullish(),
   startDate: zod.string().nullish(),
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),
@@ -693,6 +696,9 @@ export const ListUsersResponseItem = zod.object({
   managerId: zod.number().nullish(),
   department: zod.string().nullish(),
   jobTitle: zod.string().nullish(),
+  recruitmentType: zod
+    .union([zod.literal("contract"), zod.literal("perm"), zod.literal(null)])
+    .nullish(),
   startDate: zod.string().nullish(),
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),
@@ -714,6 +720,7 @@ export const CreateUserBody = zod.object({
   managerId: zod.number().optional(),
   department: zod.string().optional(),
   jobTitle: zod.string().optional(),
+  recruitmentType: zod.enum(["contract", "perm"]).optional(),
   startDate: zod.string().optional(),
   probationStatus: zod.string().optional(),
   targetRoleId: zod.number().optional(),
@@ -736,6 +743,9 @@ export const GetUserResponse = zod.object({
   managerId: zod.number().nullish(),
   department: zod.string().nullish(),
   jobTitle: zod.string().nullish(),
+  recruitmentType: zod
+    .union([zod.literal("contract"), zod.literal("perm"), zod.literal(null)])
+    .nullish(),
   startDate: zod.string().nullish(),
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),
@@ -760,6 +770,9 @@ export const UpdateUserBody = zod.object({
   managerId: zod.number().nullish(),
   department: zod.string().optional(),
   jobTitle: zod.string().optional(),
+  recruitmentType: zod
+    .union([zod.literal("contract"), zod.literal("perm"), zod.literal(null)])
+    .nullish(),
   startDate: zod.string().optional(),
   probationStatus: zod.string().optional(),
   targetRoleId: zod.number().nullish(),
@@ -775,6 +788,9 @@ export const UpdateUserResponse = zod.object({
   managerId: zod.number().nullish(),
   department: zod.string().nullish(),
   jobTitle: zod.string().nullish(),
+  recruitmentType: zod
+    .union([zod.literal("contract"), zod.literal("perm"), zod.literal(null)])
+    .nullish(),
   startDate: zod.string().nullish(),
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),
@@ -872,6 +888,9 @@ export const ListTeamMembersResponseItem = zod.object({
   managerId: zod.number().nullish(),
   department: zod.string().nullish(),
   jobTitle: zod.string().nullish(),
+  recruitmentType: zod
+    .union([zod.literal("contract"), zod.literal("perm"), zod.literal(null)])
+    .nullish(),
   startDate: zod.string().nullish(),
   probationStatus: zod.string().nullish(),
   targetRoleId: zod.number().nullish(),

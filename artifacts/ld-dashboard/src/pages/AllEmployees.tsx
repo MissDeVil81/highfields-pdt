@@ -10,6 +10,7 @@ type Employee = {
   name: string;
   jobTitle: string | null;
   department: string | null;
+  recruitmentType: "contract" | "perm" | null;
   entryCount: number;
   lastEntry: string | null;
 };
@@ -40,6 +41,7 @@ export default function AllEmployees() {
   const [, navigate] = useLocation();
   const { ldUser } = useLdStore();
   const [search, setSearch] = useState("");
+  const [recruitmentTypeFilter, setRecruitmentTypeFilter] = useState("all");
 
   if (!ldUser) { navigate("/"); return null; }
 
@@ -54,11 +56,20 @@ export default function AllEmployees() {
     },
   });
 
-  const filtered = employees.filter(e =>
-    e.name.toLowerCase().includes(search.toLowerCase()) ||
-    (e.department ?? "").toLowerCase().includes(search.toLowerCase()) ||
-    (e.jobTitle ?? "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = employees.filter(e => {
+    const matchesRecruitmentType =
+      recruitmentTypeFilter === "all" ||
+      (recruitmentTypeFilter === "unset"
+        ? !e.recruitmentType
+        : e.recruitmentType === recruitmentTypeFilter);
+    const query = search.toLowerCase();
+    const matchesSearch =
+      e.name.toLowerCase().includes(query) ||
+      (e.department ?? "").toLowerCase().includes(query) ||
+      (e.jobTitle ?? "").toLowerCase().includes(query) ||
+      (e.recruitmentType ?? "").toLowerCase().includes(query);
+    return matchesRecruitmentType && matchesSearch;
+  });
 
   return (
     <Layout whatsNewCount={whatsNewCount}>
@@ -91,15 +102,27 @@ export default function AllEmployees() {
         </div>
 
         {/* Search */}
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="search"
-            placeholder="Search by name, job title or department…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full max-w-sm pl-9 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="search"
+              placeholder="Search by name, job title, department or recruitment type…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <select
+            value={recruitmentTypeFilter}
+            onChange={event => setRecruitmentTypeFilter(event.target.value)}
+            className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="all">All recruitment types</option>
+            <option value="perm">Perm</option>
+            <option value="contract">Contract</option>
+            <option value="unset">Not set</option>
+          </select>
         </div>
 
         {/* Employee list */}
@@ -119,6 +142,7 @@ export default function AllEmployees() {
                   <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Name</th>
                   <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Job title</th>
                   <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Department</th>
+                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Recruitment</th>
                   <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Entries</th>
                   <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Last entry</th>
                   <th className="w-10" />
@@ -141,6 +165,11 @@ export default function AllEmployees() {
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{emp.jobTitle ?? "—"}</td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{emp.department ?? "—"}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {emp.recruitmentType
+                        ? emp.recruitmentType.charAt(0).toUpperCase() + emp.recruitmentType.slice(1)
+                        : "Not set"}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <BookOpen className="h-3.5 w-3.5" />

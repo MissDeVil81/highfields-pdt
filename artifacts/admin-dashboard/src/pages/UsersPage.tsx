@@ -71,6 +71,7 @@ export default function UsersPage() {
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [recruitmentTypeFilter, setRecruitmentTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
@@ -80,14 +81,21 @@ export default function UsersPage() {
   const filtered = (users ?? []).filter((u) => {
     const role = primaryRole(u.roles);
     const matchesRole = roleFilter === "all" || role === roleFilter;
+    const matchesRecruitmentType =
+      recruitmentTypeFilter === "all" ||
+      (recruitmentTypeFilter === "unset"
+        ? !u.recruitmentType
+        : u.recruitmentType === recruitmentTypeFilter);
     const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? u.isActive === "active" : u.isActive !== "active");
     const email = u.email ?? "";
     const matchesSearch =
       !search ||
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       email.toLowerCase().includes(search.toLowerCase()) ||
-      (u.department ?? "").toLowerCase().includes(search.toLowerCase());
-    return matchesRole && matchesSearch && matchesStatus;
+      (u.department ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (u.jobTitle ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (u.recruitmentType ?? "").toLowerCase().includes(search.toLowerCase());
+    return matchesRole && matchesRecruitmentType && matchesSearch && matchesStatus;
   });
 
   function handleDelete() {
@@ -130,7 +138,7 @@ export default function UsersPage() {
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <Input
           type="search"
-          placeholder="Search by name, email or department…"
+          placeholder="Search by name, job title, department or recruitment type…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
@@ -158,6 +166,17 @@ export default function UsersPage() {
             <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={recruitmentTypeFilter} onValueChange={setRecruitmentTypeFilter}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="All recruitment types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All recruitment types</SelectItem>
+            <SelectItem value="perm">Perm</SelectItem>
+            <SelectItem value="contract">Contract</SelectItem>
+            <SelectItem value="unset">Not set</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}
@@ -168,6 +187,7 @@ export default function UsersPage() {
               <TableHead className="font-semibold">Name</TableHead>
               <TableHead className="font-semibold">Role</TableHead>
               <TableHead className="font-semibold">Department</TableHead>
+              <TableHead className="font-semibold">Recruitment</TableHead>
               <TableHead className="font-semibold">Reports To</TableHead>
               <TableHead className="font-semibold">Team(s)</TableHead>
               <TableHead className="font-semibold">Status</TableHead>
@@ -180,7 +200,7 @@ export default function UsersPage() {
             {isLoading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 7 }).map((_, j) => (
+                  {Array.from({ length: 8 }).map((_, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-5 w-full max-w-[120px]" />
                     </TableCell>
@@ -190,10 +210,10 @@ export default function UsersPage() {
             ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={8}
                   className="text-center py-16 text-muted-foreground"
                 >
-                  {search || roleFilter !== "all" || statusFilter !== "all"
+                  {search || roleFilter !== "all" || recruitmentTypeFilter !== "all" || statusFilter !== "all"
                     ? "No users match your filters."
                     : "No users yet. Click 'New User' to create one."}
                 </TableCell>
@@ -223,6 +243,15 @@ export default function UsersPage() {
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
                       {user.department ?? "—"}
+                    </TableCell>
+                    <TableCell>
+                      {user.recruitmentType ? (
+                        <Badge variant="outline" className="capitalize">
+                          {user.recruitmentType}
+                        </Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Not set</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm">
                       {reportsTo}

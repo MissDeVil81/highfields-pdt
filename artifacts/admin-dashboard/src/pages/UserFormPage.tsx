@@ -52,6 +52,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -73,6 +74,7 @@ const emptyDates = (): ProbationDates => ({
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   jobTitle: z.string().optional(),
+  recruitmentType: z.enum(["contract", "perm"]),
   role: z.enum(["employee", "manager", "director", "admin", "ld"]),
   managerId: z.number().optional(),
   isActive: z.boolean(),
@@ -156,6 +158,7 @@ export default function UserFormPage() {
     defaultValues: {
       name: "",
       jobTitle: "",
+      recruitmentType: "perm",
       role: "employee",
       managerId: undefined,
       isActive: true,
@@ -178,6 +181,7 @@ export default function UserFormPage() {
       reset({
         name: user.name,
         jobTitle: user.jobTitle ?? "",
+        recruitmentType: user.recruitmentType === "contract" ? "contract" : "perm",
         role: primaryRole(user.roles),
         managerId: user.managerId ?? undefined,
         isActive: user.isActive === "active",
@@ -211,6 +215,7 @@ export default function UserFormPage() {
   }, [isEdit, id]);
 
   const roleValue = watch("role");
+  const recruitmentTypeValue = watch("recruitmentType");
   const isActiveValue = watch("isActive");
   const managerIdValue = watch("managerId");
   const teamIdsValue = watch("teamIds");
@@ -264,6 +269,7 @@ export default function UserFormPage() {
             data: {
               name: values.name,
               jobTitle: values.jobTitle?.trim() ?? "",
+              recruitmentType: values.recruitmentType,
               roles,
               managerId: values.managerId ?? null,
               isActive: values.isActive ? "active" : "inactive",
@@ -295,6 +301,7 @@ export default function UserFormPage() {
           data: {
             name: values.name,
             jobTitle: values.jobTitle?.trim() ?? "",
+            recruitmentType: values.recruitmentType,
             roles,
             managerId: values.managerId,
             isActive: values.isActive ? "active" : "inactive",
@@ -358,6 +365,25 @@ export default function UserFormPage() {
               <div className="space-y-2">
                 <Label htmlFor="jobTitle">Job title</Label>
                 <Input id="jobTitle" placeholder="e.g. Recruitment Consultant" {...register("jobTitle")} />
+              </div>
+
+              {/* Recruitment type */}
+              <div className="space-y-2">
+                <Label>Recruitment type</Label>
+                <RadioGroup
+                  value={recruitmentTypeValue}
+                  onValueChange={(value) => setValue("recruitmentType", value as "contract" | "perm")}
+                  className="flex h-10 items-center gap-6 rounded-md border border-input bg-background px-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="perm" id="recruitment-type-perm" />
+                    <Label htmlFor="recruitment-type-perm" className="cursor-pointer font-normal">Perm</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="contract" id="recruitment-type-contract" />
+                    <Label htmlFor="recruitment-type-contract" className="cursor-pointer font-normal">Contract</Label>
+                  </div>
+                </RadioGroup>
               </div>
 
               {/* Role */}

@@ -1914,6 +1914,9 @@ components:
           type: ["string", "null"]
         jobTitle:
           type: ["string", "null"]
+        recruitmentType:
+          type: ["string", "null"]
+          enum: [contract, perm, null]
         startDate:
           type: ["string", "null"]
         probationStatus:
@@ -1961,6 +1964,9 @@ components:
           type: string
         jobTitle:
           type: string
+        recruitmentType:
+          type: string
+          enum: [contract, perm]
         startDate:
           type: string
         probationStatus:
@@ -1993,6 +1999,9 @@ components:
           type: string
         jobTitle:
           type: string
+        recruitmentType:
+          type: ["string", "null"]
+          enum: [contract, perm, null]
         startDate:
           type: string
         probationStatus:

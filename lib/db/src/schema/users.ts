@@ -8,6 +8,7 @@ export const usersTable = pgTable("users", {
   managerId: integer("manager_id"),
   department: text("department"),
   jobTitle: text("job_title"),
+  recruitmentType: text("recruitment_type"),
   startDate: text("start_date"),
   probationStatus: text("probation_status"),
   targetRoleId: integer("target_role_id"),
