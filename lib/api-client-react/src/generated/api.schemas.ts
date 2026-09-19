@@ -446,6 +446,9 @@ export interface ManagerTeamMember {
   reviewCount: number;
   isPendingReview: boolean;
   hasPublishedReview: boolean;
+  isActiveDevelopmentPlan: boolean;
+  isPassiveDevelopmentPlan: boolean;
+  isMissingDevelopmentPlan: boolean;
   /** @nullable */
   currentRoleId?: number | null;
   /** @nullable */

@@ -65,12 +65,28 @@ function ColHeader({ label, tooltip }: { label: string; tooltip: string }) {
   );
 }
 
-function MetricCard({ label, value, icon: Icon, iconColor, tooltip }: {
+type DevelopmentCategory = "active" | "passive" | "missing";
+
+function MetricCard({ label, value, icon: Icon, iconColor, tooltip, active = false, onClick }: {
   label: string; value: number | undefined; icon: React.ElementType;
-  iconColor: string; tooltip: string;
+  iconColor: string; tooltip: string; active?: boolean; onClick?: () => void;
 }) {
   return (
-    <div className="bg-card border border-border rounded-xl p-4 flex items-start gap-3">
+    <div
+      role="button"
+      tabIndex={0}
+      aria-pressed={active}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick?.();
+        }
+      }}
+      className={`bg-card border rounded-xl p-4 flex items-start gap-3 text-left transition-colors ${
+        onClick ? "cursor-pointer hover:border-primary/50 hover:bg-muted/30" : ""
+      } ${active ? "border-primary ring-1 ring-primary/20" : "border-border"}`}
+    >
       <div className={`mt-0.5 flex-shrink-0 ${iconColor}`}><Icon className="h-4 w-4" /></div>
       <div className="flex-1 min-w-0">
         <p className="text-2xl font-bold tabular-nums">{value ?? "—"}</p>
@@ -78,7 +94,10 @@ function MetricCard({ label, value, icon: Icon, iconColor, tooltip }: {
       </div>
       <Tooltip>
         <TooltipTrigger asChild>
-          <button className="text-muted-foreground/40 hover:text-muted-foreground transition-colors mt-0.5">
+          <button
+            onClick={(event) => event.stopPropagation()}
+            className="text-muted-foreground/40 hover:text-muted-foreground transition-colors mt-0.5"
+          >
             <Info className="h-3.5 w-3.5" />
           </button>
         </TooltipTrigger>
@@ -93,6 +112,7 @@ export default function Development() {
   const { manager } = useManagerStore();
   const whatsNewCount = useWhatsNewCount();
   const [filteredId, setFilteredId] = useState<number | null>(null);
+  const [activeCategory, setActiveCategory] = useState<DevelopmentCategory>("active");
 
   if (!manager) { navigate("/"); return null; }
 
@@ -106,7 +126,19 @@ export default function Development() {
     { query: { queryKey: getGetManagerTeamQueryKey({ managerId: manager.id }) } }
   );
 
-  const visibleTeam = filteredId ? team.filter(m => m.id === filteredId) : team;
+  const categoryMembers = activeCategory === "active"
+    ? team.filter((member) => member.isActiveDevelopmentPlan)
+    : activeCategory === "passive"
+      ? team.filter((member) => member.isPassiveDevelopmentPlan)
+      : team.filter((member) => member.isMissingDevelopmentPlan);
+  const visibleTeam = filteredId !== null
+    ? categoryMembers.filter((member) => member.id === filteredId)
+    : categoryMembers;
+  const categoryLabel = activeCategory === "active"
+    ? "Active Plans"
+    : activeCategory === "passive"
+      ? "Passive Plans"
+      : "Missing Plan";
 
   return (
     <Layout whatsNewCount={whatsNewCount}>
@@ -123,7 +155,6 @@ export default function Development() {
           </div>
         </div>
 
-        {/* Metric cards — always show full team totals */}
         <div className="grid grid-cols-3 gap-3 mb-8">
           <MetricCard
             label="Active Plans"
@@ -131,6 +162,11 @@ export default function Development() {
             icon={TrendingUp}
             iconColor="text-green-600"
             tooltip="Team members who have scored competencies within the last 3 months."
+            active={activeCategory === "active"}
+            onClick={() => {
+              setActiveCategory("active");
+              setFilteredId(null);
+            }}
           />
           <MetricCard
             label="Passive Plans"
@@ -138,6 +174,11 @@ export default function Development() {
             icon={Minus}
             iconColor="text-amber-500"
             tooltip="Team members who have not updated their assessment in over 3 months."
+            active={activeCategory === "passive"}
+            onClick={() => {
+              setActiveCategory("passive");
+              setFilteredId(null);
+            }}
           />
           <MetricCard
             label="Missing Plan"
@@ -145,6 +186,11 @@ export default function Development() {
             icon={AlertCircle}
             iconColor="text-red-500"
             tooltip="Team members who have not yet selected their current role or scored any competencies."
+            active={activeCategory === "missing"}
+            onClick={() => {
+              setActiveCategory("missing");
+              setFilteredId(null);
+            }}
           />
         </div>
 
@@ -157,7 +203,9 @@ export default function Development() {
           ) : visibleTeam.length === 0 ? (
             <div className="py-10 text-center">
               <p className="text-sm text-muted-foreground">
-                {filteredId ? "No data found for this team member." : "No team members found."}
+                {filteredId
+                  ? "This team member is not in the selected category."
+                  : `No team members currently have ${categoryLabel.toLowerCase()}.`}
               </p>
             </div>
           ) : (

@@ -129,6 +129,7 @@ router.get("/team", async (req, res) => {
 
   const now = new Date();
   const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
   const memberIds = members.map((m) => m.id);
   const targetRoleByUser = new Map(members.map((m) => [m.id, m.targetRoleId ?? null]));
   const devMap = await buildDevMap(memberIds, targetRoleByUser);
@@ -170,6 +171,18 @@ router.get("/team", async (req, res) => {
       const dev = devMap.get(member.id);
       const currentRoleId = dev?.currentRoleId ?? null;
       const lastAssessedAt = dev?.lastAssessedAt ?? null;
+      const isDevelopmentCandidate = member.probationStatus === "in_progress";
+      const isMissingDevelopmentPlan =
+        isDevelopmentCandidate && (!dev || !dev.currentRoleId);
+      const isActiveDevelopmentPlan =
+        isDevelopmentCandidate &&
+        !isMissingDevelopmentPlan &&
+        !!dev?.lastAssessedAt &&
+        dev.lastAssessedAt >= threeMonthsAgo;
+      const isPassiveDevelopmentPlan =
+        isDevelopmentCandidate &&
+        !isMissingDevelopmentPlan &&
+        (!dev?.lastAssessedAt || dev.lastAssessedAt < threeMonthsAgo);
 
       let currentRoleTitle: string | null = null;
       let currentRoleCompletionPct: number | null = null;
@@ -207,8 +220,11 @@ router.get("/team", async (req, res) => {
         latestReviewPeriod: latest?.reviewPeriod ?? null,
         latestReviewPublishedAt: latest?.publishedAt?.toISOString() ?? null,
         reviewCount: reviews.length,
-         isPendingReview,
-         hasPublishedReview,
+        isPendingReview,
+        hasPublishedReview,
+        isActiveDevelopmentPlan,
+        isPassiveDevelopmentPlan,
+        isMissingDevelopmentPlan,
         currentRoleId,
         currentRoleTitle,
         currentRoleCompletionPct,

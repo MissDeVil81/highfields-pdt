@@ -2038,6 +2038,12 @@ components:
           type: boolean
         hasPublishedReview:
           type: boolean
+        isActiveDevelopmentPlan:
+          type: boolean
+        isPassiveDevelopmentPlan:
+          type: boolean
+        isMissingDevelopmentPlan:
+          type: boolean
         currentRoleId:
           type: ["integer", "null"]
         currentRoleTitle:
@@ -2062,6 +2068,9 @@ components:
         - reviewCount
         - isPendingReview
         - hasPublishedReview
+        - isActiveDevelopmentPlan
+        - isPassiveDevelopmentPlan
+        - isMissingDevelopmentPlan
 
     ManagerDashboardStats:
       type: object
