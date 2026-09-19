@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Info,
   Loader2,
+  Users,
 } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { TeamFilter } from "@/components/TeamFilter";
@@ -65,7 +66,7 @@ function ColHeader({ label, tooltip }: { label: string; tooltip: string }) {
   );
 }
 
-type DevelopmentCategory = "active" | "passive" | "missing";
+type DevelopmentCategory = "allEmployees" | "active" | "passive" | "missing";
 
 function MetricCard({ label, value, icon: Icon, iconColor, tooltip, active = false, onClick }: {
   label: string; value: number | undefined; icon: React.ElementType;
@@ -112,7 +113,7 @@ export default function Development() {
   const { manager } = useManagerStore();
   const whatsNewCount = useWhatsNewCount();
   const [filteredId, setFilteredId] = useState<number | null>(null);
-  const [activeCategory, setActiveCategory] = useState<DevelopmentCategory>("active");
+  const [activeCategory, setActiveCategory] = useState<DevelopmentCategory>("allEmployees");
 
   if (!manager) { navigate("/"); return null; }
 
@@ -126,19 +127,23 @@ export default function Development() {
     { query: { queryKey: getGetManagerTeamQueryKey({ managerId: manager.id }) } }
   );
 
-  const categoryMembers = activeCategory === "active"
-    ? team.filter((member) => member.isActiveDevelopmentPlan)
-    : activeCategory === "passive"
-      ? team.filter((member) => member.isPassiveDevelopmentPlan)
-      : team.filter((member) => member.isMissingDevelopmentPlan);
+  const categoryMembers = activeCategory === "allEmployees"
+    ? team
+    : activeCategory === "active"
+      ? team.filter((member) => member.isActiveDevelopmentPlan)
+      : activeCategory === "passive"
+        ? team.filter((member) => member.isPassiveDevelopmentPlan)
+        : team.filter((member) => member.isMissingDevelopmentPlan);
   const visibleTeam = filteredId !== null
     ? categoryMembers.filter((member) => member.id === filteredId)
     : categoryMembers;
-  const categoryLabel = activeCategory === "active"
-    ? "Active Plans"
-    : activeCategory === "passive"
-      ? "Passive Plans"
-      : "Missing Plan";
+  const categoryLabel = activeCategory === "allEmployees"
+    ? "All Employees"
+    : activeCategory === "active"
+      ? "Active Plans"
+      : activeCategory === "passive"
+        ? "Passive Plans"
+        : "Missing Plan";
 
   return (
     <Layout whatsNewCount={whatsNewCount}>
@@ -155,7 +160,19 @@ export default function Development() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+          <MetricCard
+            label="View All"
+            value={stats?.totalTeam}
+            icon={Users}
+            iconColor="text-primary"
+            tooltip="Show all employees on your team."
+            active={activeCategory === "allEmployees"}
+            onClick={() => {
+              setActiveCategory("allEmployees");
+              setFilteredId(null);
+            }}
+          />
           <MetricCard
             label="Active Plans"
             value={stats?.activeDevelopmentPlans}
