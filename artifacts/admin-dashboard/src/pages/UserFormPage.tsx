@@ -72,6 +72,7 @@ const emptyDates = (): ProbationDates => ({
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
+  jobTitle: z.string().optional(),
   role: z.enum(["employee", "manager", "director", "admin", "ld"]),
   managerId: z.number().optional(),
   isActive: z.boolean(),
@@ -154,6 +155,7 @@ export default function UserFormPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
+      jobTitle: "",
       role: "employee",
       managerId: undefined,
       isActive: true,
@@ -175,6 +177,7 @@ export default function UserFormPage() {
 
       reset({
         name: user.name,
+        jobTitle: user.jobTitle ?? "",
         role: primaryRole(user.roles),
         managerId: user.managerId ?? undefined,
         isActive: user.isActive === "active",
@@ -260,6 +263,7 @@ export default function UserFormPage() {
             id: id!,
             data: {
               name: values.name,
+              jobTitle: values.jobTitle?.trim() ?? "",
               roles,
               managerId: values.managerId ?? null,
               isActive: values.isActive ? "active" : "inactive",
@@ -290,6 +294,7 @@ export default function UserFormPage() {
         const created = await createUser.mutateAsync({
           data: {
             name: values.name,
+            jobTitle: values.jobTitle?.trim() ?? "",
             roles,
             managerId: values.managerId,
             isActive: values.isActive ? "active" : "inactive",
@@ -347,6 +352,12 @@ export default function UserFormPage() {
                 <Label htmlFor="name">Full name</Label>
                 <Input id="name" placeholder="Jane Smith" {...register("name")} />
                 {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+              </div>
+
+              {/* Job title */}
+              <div className="space-y-2">
+                <Label htmlFor="jobTitle">Job title</Label>
+                <Input id="jobTitle" placeholder="e.g. Recruitment Consultant" {...register("jobTitle")} />
               </div>
 
               {/* Role */}
