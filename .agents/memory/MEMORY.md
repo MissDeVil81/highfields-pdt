@@ -9,3 +9,4 @@
 - [Development schema sync](development-schema-sync.md) — API startup may report schema current while new columns are absent; apply additive Development DDL explicitly and verify through the API.
 - [Production seed chain guards](prod-seed-guards.md) — each seed function must guard on a table unique to itself; wrong guards cause silent skips leaving data missing.
 - [Development seed dependencies](development-seed-dependencies.md) — manager reference data must seed before V2 progress so target-linked test data loads cleanly.
+- [Manager probation categories](manager-probation-categories.md) — summary totals and filtered member flags must share one review-classification rule.

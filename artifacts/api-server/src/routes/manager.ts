@@ -10,6 +10,7 @@ import {
   financialProgressTable,
 } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
+import { getManagerReviewFlags } from "./managerProbation";
 
 const router = Router();
 
@@ -128,7 +129,6 @@ router.get("/team", async (req, res) => {
   }
 
   const now = new Date();
-  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
   const memberIds = members.map((m) => m.id);
   const targetRoleByUser = new Map(members.map((m) => [m.id, m.targetRoleId ?? null]));
@@ -147,26 +147,11 @@ router.get("/team", async (req, res) => {
       const sixMonthReview =
         reviews.find((review) => review.reviewPeriod === "6 Months") ??
         reviews.find((review) => review.reviewPeriod === "month6");
-      const hasScheduledPending = reviews.some((review) => {
-        if (review.publishedAt !== null || !review.reviewDate) return false;
-        const reviewDate = new Date(review.reviewDate);
-        return !Number.isNaN(reviewDate.getTime()) &&
-          reviewDate >= now &&
-          reviewDate <= sevenDaysFromNow;
-      });
-      const hasNoProbationReview =
-        !reviews.length && member.probationStatus === "in_progress";
-      const isPendingReview =
-        member.probationStatus === "in_progress" &&
-        (hasScheduledPending || hasNoProbationReview);
-      const hasPublishedReview =
-        member.probationStatus === "in_progress" &&
-        reviews.some((review) => {
-          if (!review.publishedAt) return false;
-          if (!review.reviewDate) return true;
-          const reviewDate = new Date(review.reviewDate);
-          return Number.isNaN(reviewDate.getTime()) || reviewDate <= now;
-        });
+      const { isPendingReview, hasPublishedReview } = getManagerReviewFlags(
+        member.probationStatus,
+        reviews,
+        now,
+      );
 
       const dev = devMap.get(member.id);
       const currentRoleId = dev?.currentRoleId ?? null;
@@ -236,7 +221,6 @@ router.get("/team", async (req, res) => {
       };
     })
   );
-
   return res.json(result);
 });
 
@@ -271,29 +255,11 @@ router.get("/dashboard-stats", async (req, res) => {
       .from(probationManagerReviewsTable)
       .where(eq(probationManagerReviewsTable.userId, member.id));
 
-    // Pending: within next 7 days AND not yet published, OR in probation with no reviews at all
-    const hasScheduledPending = reviews.some((r) => {
-      if (r.publishedAt !== null) return false;
-      if (!r.reviewDate) return false;
-      const d = new Date(r.reviewDate);
-      return !isNaN(d.getTime()) && d >= now && d <= sevenDaysFromNow;
-    });
-    const hasNoProbationReview = !reviews.length && member.probationStatus === "in_progress";
-    const hasPending = hasScheduledPending || hasNoProbationReview;
-
-    // Published: review date has passed AND at least one published review exists
-    const hasPublished = reviews.some((r) => {
-      if (!r.publishedAt) return false;
-      if (!r.reviewDate) return true;
-      const d = new Date(r.reviewDate);
-      return isNaN(d.getTime()) || d <= now;
-    });
-
-    if (hasPending) pendingReviews++;
-    if (hasPublished) publishedReviews++;
-    if (hasNoProbationReview) needingAttention++;
-
-    // Personal development classification
+    const { isPendingReview, hasPublishedReview } = getManagerReviewFlags(
+      member.probationStatus,
+      reviews,
+      now,
+    );
     const dev = devMap.get(member.id);
     if (!dev || !dev.currentRoleId) {
       missingDevelopmentPlans++;

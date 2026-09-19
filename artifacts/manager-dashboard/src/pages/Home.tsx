@@ -24,6 +24,10 @@ import {
 import { Layout } from "@/components/Layout";
 import { TeamFilter } from "@/components/TeamFilter";
 import { useWhatsNewCount } from "@/hooks/useWhatsNewCount";
+import {
+  getDashboardCategoryMembers,
+  type DashboardCategory,
+} from "@/lib/dashboardCategories";
 
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -39,8 +43,6 @@ function formatDate(value: string | null | undefined) {
     year: "numeric",
   });
 }
-
-type DashboardCategory = "inProbation" | "pendingReviews" | "publishedReviews";
 
 function MetricCard({ label, value, icon: Icon, iconColor, tooltip, active = false, onClick }: {
   label: string; value: number | undefined; icon: React.ElementType;
@@ -108,12 +110,7 @@ export default function Home() {
     { query: { queryKey: getGetManagerTeamQueryKey({ managerId: manager.id }) } }
   );
 
-  const inProbation = team.filter((m) => m.probationStatus === "in_progress");
-  const categoryMembers = activeCategory === "inProbation"
-    ? inProbation
-    : activeCategory === "pendingReviews"
-      ? team.filter((m) => m.isPendingReview)
-      : team.filter((m) => m.hasPublishedReview);
+  const categoryMembers = getDashboardCategoryMembers(team, activeCategory);
 
   const visibleMembers = filteredId !== null
     ? categoryMembers.filter((m) => m.id === filteredId)
