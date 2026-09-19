@@ -41,7 +41,19 @@ function EntryCard({ entry, ldUserId }: { entry: WhatsNewEntry; ldUserId: number
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="flex items-start gap-3 px-5 py-4">
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        onClick={() => setExpanded(v => !v)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setExpanded(v => !v);
+          }
+        }}
+        className="flex items-start gap-3 px-5 py-4 cursor-pointer hover:bg-accent/40 transition-colors"
+      >
         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
           <span className="text-xs font-bold text-primary">{getInitials(entry.employeeName)}</span>
         </div>
@@ -56,14 +68,14 @@ function EntryCard({ entry, ldUserId }: { entry: WhatsNewEntry; ldUserId: number
               </p>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
+              {expanded
+                ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
               <button
-                onClick={() => setExpanded(v => !v)}
-                className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-              >
-                {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </button>
-              <button
-                onClick={() => markViewed.mutate()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  markViewed.mutate();
+                }}
                 disabled={markViewed.isPending}
                 title="Mark as viewed"
                 className="p-1.5 rounded-lg text-muted-foreground hover:text-green-600 hover:bg-green-50 transition-colors"
@@ -75,17 +87,31 @@ function EntryCard({ entry, ldUserId }: { entry: WhatsNewEntry; ldUserId: number
         </div>
       </div>
       {expanded && (
-        <div className="px-5 pb-4 space-y-3 border-t border-border pt-3 ml-11">
+        <div className="px-5 pb-5 space-y-4 border-t border-border pt-4 ml-11">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Date of learning</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{entry.dateOfLearning || "Not provided"}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Delivered by</p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{entry.deliveredBy || "Not provided"}</p>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Training</p>
+            <p className="text-sm text-foreground whitespace-pre-wrap">{entry.training || "Not provided"}</p>
+          </div>
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">What did they learn?</p>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{entry.whatDidILearn}</p>
+            <p className="text-sm text-foreground whitespace-pre-wrap">{entry.whatDidILearn || "Not provided"}</p>
           </div>
-          {entry.furtherTrainingNeeded && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Further training needed</p>
-              <p className="text-sm text-foreground whitespace-pre-wrap">{entry.furtherTrainingNeeded}</p>
-            </div>
-          )}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Further training needed</p>
+            <p className="text-sm text-foreground whitespace-pre-wrap">
+              {entry.furtherTrainingNeeded || "No further training noted"}
+            </p>
+          </div>
         </div>
       )}
     </div>
