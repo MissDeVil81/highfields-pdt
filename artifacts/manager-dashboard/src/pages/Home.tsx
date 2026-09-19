@@ -42,15 +42,10 @@ function formatDate(value: string | null | undefined) {
 
 type DashboardCategory = "inProbation" | "pendingReviews" | "publishedReviews";
 
-function MetricCard({ label, value, icon: Icon, iconColor, tooltip }: {
+function MetricCard({ label, value, icon: Icon, iconColor, tooltip, active = false, onClick }: {
   label: string; value: number | undefined; icon: React.ElementType;
   iconColor: string; tooltip: string; active?: boolean; onClick?: () => void;
 }) {
-  const { active = false, onClick } = arguments[0] as {
-    active?: boolean;
-    onClick?: () => void;
-  };
-
   return (
     <div
       role="button"

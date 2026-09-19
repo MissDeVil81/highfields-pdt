@@ -1023,6 +1023,8 @@ export const GetManagerTeamResponseItem = zod.object({
   latestReviewPeriod: zod.string().nullish(),
   latestReviewPublishedAt: zod.coerce.date().nullish(),
   reviewCount: zod.number(),
+  isPendingReview: zod.boolean(),
+  hasPublishedReview: zod.boolean(),
   currentRoleId: zod.number().nullish(),
   currentRoleTitle: zod.string().nullish(),
   currentRoleCompletionPct: zod.number().nullish(),

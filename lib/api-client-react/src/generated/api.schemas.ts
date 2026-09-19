@@ -444,6 +444,8 @@ export interface ManagerTeamMember {
   /** @nullable */
   latestReviewPublishedAt?: string | null;
   reviewCount: number;
+  isPendingReview: boolean;
+  hasPublishedReview: boolean;
   /** @nullable */
   currentRoleId?: number | null;
   /** @nullable */
