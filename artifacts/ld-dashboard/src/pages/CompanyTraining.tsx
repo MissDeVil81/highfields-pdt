@@ -294,43 +294,54 @@ function AddTrainingPanel({
                   ) : recipients.length === 0 ? (
                     <p className="px-3 py-4 text-center text-xs text-muted-foreground">No active people found.</p>
                   ) : (
-                    recipients.map(person => {
-                      const isSelected = selectedUserIds.includes(person.id);
-                      return (
-                        <button
-                          key={person.id}
-                          type="button"
-                          onClick={() => toggleRecipient(person.id)}
-                          className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-accent transition-colors"
-                        >
-                          <span className={cn(
-                            "h-4 w-4 rounded border flex items-center justify-center shrink-0",
-                            isSelected ? "bg-primary border-primary text-primary-foreground" : "border-border"
-                          )}>
-                            {isSelected && <Check className="h-3 w-3" />}
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block text-sm font-medium text-foreground">{person.name}</span>
-                            {person.jobTitle && (
-                              <span className="block truncate text-xs text-muted-foreground">{person.jobTitle}</span>
-                            )}
-                          </span>
-                        </button>
-                      );
-                    })
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const allSelected = selectedUserIds.length === recipients.length;
+                          setSelectedUserIds(allSelected ? [] : recipients.map(person => person.id));
+                          setRecipientError("");
+                        }}
+                        className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-accent transition-colors border-b border-border mb-1"
+                      >
+                        <span className={cn(
+                          "h-4 w-4 rounded border flex items-center justify-center shrink-0",
+                          selectedUserIds.length === recipients.length
+                            ? "bg-primary border-primary text-primary-foreground"
+                            : "border-border"
+                        )}>
+                          {selectedUserIds.length === recipients.length && <Check className="h-3 w-3" />}
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">All employees</span>
+                      </button>
+                      {recipients.map(person => {
+                        const isSelected = selectedUserIds.includes(person.id);
+                        return (
+                          <button
+                            key={person.id}
+                            type="button"
+                            onClick={() => toggleRecipient(person.id)}
+                            className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-left hover:bg-accent transition-colors"
+                          >
+                            <span className={cn(
+                              "h-4 w-4 rounded border flex items-center justify-center shrink-0",
+                              isSelected ? "bg-primary border-primary text-primary-foreground" : "border-border"
+                            )}>
+                              {isSelected && <Check className="h-3 w-3" />}
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block text-sm font-medium text-foreground">{person.name}</span>
+                              {person.jobTitle && (
+                                <span className="block truncate text-xs text-muted-foreground">{person.jobTitle}</span>
+                              )}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </>
                   )}
                 </div>
-                <div className="flex items-center justify-between gap-3 border-t border-border px-3 py-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedUserIds(recipients.map(person => person.id));
-                      setRecipientError("");
-                    }}
-                    className="text-xs font-medium text-primary hover:underline"
-                  >
-                    Select all
-                  </button>
+                <div className="flex items-center justify-end gap-3 border-t border-border px-3 py-2">
                   <button
                     type="button"
                     onClick={() => setRecipientPickerOpen(false)}

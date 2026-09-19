@@ -5,7 +5,7 @@ import { useLdStore } from "@/hooks/useLdStore";
 import { Layout } from "@/components/Layout";
 import {
   MessageSquare, Plus, X, ChevronDown, ChevronUp, Loader2,
-  Send, BookOpen, Lock, User
+  Send, BookOpen, Lock, User, Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -416,38 +416,29 @@ export default function IndividualFeedback() {
 
         {/* Employee filter */}
         <div className="mb-6">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">
+          <label htmlFor="feedback-employee-filter" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">
             Filter by employee
           </label>
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setSelectedEmployeeId(null)}
-              className={cn(
-                "px-3.5 py-1.5 rounded-full text-sm font-medium transition-all",
-                !selectedEmployeeId
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              )}
+          <div className="relative max-w-sm">
+            <Users className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <select
+              id="feedback-employee-filter"
+              value={selectedEmployeeId ?? ""}
+              onChange={event => {
+                const value = event.target.value;
+                setSelectedEmployeeId(value ? Number(value) : null);
+              }}
+              disabled={employeesLoading}
+              className="w-full appearance-none rounded-lg border border-border bg-card py-2.5 pl-9 pr-9 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
             >
-              All
-            </button>
-            {employees.map(emp => (
-              <button
-                key={emp.id}
-                onClick={() => setSelectedEmployeeId(emp.id === selectedEmployeeId ? null : emp.id)}
-                className={cn(
-                  "px-3.5 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5",
-                  selectedEmployeeId === emp.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                )}
-              >
-                <span className="h-4 w-4 rounded-full bg-current/20 flex items-center justify-center text-[9px] font-bold flex-shrink-0">
-                  {getInitials(emp.name)}
-                </span>
-                {emp.name}
-              </button>
-            ))}
+              <option value="">All employees</option>
+              {employees.map(emp => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.name}{emp.jobTitle ? ` · ${emp.jobTitle}` : ""}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           </div>
         </div>
 
