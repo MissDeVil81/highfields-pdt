@@ -4,6 +4,10 @@ import { useLdStore } from "@/hooks/useLdStore";
 import { Layout } from "@/components/Layout";
 import { BookOpen, Clock, ChevronRight, Loader2, Search } from "lucide-react";
 import { useState } from "react";
+import {
+  matchesEmploymentType,
+  type EmploymentTypeFilter,
+} from "@/lib/employmentTypeFilter";
 
 type Employee = {
   id: number;
@@ -41,7 +45,8 @@ export default function AllEmployees() {
   const [, navigate] = useLocation();
   const { ldUser } = useLdStore();
   const [search, setSearch] = useState("");
-  const [recruitmentTypeFilter, setRecruitmentTypeFilter] = useState("all");
+  const [recruitmentTypeFilter, setRecruitmentTypeFilter] =
+    useState<EmploymentTypeFilter>("all");
 
   if (!ldUser) { navigate("/"); return null; }
 
@@ -57,11 +62,10 @@ export default function AllEmployees() {
   });
 
   const filtered = employees.filter(e => {
-    const matchesRecruitmentType =
-      recruitmentTypeFilter === "all" ||
-      (recruitmentTypeFilter === "unset"
-        ? !e.recruitmentType
-        : e.recruitmentType === recruitmentTypeFilter);
+    const matchesRecruitmentType = matchesEmploymentType(
+      e.recruitmentType,
+      recruitmentTypeFilter,
+    );
     const query = search.toLowerCase();
     const matchesSearch =
       e.name.toLowerCase().includes(query) ||
@@ -115,7 +119,9 @@ export default function AllEmployees() {
           </div>
           <select
             value={recruitmentTypeFilter}
-            onChange={event => setRecruitmentTypeFilter(event.target.value)}
+            onChange={event =>
+              setRecruitmentTypeFilter(event.target.value as EmploymentTypeFilter)
+            }
             className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="all">All recruitment types</option>

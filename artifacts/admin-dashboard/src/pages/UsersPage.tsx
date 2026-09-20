@@ -37,6 +37,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import {
+  matchesEmploymentType,
+  type EmploymentTypeFilter,
+} from "@/lib/employmentTypeFilter";
 import { PlusIcon, PencilIcon, TrashIcon } from "lucide-react";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -71,7 +75,8 @@ export default function UsersPage() {
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [recruitmentTypeFilter, setRecruitmentTypeFilter] = useState<string>("all");
+  const [recruitmentTypeFilter, setRecruitmentTypeFilter] =
+    useState<EmploymentTypeFilter>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
@@ -81,11 +86,10 @@ export default function UsersPage() {
   const filtered = (users ?? []).filter((u) => {
     const role = primaryRole(u.roles);
     const matchesRole = roleFilter === "all" || role === roleFilter;
-    const matchesRecruitmentType =
-      recruitmentTypeFilter === "all" ||
-      (recruitmentTypeFilter === "unset"
-        ? !u.recruitmentType
-        : u.recruitmentType === recruitmentTypeFilter);
+    const matchesRecruitmentType = matchesEmploymentType(
+      u.recruitmentType,
+      recruitmentTypeFilter,
+    );
     const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? u.isActive === "active" : u.isActive !== "active");
     const email = u.email ?? "";
     const matchesSearch =
@@ -166,7 +170,12 @@ export default function UsersPage() {
             <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={recruitmentTypeFilter} onValueChange={setRecruitmentTypeFilter}>
+        <Select
+          value={recruitmentTypeFilter}
+          onValueChange={(value) =>
+            setRecruitmentTypeFilter(value as EmploymentTypeFilter)
+          }
+        >
           <SelectTrigger className="w-44">
             <SelectValue placeholder="All recruitment types" />
           </SelectTrigger>
