@@ -1,0 +1,45 @@
+LIVE REPLIT ONLY. READ-ONLY INVESTIGATION. Do not change code or either database yet.
+
+The newly published Live application is generally working, but there is one issue in the individual employee probation tool.
+
+In the employee’s 1-month, 3-month, 5-month and 6-month probation reviews, there should be expandable/dropdown assessment sections for:
+
+* Skills: 4 items
+* Behaviours: 4 items
+* Knowledge: 3 items
+* Activity: 3 items
+* Financial Awareness: 2 items
+* Behaviour and Conduct: 2 items
+* Values: 6 items
+
+Total: 24 assessment items.
+
+When an individual opens each category, its items should appear with the scoring matrix/self-assessment controls, and the probation review functionality also supports manager comments.
+
+In the newly published Live application, there is currently a blank area where these assessment/dropdown sections should appear.
+
+Please diagnose this read-only first.
+
+Trace the employee probation page/component, API calls and database queries responsible for rendering these categories and items.
+
+Determine:
+
+* whether the UI/component for these dropdowns and scoring controls exists in the currently published application code;
+* whether it exists in the current Development/GitHub code;
+* which API endpoint/data source supplies the categories and assessment items;
+* whether the request is being made successfully in Production;
+* whether Production logs show an error associated with this section;
+* which Live database tables/records are required to populate it;
+* whether those required records exist in neondb;
+* whether the expected 24 items/categories are present and correctly associated;
+* whether this functionality existed in the archived pre-publish Live code and, if so, whether there is any relevant difference from the current code;
+* the exact reason the area is blank.
+
+You may perform read-only database queries against neondb to diagnose this, but do not insert, update or delete anything.
+
+Do not change code.
+Do not change either database.
+Do not migrate, seed, reset or schema sync.
+Do not republish or restart.
+
+Stop once you have identified the root cause and tell me the safest proposed fix.
