@@ -25,13 +25,9 @@ export function EnvironmentBanner() {
 
   if (!appEnv || appEnv === "production") return null;
 
-  if (appEnv === "development") {
-    return (
-      <div className="w-full bg-red-600 text-white text-center text-sm font-semibold py-1.5 tracking-wide z-50">
-        ⚠ DEVELOPMENT ENVIRONMENT — Data is for testing only
-      </div>
-    );
-  }
+  // The Development warning is injected by the path-aware Vite banner so
+  // its resources work correctly under the /admin/ artifact route.
+  if (appEnv === "development") return null;
 
   if (appEnv === "demo") {
     return (
