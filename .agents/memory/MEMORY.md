@@ -11,3 +11,4 @@
 - [Development seed dependencies](development-seed-dependencies.md) — manager reference data must seed before V2 progress so target-linked test data loads cleanly.
 - [Manager probation categories](manager-probation-categories.md) — summary totals and filtered member flags must share one review-classification rule.
 - [Path-routed Vite resources](path-routed-vite-resources.md) — root-scoped development plugin assets are not forwarded by artifact path routing and can surface as browser 502s.
+- [Learning-date validation boundary](learning-date-validation-boundary.md) — share pure date predicates across Zod versions; rebuild DB declarations after schema export changes.

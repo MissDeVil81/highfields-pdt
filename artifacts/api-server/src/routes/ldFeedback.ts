@@ -2,6 +2,7 @@ import { Router } from "express";
 import { pool } from "@workspace/db";
 import { z } from "zod";
 import { employeeExists, parsePositiveIntegerQuery } from "../lib/employeeScope";
+import { optionalLearningDateSchema } from "../lib/learningDateValidation";
 
 const router = Router();
 
@@ -56,7 +57,7 @@ const insertSchema = z.object({
   authorName: z.string().min(1),
   title: z.string().min(1),
   content: z.string().min(1),
-  feedbackDate: z.string().optional().default(""),
+  feedbackDate: optionalLearningDateSchema.optional().default(""),
   sendToManager: z.boolean().optional().default(false),
   sendToIndividual: z.boolean().optional().default(false),
 });

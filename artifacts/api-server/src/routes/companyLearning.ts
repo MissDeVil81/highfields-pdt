@@ -2,6 +2,7 @@ import { Router } from "express";
 import { pool } from "@workspace/db";
 import { z } from "zod";
 import { employeeExists, parsePositiveIntegerQuery } from "../lib/employeeScope";
+import { requiredLearningDateSchema } from "../lib/learningDateValidation";
 
 const router = Router();
 
@@ -65,7 +66,7 @@ router.get("/", async (req, res) => {
 // POST /api/company-learning
 const insertSchema = z.object({
   title: z.string().min(1),
-  dateOfLearning: z.string().min(1),
+  dateOfLearning: requiredLearningDateSchema,
   trainer: z.string().min(1),
   description: z.string().optional().default(""),
   recipientUserIds: z.array(z.number().int().positive()).min(1),
