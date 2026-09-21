@@ -1,13 +1,17 @@
-import { pool } from "@workspace/db";
+import { pool, RESOLVED_APP_ENV } from "@workspace/db";
 import { logger } from "./lib/logger";
 
 /**
  * Creates every table in the schema using CREATE TABLE IF NOT EXISTS.
- * Runs first on every startup — fully idempotent.
- * This ensures Demo / Live databases catch up after a git pull without
- * needing manual drizzle-kit push or migration commands.
+ * Runs during non-production startup only.
+ * Production schema changes must be applied outside the container lifecycle.
  */
 export async function ensureSchemaExists(): Promise<void> {
+  if (RESOLVED_APP_ENV === "production") {
+    logger.info("Skipping automatic schema management in production");
+    return;
+  }
+
   const client = await pool.connect();
   try {
     logger.info("Ensuring database schema is up to date...");

@@ -19,3 +19,5 @@ export * from "./additionalTeamPermissions";
 export * from "./auditLog";
 export * from "./learningLog";
 export * from "./managerLogins";
+export * from "./companyLearning";
+export * from "./ldFeedback";
