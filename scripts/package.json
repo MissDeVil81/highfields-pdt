@@ -6,6 +6,8 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "seed-probation": "tsx ./src/seedProbation.ts",
+    "check-dashboard-asset-routes": "tsx ./src/checkDashboardAssetRoutes.ts",
+    "test": "tsx --test src/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
