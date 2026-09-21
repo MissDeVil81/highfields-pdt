@@ -5,6 +5,10 @@ import { useLdStore } from "@/hooks/useLdStore";
 import { Layout } from "@/components/Layout";
 import { cn } from "@/lib/utils";
 import {
+  matchesLearningFilters,
+  type LearningFilters,
+} from "@/lib/learningDateFilter";
+import {
   ArrowLeft,
   BookOpen,
   Building2,
@@ -51,12 +55,6 @@ type LdFeedbackEntry = {
   createdAt: string;
 };
 
-type LearningFilters = {
-  search: string;
-  fromDate: string;
-  toDate: string;
-};
-
 const TABS = [
   { key: "company-learning", label: "Company Learning", icon: Building2 },
   { key: "individual-learning", label: "Individual Learning", icon: BookOpen },
@@ -67,43 +65,6 @@ type TabKey = typeof TABS[number]["key"];
 
 function getInitials(name: string) {
   return name.split(" ").map((part) => part[0]).join("").toUpperCase().slice(0, 2);
-}
-
-function normaliseDate(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-
-  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
-
-  const ukMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
-  if (ukMatch) {
-    const year = ukMatch[3].length === 2 ? `20${ukMatch[3]}` : ukMatch[3];
-    return `${year}-${ukMatch[2].padStart(2, "0")}-${ukMatch[1].padStart(2, "0")}`;
-  }
-
-  const parsed = new Date(trimmed);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return [
-    parsed.getFullYear(),
-    String(parsed.getMonth() + 1).padStart(2, "0"),
-    String(parsed.getDate()).padStart(2, "0"),
-  ].join("-");
-}
-
-function matchesLearningFilters(
-  filters: LearningFilters,
-  searchableText: string,
-  dateValue: string | null | undefined,
-) {
-  const query = filters.search.trim().toLowerCase();
-  if (query && !searchableText.toLowerCase().includes(query)) return false;
-
-  const entryDate = normaliseDate(dateValue);
-  if (filters.fromDate && (!entryDate || entryDate < filters.fromDate)) return false;
-  if (filters.toDate && (!entryDate || entryDate > filters.toDate)) return false;
-  return true;
 }
 
 function LearningFiltersBar({
