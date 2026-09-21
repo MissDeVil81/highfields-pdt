@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "@workspace/db";
 import { z } from "zod";
+import { employeeExists, parsePositiveIntegerQuery } from "../lib/employeeScope";
 
 const router = Router();
 
@@ -8,20 +9,16 @@ const router = Router();
 router.get("/", async (req, res) => {
   const rawUserId = req.query.userId;
   const hasUserId = rawUserId !== undefined;
-  const userId =
-    typeof rawUserId === "string" && /^[1-9]\d*$/.test(rawUserId)
-      ? Number(rawUserId)
-      : undefined;
-  if (
-    hasUserId &&
-    (typeof rawUserId !== "string" ||
-      userId === undefined ||
-      !Number.isSafeInteger(userId))
-  ) {
+  const userId = hasUserId ? parsePositiveIntegerQuery(rawUserId) : undefined;
+  if (hasUserId && userId === null) {
     return res.status(400).json({ error: "Invalid userId" });
   }
 
   try {
+    if (typeof userId === "number" && !(await employeeExists(userId))) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
     const result = userId === undefined
       ? await pool.query(
           `SELECT cle.id, cle.title, cle.date_of_learning AS "dateOfLearning",

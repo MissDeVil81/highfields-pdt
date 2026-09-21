@@ -202,8 +202,9 @@ function LoadingState() {
 export default function EmployeeLearning() {
   const [, navigate] = useLocation();
   const params = useParams<{ id: string }>();
-  const employeeId = Number.parseInt(params.id ?? "", 10);
-  const hasEmployeeId = Number.isFinite(employeeId);
+  const rawEmployeeId = params.id ?? "";
+  const employeeId = /^[1-9]\d*$/.test(rawEmployeeId) ? Number(rawEmployeeId) : null;
+  const hasEmployeeId = employeeId !== null && Number.isSafeInteger(employeeId);
   const { ldUser } = useLdStore();
   const [activeTab, setActiveTab] = useState<TabKey>("company-learning");
   const [filters, setFilters] = useState<LearningFilters>({
@@ -240,7 +241,7 @@ export default function EmployeeLearning() {
       if (!response.ok) throw new Error("Failed to load company learning");
       return response.json();
     },
-    enabled: !!ldUser && hasEmployeeId,
+    enabled: !!ldUser && hasEmployeeId && !!employeesQuery.data?.some(item => item.id === employeeId),
   });
 
   const individualLearningQuery = useQuery<LearningEntry[]>({
@@ -250,7 +251,7 @@ export default function EmployeeLearning() {
       if (!response.ok) throw new Error("Failed to load individual learning");
       return response.json();
     },
-    enabled: !!ldUser && hasEmployeeId,
+    enabled: !!ldUser && hasEmployeeId && !!employeesQuery.data?.some(item => item.id === employeeId),
   });
 
   const feedbackQuery = useQuery<LdFeedbackEntry[]>({
@@ -260,7 +261,7 @@ export default function EmployeeLearning() {
       if (!response.ok) throw new Error("Failed to load L&D feedback");
       return response.json();
     },
-    enabled: !!ldUser && hasEmployeeId,
+    enabled: !!ldUser && hasEmployeeId && !!employeesQuery.data?.some(item => item.id === employeeId),
   });
 
   if (!ldUser) {
@@ -269,6 +270,42 @@ export default function EmployeeLearning() {
   }
 
   const employee = employeesQuery.data?.find(item => item.id === employeeId);
+  const invalidEmployee = !hasEmployeeId || (
+    !employeesQuery.isLoading &&
+    !employeesQuery.isError &&
+    !employee
+  );
+
+  if (invalidEmployee || employeesQuery.isError) {
+    return (
+      <Layout whatsNewCount={whatsNewQuery.data?.length ?? 0}>
+        <div className="mx-auto max-w-5xl px-8 py-10">
+          <button
+            type="button"
+            onClick={() => navigate("/home")}
+            className="mb-6 flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to all employees
+          </button>
+          <EmptyState message={
+            employeesQuery.isError
+              ? "Employee details could not be loaded. Please try again."
+              : "This employee could not be found."
+          } />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (employeesQuery.isLoading || !employee) {
+    return (
+      <Layout whatsNewCount={whatsNewQuery.data?.length ?? 0}>
+        <LoadingState />
+      </Layout>
+    );
+  }
+
   const name = employee?.name ?? "Employee";
   const companyEntries = companyLearningQuery.data ?? [];
   const individualEntries = individualLearningQuery.data ?? [];

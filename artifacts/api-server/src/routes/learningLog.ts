@@ -1,13 +1,18 @@
 import { Router } from "express";
 import { db, learningLogEntriesTable, insertLearningLogEntrySchema } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
+import { employeeExists, parsePositiveIntegerQuery } from "../lib/employeeScope";
 
 const router = Router();
 
 // GET /api/learning-log?userId=:userId
 router.get("/", async (req, res) => {
-  const userId = parseInt(req.query.userId as string);
-  if (isNaN(userId)) return res.status(400).json({ error: "userId is required" });
+  const userId = parsePositiveIntegerQuery(req.query.userId);
+  if (userId === null) return res.status(400).json({ error: "Invalid userId" });
+  if (!(await employeeExists(userId))) {
+    return res.status(404).json({ error: "Employee not found" });
+  }
+
   const entries = await db
     .select()
     .from(learningLogEntriesTable)

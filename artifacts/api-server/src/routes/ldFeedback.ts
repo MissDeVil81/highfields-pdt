@@ -1,15 +1,19 @@
 import { Router } from "express";
 import { pool } from "@workspace/db";
 import { z } from "zod";
+import { employeeExists, parsePositiveIntegerQuery } from "../lib/employeeScope";
 
 const router = Router();
 
 // GET /api/ld-feedback?userId=X  (or no userId for all)
 router.get("/", async (req, res) => {
   try {
-    if (req.query.userId) {
-      const userId = parseInt(req.query.userId as string);
-      if (isNaN(userId)) return res.status(400).json({ error: "Invalid userId" });
+    if (req.query.userId !== undefined) {
+      const userId = parsePositiveIntegerQuery(req.query.userId);
+      if (userId === null) return res.status(400).json({ error: "Invalid userId" });
+      if (!(await employeeExists(userId))) {
+        return res.status(404).json({ error: "Employee not found" });
+      }
 
       const result = await pool.query(
         `SELECT lf.id, lf.user_id AS "userId", u.name AS "employeeName", u.job_title AS "employeeJobTitle",
@@ -41,7 +45,7 @@ router.get("/", async (req, res) => {
       return res.json(result.rows);
     }
   } catch (err) {
-    console.error(err);
+    req.log.error({ err }, "Failed to fetch L&D feedback");
     return res.status(500).json({ error: "Failed to fetch L&D feedback" });
   }
 });
