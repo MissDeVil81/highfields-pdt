@@ -25,6 +25,7 @@ import learningLogRouter from "./learningLog";
 import managerLdRouter from "./managerLd";
 import companyLearningRouter from "./companyLearning";
 import ldFeedbackRouter from "./ldFeedback";
+import learningDateAuditRouter from "./learningDateAudit";
 
 const router: IRouter = Router();
 
@@ -54,5 +55,6 @@ router.use("/learning-log", learningLogRouter);
 router.use("/manager-ld", managerLdRouter);
 router.use("/company-learning", companyLearningRouter);
 router.use("/ld-feedback", ldFeedbackRouter);
+router.use("/learning-date-audit", learningDateAuditRouter);
 
 export default router;
