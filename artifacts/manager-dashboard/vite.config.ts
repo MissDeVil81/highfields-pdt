@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { pathAwareDevBanner } from "../../vite-path-aware-dev-banner";
 
 const rawPort = process.env.PORT;
 
@@ -43,9 +44,7 @@ export default defineConfig({
               root: path.resolve(import.meta.dirname, ".."),
             }),
           ),
-          await import("@replit/vite-plugin-dev-banner").then((m) =>
-            m.devBanner(),
-          ),
+          pathAwareDevBanner(basePath),
         ]
       : []),
   ],
