@@ -23,13 +23,14 @@ import { useAdmin } from "@/components/AdminProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SELECTABLE_ROLES,
+  buildRolesPayload,
+  getEditableRoles,
+  isRoleSelected,
+  setRoleSelected,
+} from "@/lib/userRoles";
 import {
   Table,
   TableBody,
@@ -76,7 +77,7 @@ const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   jobTitle: z.string().optional(),
   recruitmentType: z.enum(["contract", "perm"]),
-  role: z.enum(["employee", "manager", "director", "admin", "ld"]),
+  roles: z.array(z.string()).min(1, "Select at least one role"),
   managerId: z.number().optional(),
   isActive: z.boolean(),
   teamIds: z.array(z.number()).default([]),
@@ -87,14 +88,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-function primaryRole(roles: string[]): "employee" | "manager" | "director" | "admin" | "ld" {
-  if (roles.includes("admin")) return "admin";
-  if (roles.includes("director")) return "director";
-  if (roles.includes("manager")) return "manager";
-  if (roles.includes("ld")) return "ld";
-  return "employee";
-}
 
 function hasDates(dates: ProbationDates) {
   return PROBATION_PERIODS.some(p => !!dates[p]);
@@ -160,7 +153,7 @@ export default function UserFormPage() {
       name: "",
       jobTitle: "",
       recruitmentType: "perm",
-      role: "employee",
+      roles: ["employee"],
       managerId: undefined,
       isActive: true,
       teamIds: [],
@@ -183,7 +176,7 @@ export default function UserFormPage() {
         name: user.name,
         jobTitle: user.jobTitle ?? "",
         recruitmentType: user.recruitmentType === "contract" ? "contract" : "perm",
-        role: primaryRole(user.roles),
+        roles: getEditableRoles(user.roles),
         managerId: user.managerId ?? undefined,
         isActive: user.isActive === "active",
         teamIds: user.teamIds || [],
@@ -215,7 +208,7 @@ export default function UserFormPage() {
       .catch(() => {});
   }, [isEdit, id]);
 
-  const roleValue = watch("role");
+  const rolesValue = watch("roles") ?? [];
   const recruitmentTypeValue = watch("recruitmentType");
   const isActiveValue = watch("isActive");
   const managerIdValue = watch("managerId");
@@ -260,8 +253,6 @@ export default function UserFormPage() {
   }
 
   async function onSubmit(values: FormValues) {
-    const roles = [values.role];
-
     try {
       if (isEdit) {
         await Promise.all([
@@ -271,7 +262,7 @@ export default function UserFormPage() {
               name: values.name,
               jobTitle: values.jobTitle?.trim() ?? "",
               recruitmentType: values.recruitmentType,
-              roles,
+              ...buildRolesPayload(values.roles),
               managerId: values.managerId ?? null,
               isActive: values.isActive ? "active" : "inactive",
               teamIds: values.teamIds,
@@ -305,7 +296,7 @@ export default function UserFormPage() {
             name: values.name,
             jobTitle: values.jobTitle?.trim() ?? "",
             recruitmentType: values.recruitmentType,
-            roles,
+            ...buildRolesPayload(values.roles),
             managerId: values.managerId,
             isActive: values.isActive ? "active" : "inactive",
             teamIds: values.teamIds,
@@ -389,23 +380,32 @@ export default function UserFormPage() {
                 </RadioGroup>
               </div>
 
-              {/* Role */}
-              <div className="space-y-2">
-                <Label>Role</Label>
-                <Select value={roleValue} onValueChange={(v: any) => setValue("role", v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="employee">Employee</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="director">Director</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="ld">L&amp;D</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
-              </div>
+              {/* Roles */}
+              <fieldset className="space-y-2 md:col-span-2">
+                <legend className="text-sm font-medium">Roles</legend>
+                <div className="flex flex-wrap gap-x-6 gap-y-3 rounded-md border border-input bg-background px-3 py-3">
+                  {SELECTABLE_ROLES.map(({ value, label }) => {
+                    const checked = isRoleSelected(rolesValue, value);
+                    return (
+                      <div key={value} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`role-${value}`}
+                          checked={checked}
+                          disabled={checked && rolesValue.length === 1}
+                          onCheckedChange={(selected) =>
+                            setValue("roles", setRoleSelected(rolesValue, value, selected === true), {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            })
+                          }
+                        />
+                        <Label htmlFor={`role-${value}`} className="cursor-pointer font-normal">{label}</Label>
+                      </div>
+                    );
+                  })}
+                </div>
+                {errors.roles && <p className="text-xs text-destructive">{errors.roles.message}</p>}
+              </fieldset>
 
               {/* Reports To */}
               <div className="space-y-2">

@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { RoleBadges } from "@/components/RoleBadges";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRightIcon, ChevronDownIcon, NetworkIcon } from "lucide-react";
 
@@ -72,11 +73,9 @@ function OrgTreeNode({ node, level = 0, defaultExpanded = false }: { node: OrgNo
           className={`flex-1 p-3 sm:px-4 sm:py-3 min-w-[280px] max-w-[400px] flex flex-col justify-center gap-1.5 hover:border-primary/50 transition-colors cursor-pointer shadow-sm ${level === 0 ? 'border-primary/30 bg-primary/5' : ''}`} 
           onClick={() => navigate(`/users/${node.id}/edit`)}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-foreground truncate">{node.name}</span>
-            <Badge variant={node.roles.includes('admin') ? 'destructive' : node.roles.includes('manager') ? 'default' : node.roles.includes('director') ? 'outline' : 'secondary'} className="text-[10px] uppercase h-5 px-1.5 shrink-0">
-              {node.roles[0] || 'employee'}
-            </Badge>
+            <RoleBadges roles={node.roles} context="hierarchy" />
           </div>
           
           <p className="text-xs text-muted-foreground truncate">

@@ -7,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReactNode } from "react";
+import { getActiveAdminUsers } from "@/lib/userRoles";
 
 export function AdminIdentityPicker() {
   const { setAdminUserId } = useAdmin();
   const { data: users, isLoading } = useListUsers();
-  const admins = (users ?? []).filter((u) => u.roles.includes("admin") && u.isActive === "active");
+  const admins = getActiveAdminUsers(users ?? []);
 
   return (
     <div className="min-h-[100dvh] flex items-center justify-center bg-background p-6">

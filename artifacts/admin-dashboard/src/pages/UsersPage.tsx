@@ -41,31 +41,9 @@ import {
   matchesEmploymentType,
   type EmploymentTypeFilter,
 } from "@/lib/employmentTypeFilter";
+import { matchesRoleFilter } from "@/lib/userRoles";
+import { DirectoryRoleBadges } from "@/components/DirectoryRoleBadges";
 import { PlusIcon, PencilIcon, TrashIcon } from "lucide-react";
-
-const ROLE_LABELS: Record<string, string> = {
-  employee: "Employee",
-  manager: "Manager",
-  director: "Director",
-  admin: "Admin",
-  ld: "L&D",
-};
-
-const ROLE_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  employee: "secondary",
-  manager: "default",
-  director: "outline",
-  admin: "destructive",
-  ld: "secondary",
-};
-
-function primaryRole(roles: string[]): string {
-  if (roles.includes("admin")) return "admin";
-  if (roles.includes("director")) return "director";
-  if (roles.includes("manager")) return "manager";
-  if (roles.includes("ld")) return "ld";
-  return roles[0] ?? "employee";
-}
 
 export default function UsersPage() {
   const [, navigate] = useLocation();
@@ -84,8 +62,7 @@ export default function UsersPage() {
   const deleteUser = useDeleteUser({ request: { headers: { 'x-requesting-user-id': String(adminUserId) } } });
 
   const filtered = (users ?? []).filter((u) => {
-    const role = primaryRole(u.roles);
-    const matchesRole = roleFilter === "all" || role === roleFilter;
+    const matchesRole = matchesRoleFilter(u.roles, roleFilter);
     const matchesRecruitmentType = matchesEmploymentType(
       u.recruitmentType,
       recruitmentTypeFilter,
@@ -229,7 +206,6 @@ export default function UsersPage() {
               </TableRow>
             ) : (
               filtered.map((user) => {
-                const role = primaryRole(user.roles);
                 const isActive = user.isActive === "active";
                 const manager = (users ?? []).find(u => u.id === user.managerId);
                 const reportsTo = manager ? manager.name : "—";
@@ -246,9 +222,7 @@ export default function UsersPage() {
                       <div className="text-xs text-muted-foreground mt-0.5">{user.email ?? "—"}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={ROLE_VARIANTS[role] ?? "secondary"} className="uppercase text-[10px] px-1.5 h-5">
-                        {ROLE_LABELS[role] ?? role}
-                      </Badge>
+                      <DirectoryRoleBadges roles={user.roles} />
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
                       {user.department ?? "—"}

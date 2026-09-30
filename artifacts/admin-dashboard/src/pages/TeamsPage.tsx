@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { RoleBadges } from "@/components/RoleBadges";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/hooks/use-toast";
@@ -251,7 +252,7 @@ function TeamMembersDialog({ team, open, onOpenChange }: { team: Team, open: boo
                 members?.map(member => (
                   <TableRow key={member.id}>
                     <TableCell className="font-medium">{member.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{member.roles[0] || 'employee'}</TableCell>
+                    <TableCell><RoleBadges roles={member.roles} context="team" /></TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleRemove(member.id, member.name)}>
                         <TrashIcon className="h-4 w-4" />

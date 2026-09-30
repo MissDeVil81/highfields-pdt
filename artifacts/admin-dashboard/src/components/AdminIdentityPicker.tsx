@@ -3,12 +3,13 @@ import { useAdmin } from "./AdminProvider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShieldAlertIcon } from "lucide-react";
+import { getActiveAdminUsers } from "@/lib/userRoles";
 
 export function AdminIdentityPicker() {
   const { setAdminUserId } = useAdmin();
   const { data: users, isLoading } = useListUsers();
 
-  const admins = (users || []).filter(u => u.roles.includes("admin") && u.isActive === "active");
+  const admins = getActiveAdminUsers(users ?? []);
 
   return (
     <div className="min-h-screen bg-sidebar flex items-center justify-center p-4">
