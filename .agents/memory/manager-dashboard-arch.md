@@ -11,7 +11,7 @@ description: Key design decisions for the Manager Dashboard artifact at /manager
 - `roles text[]` defaults to `["employee"]`; managers have `"manager"` in their roles
 - `managerId` links employees to their manager
 - `sessionId` links an employee's user record to their career-tracker localStorage session
-- `probationStatus`: `null | "in_probation" | "passed" | "extended" | "failed"`
+- Probation status has two live "currently on probation" values; see [probation status compatibility](probation-status-compatibility.md).
 
 **Publish gate:** `publishedAt` on `probation_manager_reviews` controls employee visibility. `null` = draft (manager-only), set timestamp = published (employee can see manager assessment). The career-tracker app still needs to be updated to respect this field before showing manager data.
 

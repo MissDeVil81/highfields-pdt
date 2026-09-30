@@ -6,7 +6,7 @@ import {
 } from "./dashboardCategories";
 
 const team = [
-  { id: 1, probationStatus: "in_progress", isPendingReview: true, hasPublishedReview: false },
+  { id: 1, probationStatus: "in_probation", isPendingReview: true, hasPublishedReview: false },
   { id: 2, probationStatus: "in_progress", isPendingReview: false, hasPublishedReview: true },
   { id: 3, probationStatus: "completed", isPendingReview: false, hasPublishedReview: false },
 ] as Parameters<typeof getDashboardCategoryMembers>[0];

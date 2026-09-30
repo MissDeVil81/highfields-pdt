@@ -28,6 +28,7 @@ import {
   getDashboardCategoryMembers,
   type DashboardCategory,
 } from "@/lib/dashboardCategories";
+import { getMembersInProbation } from "@workspace/probation-status";
 
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -118,7 +119,7 @@ export default function Home() {
 
   const visibleAttention = activeCategory === "publishedReviews"
     ? []
-    : visibleMembers.filter((m) => m.probationStatus === "in_progress" && m.reviewCount === 0);
+    : getMembersInProbation(visibleMembers).filter((m) => m.reviewCount === 0);
 
   const filteredNotInCategory = filteredId !== null && categoryMembers.every(m => m.id !== filteredId)
     ? team.find(m => m.id === filteredId)

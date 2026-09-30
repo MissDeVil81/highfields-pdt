@@ -11,6 +11,7 @@ import {
 } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import { getManagerReviewFlags } from "./managerProbation";
+import { getMembersInProbation, isOnProbation } from "@workspace/probation-status";
 
 const router = Router();
 
@@ -156,7 +157,7 @@ router.get("/team", async (req, res) => {
       const dev = devMap.get(member.id);
       const currentRoleId = dev?.currentRoleId ?? null;
       const lastAssessedAt = dev?.lastAssessedAt ?? null;
-      const isDevelopmentCandidate = member.probationStatus === "in_progress";
+      const isDevelopmentCandidate = isOnProbation(member.probationStatus);
       const isMissingDevelopmentPlan =
         isDevelopmentCandidate && (!dev || !dev.currentRoleId);
       const isActiveDevelopmentPlan =
@@ -234,7 +235,8 @@ router.get("/dashboard-stats", async (req, res) => {
   const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
-  let inProbation = 0;
+  const probationMembers = getMembersInProbation(members);
+  const inProbation = probationMembers.length;
   let pendingReviews = 0;
   let publishedReviews = 0;
   let needingAttention = 0;
@@ -246,10 +248,7 @@ router.get("/dashboard-stats", async (req, res) => {
   const targetRoleByUser = new Map(members.map((m) => [m.id, m.targetRoleId ?? null]));
   const devMap = await buildDevMap(memberIds, targetRoleByUser);
 
-  for (const member of members) {
-    if (member.probationStatus === "in_progress") inProbation++;
-    if (member.probationStatus !== "in_progress") continue;
-
+  for (const member of probationMembers) {
     const reviews = await db
       .select()
       .from(probationManagerReviewsTable)

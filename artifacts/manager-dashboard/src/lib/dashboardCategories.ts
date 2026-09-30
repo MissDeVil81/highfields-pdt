@@ -2,6 +2,7 @@ import type {
   ManagerDashboardStats,
   ManagerTeamMember,
 } from "@workspace/api-client-react";
+import { getMembersInProbation } from "@workspace/probation-status";
 
 export type DashboardCategory =
   | "inProbation"
@@ -14,7 +15,7 @@ export function getDashboardCategoryMembers(
 ): ManagerTeamMember[] {
   switch (category) {
     case "inProbation":
-      return team.filter((member) => member.probationStatus === "in_progress");
+      return getMembersInProbation(team);
     case "pendingReviews":
       return team.filter((member) => member.isPendingReview);
     case "publishedReviews":

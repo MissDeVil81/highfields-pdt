@@ -3,13 +3,14 @@ import { useManagerStore } from "@/hooks/useManagerStore";
 import { useGetManagerTeam, getGetManagerTeamQueryKey } from "@workspace/api-client-react";
 import { ArrowLeft, ChevronRight, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useEffect } from "react";
+import { isOnProbation } from "@workspace/probation-status";
 
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 }
 
 function ProbationStatusPill({ status }: { status: string | null | undefined }) {
-  if (status === "in_probation" || status === "in_progress")
+  if (isOnProbation(status))
     return <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-100 text-amber-700">In Probation</span>;
   if (status === "passed")
     return <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-700">Passed</span>;

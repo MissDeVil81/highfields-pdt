@@ -22,11 +22,13 @@ function review(overrides: Record<string, unknown> = {}) {
   } as Parameters<typeof getManagerReviewFlags>[1][number];
 }
 
-test("flags an in-probation member with no review as pending", () => {
-  assert.deepEqual(getManagerReviewFlags("in_progress", [], now), {
-    isPendingReview: true,
-    hasPublishedReview: false,
-  });
+test("flags members with either probation status and no review as pending", () => {
+  for (const status of ["in_probation", "in_progress"]) {
+    assert.deepEqual(getManagerReviewFlags(status, [], now), {
+      isPendingReview: true,
+      hasPublishedReview: false,
+    });
+  }
 });
 
 test("uses the same date rules for pending and published flags", () => {
@@ -37,10 +39,12 @@ test("uses the same date rules for pending and published flags", () => {
     publishedAt: now,
   });
 
-  assert.deepEqual(getManagerReviewFlags("in_progress", [pending, published], now), {
-    isPendingReview: true,
-    hasPublishedReview: true,
-  });
+  for (const status of ["in_probation", "in_progress"]) {
+    assert.deepEqual(getManagerReviewFlags(status, [pending, published], now), {
+      isPendingReview: true,
+      hasPublishedReview: true,
+    });
+  }
 });
 
 test("does not include completed probation members in either category", () => {

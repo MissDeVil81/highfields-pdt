@@ -1,4 +1,5 @@
 import type { ProbationManagerReview } from "@workspace/db";
+import { isOnProbation } from "@workspace/probation-status";
 
 export interface ManagerReviewFlags {
   isPendingReview: boolean;
@@ -18,7 +19,7 @@ export function getManagerReviewFlags(
   reviews: ProbationManagerReview[],
   now: Date,
 ): ManagerReviewFlags {
-  if (probationStatus !== "in_progress") {
+  if (!isOnProbation(probationStatus)) {
     return { isPendingReview: false, hasPublishedReview: false };
   }
 

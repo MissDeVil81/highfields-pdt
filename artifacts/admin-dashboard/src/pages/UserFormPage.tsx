@@ -18,6 +18,7 @@ import {
   getGetUserAccessSummaryQueryKey
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { isOnProbation } from "@workspace/probation-status";
 import { useAdmin } from "@/components/AdminProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -192,7 +193,7 @@ export default function UserFormPage() {
         additionalEditTeams: editTeams,
       });
 
-      setOnProbation(user.probationStatus === "in_probation");
+      setOnProbation(isOnProbation(user.probationStatus));
     }
   }, [user, permissions, isEdit, reset]);
 
@@ -274,7 +275,9 @@ export default function UserFormPage() {
               managerId: values.managerId ?? null,
               isActive: values.isActive ? "active" : "inactive",
               teamIds: values.teamIds,
-              probationStatus: onProbation ? "in_probation" : null,
+              probationStatus: onProbation
+                ? (user && isOnProbation(user.probationStatus) ? user.probationStatus : "in_probation")
+                : null,
             } as any,
           }),
           setPermissions.mutateAsync({

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSessionStore } from "@/lib/session";
+import { isOnProbation } from "@workspace/probation-status";
 
 interface ApiUser {
   id: number;
@@ -22,7 +23,7 @@ const CAREER_OVERRIDES: Record<number, { currentRoleId: number; careerPathId: nu
 };
 
 function getSubtitle(user: ApiUser): string {
-  if (user.probationStatus === "in_progress") return "Probation in Progress";
+  if (isOnProbation(user.probationStatus)) return "Probation in Progress";
   if (user.probationStatus === "passed") return "Probation Passed";
   if (user.targetRoleId) return "Working Towards Promotion";
   return user.jobTitle ?? "Employee";
